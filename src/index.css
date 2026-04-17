@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/* ── Tailwind v4: dark mode via class strategy ─────────────────────────────
+   Add/remove class="dark" on <html> to toggle theme.
+   All custom properties defined here flow through Tailwind utilities.    */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ── Design tokens — Light mode defaults ───────────────────────────────── */
+:root {
+  /* Brand */
+  --color-brand:         #2563eb;   /* blue-600  */
+  --color-brand-light:   #3b82f6;   /* blue-500  */
+  --color-brand-dark:    #1d4ed8;   /* blue-700  */
+
+  /* Surface */
+  --color-bg:            #f8fafc;   /* slate-50  */
+  --color-surface:       #ffffff;
+  --color-surface-raised:#f1f5f9;   /* slate-100 */
+  --color-border:        #e2e8f0;   /* slate-200 */
+
+  /* Text */
+  --color-text-primary:  #0f172a;   /* slate-900 */
+  --color-text-secondary:#475569;   /* slate-600 */
+  --color-text-muted:    #94a3b8;   /* slate-400 */
+
+  /* Sidebar */
+  --color-sidebar-bg:    #1e293b;   /* slate-800 */
+  --color-sidebar-text:  #cbd5e1;   /* slate-300 */
+  --color-sidebar-active:#2563eb;   /* brand     */
+  --color-sidebar-hover: #334155;   /* slate-700 */
+
+  /* Status */
+  --color-success:       #16a34a;
+  --color-warning:       #d97706;
+  --color-danger:        #dc2626;
+  --color-info:          #0284c7;
+
+  /* Layout */
+  --sidebar-width:       256px;
+  --sidebar-collapsed:   72px;
+  --header-height:       64px;
+  --radius-sm:           6px;
+  --radius-md:           10px;
+  --radius-lg:           16px;
+
+  /* Transitions */
+  --transition-fast:     150ms ease;
+  --transition-base:     250ms ease;
+  --transition-slow:     400ms ease;
+}
+
+/* ── Dark mode overrides ────────────────────────────────────────────────── */
+.dark {
+  --color-bg:            #0f172a;   /* slate-900 */
+  --color-surface:       #1e293b;   /* slate-800 */
+  --color-surface-raised:#334155;   /* slate-700 */
+  --color-border:        #334155;   /* slate-700 */
+
+  --color-text-primary:  #f1f5f9;   /* slate-100 */
+  --color-text-secondary:#94a3b8;   /* slate-400 */
+  --color-text-muted:    #475569;   /* slate-600 */
+
+  --color-sidebar-bg:    #0f172a;   /* slate-900 */
+  --color-sidebar-text:  #94a3b8;
+  --color-sidebar-hover: #1e293b;
+}
+
+/* ── Base resets ────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Geist', 'DM Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+  transition: background-color var(--transition-base), color var(--transition-base);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Scrollbar styling ──────────────────────────────────────────────────── */
+::-webkit-scrollbar         { width: 6px; height: 6px; }
+::-webkit-scrollbar-track   { background: transparent; }
+::-webkit-scrollbar-thumb   { background: var(--color-border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+/* ── Focus ring ─────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Page transition class (applied by router) ──────────────────────────── */
+.page-enter {
+  animation: pageIn var(--transition-base) both;
+}
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
