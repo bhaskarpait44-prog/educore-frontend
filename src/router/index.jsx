@@ -10,9 +10,17 @@ import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import LoginPage from '@/pages/LoginPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
+
 // Lazy-loaded pages
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
 const PlaceholderPage = lazy(() => import('@/pages/PlaceholderPage'))
+// Add these imports:
+const SessionsPage = lazy(() => import('@/pages/sessions/SessionsPage'))
+const CreateSessionPage = lazy(() => import('@/pages/sessions/CreateSessionPage'))
+const SessionDetailPage = lazy(() => import('@/pages/sessions/SessionDetailPage'))
+const StudentsPage = lazy(() => import('@/pages/students/StudentsPage'))
+const AdmitStudentPage = lazy(() => import('@/pages/students/AdmitStudentPage'))
+const StudentDetailPage = lazy(() => import('@/pages/students/StudentDetailPage'))
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[50vh]">
@@ -54,6 +62,9 @@ const router = createBrowserRouter([
 
       { path: ROUTES.DASHBOARD, element: <Lazy component={DashboardPage} /> },
 
+
+
+
       // Academics
       {
         path: ROUTES.STUDENTS,
@@ -71,6 +82,37 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+
+
+      // Inside protected children:
+      {
+        path: ROUTES.STUDENTS,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER]}>
+            <Lazy component={StudentsPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.STUDENT_NEW,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
+            <Lazy component={AdmitStudentPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.STUDENT_DETAIL,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER]}>
+            <Lazy component={StudentDetailPage} />
+          </ProtectedRoute>
+        ),
+      },
+
+
+
+
       {
         path: ROUTES.STUDENT_DETAIL,
         element: (
@@ -121,6 +163,36 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+
+
+      {
+        path: ROUTES.SESSIONS,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
+            <Lazy component={SessionsPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.SESSION_NEW,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
+            <Lazy component={CreateSessionPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.SESSION_DETAIL,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
+            <Lazy component={SessionDetailPage} />
+          </ProtectedRoute>
+        ),
+      },
+
+
+
+
       {
         path: ROUTES.FEES,
         element: (

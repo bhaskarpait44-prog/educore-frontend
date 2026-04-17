@@ -1,34 +1,32 @@
 @import "tailwindcss";
 
-/* ── Tailwind v4: dark mode via class strategy ─────────────────────────────
-   Add/remove class="dark" on <html> to toggle theme.
-   All custom properties defined here flow through Tailwind utilities.    */
+/* ── Tailwind v4: dark mode via class strategy ───────────────────────────── */
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ── Design tokens — Light mode defaults ───────────────────────────────── */
 :root {
   /* Brand */
-  --color-brand:         #2563eb;   /* blue-600  */
-  --color-brand-light:   #3b82f6;   /* blue-500  */
-  --color-brand-dark:    #1d4ed8;   /* blue-700  */
+  --color-brand:         #2563eb;
+  --color-brand-light:   #3b82f6;
+  --color-brand-dark:    #1d4ed8;
 
   /* Surface */
-  --color-bg:            #f8fafc;   /* slate-50  */
+  --color-bg:            #f8fafc;
   --color-surface:       #ffffff;
-  --color-surface-raised:#f1f5f9;   /* slate-100 */
-  --color-border:        #e2e8f0;   /* slate-200 */
+  --color-surface-raised:#f1f5f9;
+  --color-border:        #e2e8f0;
 
   /* Text */
-  --color-text-primary:  #0f172a;   /* slate-900 */
-  --color-text-secondary:#475569;   /* slate-600 */
-  --color-text-muted:    #94a3b8;   /* slate-400 */
+  --color-text-primary:  #0f172a;
+  --color-text-secondary:#475569;
+  --color-text-muted:    #94a3b8;
 
   /* Sidebar */
-  --color-sidebar-bg:    #1e293b;   /* slate-800 */
-  --color-sidebar-text:  #cbd5e1;   /* slate-300 */
-  --color-sidebar-active:#2563eb;   /* brand     */
-  --color-sidebar-hover: #334155;   /* slate-700 */
+  --color-sidebar-bg:    #1e293b;
+  --color-sidebar-text:  #cbd5e1;
+  --color-sidebar-active:#2563eb;
+  --color-sidebar-hover: #334155;
 
   /* Status */
   --color-success:       #16a34a;
@@ -40,6 +38,7 @@
   --sidebar-width:       256px;
   --sidebar-collapsed:   72px;
   --header-height:       64px;
+  --header-left:         0px; /* ✅ added */
   --radius-sm:           6px;
   --radius-md:           10px;
   --radius-lg:           16px;
@@ -50,18 +49,25 @@
   --transition-slow:     400ms ease;
 }
 
+/* ✅ Mobile responsive sidebar behavior */
+@media (max-width: 1023px) {
+  :root {
+    --header-left: 0px;
+  }
+}
+
 /* ── Dark mode overrides ────────────────────────────────────────────────── */
 .dark {
-  --color-bg:            #0f172a;   /* slate-900 */
-  --color-surface:       #1e293b;   /* slate-800 */
-  --color-surface-raised:#334155;   /* slate-700 */
-  --color-border:        #334155;   /* slate-700 */
+  --color-bg:            #0f172a;
+  --color-surface:       #1e293b;
+  --color-surface-raised:#334155;
+  --color-border:        #334155;
 
-  --color-text-primary:  #f1f5f9;   /* slate-100 */
-  --color-text-secondary:#94a3b8;   /* slate-400 */
-  --color-text-muted:    #475569;   /* slate-600 */
+  --color-text-primary:  #f1f5f9;
+  --color-text-secondary:#94a3b8;
+  --color-text-muted:    #475569;
 
-  --color-sidebar-bg:    #0f172a;   /* slate-900 */
+  --color-sidebar-bg:    #0f172a;
   --color-sidebar-text:  #94a3b8;
   --color-sidebar-hover: #1e293b;
 }
@@ -98,7 +104,7 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* ── Page transition class (applied by router) ──────────────────────────── */
+/* ── Page transition class ──────────────────────────────────────────────── */
 .page-enter {
   animation: pageIn var(--transition-base) both;
 }
@@ -106,4 +112,29 @@ body {
 @keyframes pageIn {
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ✅ Mobile drawer overlay animation */
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ✅ Sidebar slide animation */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+/* ✅ Responsive main content offset */
+@media (min-width: 1024px) {
+  .main-content-collapsed { margin-left: 72px; }
+  .main-content-expanded  { margin-left: 256px; }
+}
+
+@media (max-width: 1023px) {
+  .main-content-collapsed,
+  .main-content-expanded {
+    margin-left: 0;
+  }
 }

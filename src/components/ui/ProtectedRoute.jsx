@@ -1,20 +1,20 @@
 // src/components/ui/ProtectedRoute.jsx
-// Wraps routes that require authentication and optional role check
-
 import { Navigate, useLocation } from 'react-router-dom'
-import useAuth from '@/hooks/useAuth'
+import useAuthStore from '@/store/authStore'
 import { ROUTES } from '@/constants/app'
 
 /**
+ * Wraps routes that require authentication.
+ * Redirects to /login with the intended path saved in state.
+ *
  * @param {{ children: ReactNode, roles?: string[] }} props
- * roles — if provided, user must have one of these roles
  */
 const ProtectedRoute = ({ children, roles = [] }) => {
-  const { isAuthenticated, hasRole } = useAuth()
-  const location = useLocation()
+  const { token, user } = useAuthStore()
+  const location        = useLocation()
 
-  // Not logged in → redirect to login, preserve intended path
-  if (!isAuthenticated) {
+  // 1. Not authenticated → redirect to login
+  if (!token) {
     return (
       <Navigate
         to={ROUTES.LOGIN}
@@ -24,11 +24,9 @@ const ProtectedRoute = ({ children, roles = [] }) => {
     )
   }
 
-  // Role check
-  if (roles.length > 0 && !hasRole(...roles)) {
-    return (
-      <Navigate to={ROUTES.DASHBOARD} replace />
-    )
+  // 2. Role check — redirect to dashboard if not allowed
+  if (roles.length > 0 && user && !roles.includes(user.role)) {
+    return <Navigate to={ROUTES.DASHBOARD} replace />
   }
 
   return children
