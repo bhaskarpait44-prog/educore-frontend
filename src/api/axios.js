@@ -1,9 +1,12 @@
 // src/api/axios.js
 import axios from 'axios'
 import { STORAGE_KEYS } from '@/constants/app'
+import useAuthStore from '@/store/authStore'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'
 
 const api = axios.create({
-  baseURL : import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  baseURL : API_BASE_URL,
   timeout : 15000,
   headers : { 'Content-Type': 'application/json' },
 })
@@ -67,7 +70,7 @@ api.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/auth/refresh`,
+          `${API_BASE_URL}/auth/refresh`,
           { refresh_token: refreshTkn }
         )
         const { token: newToken, refresh_token: newRefresh } = response.data.data
@@ -100,9 +103,8 @@ api.interceptors.response.use(
 )
 
 const clearAuthAndRedirect = () => {
-  localStorage.removeItem(STORAGE_KEYS.TOKEN)
-  localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN)
-  localStorage.removeItem(STORAGE_KEYS.USER)
+  // Call store logout to clear both Zustand state and localStorage
+  useAuthStore.getState().logout()
   if (window.location.pathname !== '/login') {
     window.location.href = '/login'
   }

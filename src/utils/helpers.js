@@ -120,3 +120,20 @@ export const isEmpty = (value) => {
   if (typeof value === 'object') return Object.keys(value).length === 0
   return false
 }
+
+const EXAM_TYPE_LABELS = {
+  term: 'Exam',
+  midterm: 'Unit 2',
+  final: 'Final',
+  compartment: 'Compartment',
+}
+
+export const getExamTypeLabel = (examType, examName = '') => {
+  const normalizedName = String(examName || '').trim().toLowerCase()
+  if (normalizedName.includes('unit 1')) return 'Unit 1'
+  if (normalizedName.includes('unit 2')) return 'Unit 2'
+  if (normalizedName.includes('half yearly')) return 'Half Yearly'
+  if (normalizedName.includes('unit 3')) return 'Unit 3'
+  if (normalizedName.includes('final')) return 'Final'
+  return EXAM_TYPE_LABELS[examType] || titleCase(String(examType || 'Exam'))
+}

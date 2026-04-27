@@ -1,7 +1,7 @@
 // src/pages/attendance/MarkAttendancePage.jsx
 import { useState, useEffect, useCallback } from 'react'
 import { CheckCircle, Send, RefreshCw, Users, Calendar } from 'lucide-react'
-import { getClasses, getSections } from '@/api/classes'
+import { getClasses, getClassOptions, getSections } from '@/api/classApi'
 import { getSessionReport } from '@/api/attendance'
 import useAttendanceStore from '@/store/attendanceStore'
 import useSessionStore from '@/store/sessionStore'
@@ -25,7 +25,7 @@ const MarkAttendancePage = () => {
   usePageTitle('Mark Attendance')
   const { toastSuccess, toastError } = useToast()
   const { markBulk, isSaving } = useAttendanceStore()
-  const { currentSession } = useSessionStore()
+  const { currentSession, fetchCurrentSession } = useSessionStore()
 
   const [classes,    setClasses]    = useState([])
   const [sections,   setSections]   = useState([])
@@ -40,8 +40,14 @@ const MarkAttendancePage = () => {
 
   // Load classes
   useEffect(() => {
+    if (!currentSession?.id) {
+      fetchCurrentSession?.().catch(() => {})
+    }
+  }, [currentSession?.id, fetchCurrentSession])
+
+  useEffect(() => {
     getClasses()
-      .then(r => setClasses((r.data || []).map(c => ({ value: String(c.id), label: c.name }))))
+      .then(r => setClasses(getClassOptions(r)))
       .catch(() => {})
   }, [])
 
@@ -55,33 +61,39 @@ const MarkAttendancePage = () => {
 
   // Load students + check if already marked
   const loadStudents = async () => {
-    if (!sectionId || !currentSession) return
+    if (!sectionId) return
+    if (!currentSession?.id) {
+      toastError('No active session found. Please activate a session first.')
+      return
+    }
     setLoadingStudents(true)
     setStudents([])
     setAlreadyMarked(false)
     setSubmitted(false)
 
     try {
-      // Fetch session report filtered by class + section to get enrollment list
-      const res = await getSessionReport(currentSession.id, {
-        class_id: classId, section_id: sectionId,
+      const reportRes = await getSessionReport(currentSession.id, {
+        class_id: classId,
+        section_id: sectionId,
       })
-      const rows = res.data || []
 
-      // Check if this date already has records
-      const hasRecords = rows.some(r =>
-        r.attendance?.some(a => a.date === date && a.status)
+      const reportRows = reportRes?.data || []
+
+      const hasRecords = reportRows.some((row) =>
+        row.attendance?.some((attendance) => attendance.date === date && attendance.status)
       )
       setAlreadyMarked(hasRecords)
 
-      // Build student list from report rows
-      const studentList = rows.map(r => ({
-        enrollment_id : r.enrollment_id || r.id,
-        name          : r.student_name  || `${r.first_name} ${r.last_name}`,
-        roll_number   : r.roll_number,
-        // If already marked today, use that status; else default to present
-        currentStatus : r.attendance?.find(a => a.date === date)?.status || 'present',
+      const studentList = reportRows.map((row) => ({
+        enrollment_id : row.enrollment_id || row.id,
+        name          : row.student_name || `${row.first_name || ''} ${row.last_name || ''}`.trim(),
+        roll_number   : row.roll_number,
+        currentStatus : row.attendance?.find((attendance) => attendance.date === date)?.status || 'present',
       }))
+
+      if (studentList.length === 0) {
+        throw new Error('No students found for the selected class and section.')
+      }
 
       setStudents(studentList)
 
@@ -90,7 +102,7 @@ const MarkAttendancePage = () => {
       studentList.forEach(s => { init[s.enrollment_id] = s.currentStatus })
       setStatuses(init)
     } catch (err) {
-      toastError('Failed to load students')
+      toastError(err?.message || 'Failed to load students')
     } finally {
       setLoadingStudents(false)
     }
@@ -108,7 +120,7 @@ const MarkAttendancePage = () => {
   }
 
   const handleSubmit = async () => {
-    if (students.length === 0) return
+    if (students.length === 0 || !classId || !sectionId) return
     const records = students.map(s => ({
       enrollment_id: s.enrollment_id,
       status       : statuses[s.enrollment_id] || 'present',
@@ -116,6 +128,7 @@ const MarkAttendancePage = () => {
 
     const result = await markBulk({
       session_id : currentSession?.id,
+      class_id   : classId,
       section_id : sectionId,
       date,
       records,
@@ -125,6 +138,7 @@ const MarkAttendancePage = () => {
       toastSuccess(`Attendance marked for ${students.length} students`)
       setSubmitted(true)
       setAlreadyMarked(true)
+      loadStudents()
     } else {
       toastError(result.message || 'Failed to submit attendance')
     }

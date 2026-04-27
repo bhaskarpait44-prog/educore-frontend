@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import useStudentStore from '@/store/studentStore'
 import useSessionStore from '@/store/sessionStore'
+import useClasses from '@/hooks/useClasses'
 import usePageTitle from '@/hooks/usePageTitle'
 import useToast from '@/hooks/useToast'
 import Button from '@/components/ui/Button'
@@ -26,10 +27,11 @@ const StudentsPage = () => {
   const navigate = useNavigate()
   const { toastError } = useToast()
   const { students, pagination, isLoading, fetchStudents } = useStudentStore()
+  const { classes, fetchClasses } = useClasses()
   const { currentSession } = useSessionStore()
 
   const [search,  setSearch]  = useState('')
-  const [filters, setFilters] = useState({ class_id: '', section_id: '', session_id: '' })
+  const [filters, setFilters] = useState({ class_id: '', section_id: '' })
   const [page,    setPage]    = useState(1)
 
   // Debounced search fetch
@@ -41,11 +43,17 @@ const StudentsPage = () => {
     []
   )
 
-  useEffect(() => { doFetch(search, filters, page) }, [search, filters, page])
+  useEffect(() => {
+    if (!currentSession?.id) return
+    doFetch(search, { ...filters, session_id: String(currentSession.id) }, page)
+  }, [search, filters, page, currentSession?.id])
+  useEffect(() => {
+    fetchClasses().catch(() => toastError('Failed to load classes'))
+  }, [fetchClasses, toastError])
 
   const clearFilters = () => {
     setSearch('')
-    setFilters({ class_id: '', section_id: '', session_id: '' })
+    setFilters({ class_id: '', section_id: '' })
     setPage(1)
   }
 
@@ -61,7 +69,9 @@ const StudentsPage = () => {
             Students
           </h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {pagination.total > 0 ? `${pagination.total} students enrolled` : 'Manage student admissions and profiles'}
+            {pagination.total > 0
+              ? `${pagination.total} students enrolled in ${currentSession?.name || 'the current session'}`
+              : 'Manage current-session student admissions and profiles'}
           </p>
         </div>
         <Button icon={Plus} onClick={() => navigate(ROUTES.STUDENT_NEW)}>
@@ -78,7 +88,7 @@ const StudentsPage = () => {
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--color-text-muted)' }} />
           <input
             type="text"
-            placeholder="Search by name or admission number…"
+            placeholder="Search current-session students by name or admission number..."
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
             className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none"
@@ -87,6 +97,25 @@ const StudentsPage = () => {
             onBlur={e   => e.target.style.borderColor = 'var(--color-border)'}
           />
         </div>
+
+        <select
+          value={filters.class_id}
+          onChange={e => {
+            setFilters(f => ({ ...f, class_id: e.target.value }))
+            setPage(1)
+          }}
+          className="px-4 py-2 rounded-xl text-sm outline-none min-w-[180px]"
+          style={{ backgroundColor: 'var(--color-bg)', border: '1.5px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+          onFocus={e => e.target.style.borderColor = 'var(--color-brand)'}
+          onBlur={e => e.target.style.borderColor = 'var(--color-border)'}
+        >
+          <option value="">All Classes</option>
+          {classes.map(cls => (
+            <option key={cls.id} value={cls.id}>
+              {cls.display_name || cls.name}
+            </option>
+          ))}
+        </select>
 
         {/* Clear filters */}
         {hasActiveFilters && (
@@ -230,7 +259,7 @@ const StudentRow = ({ student, isLast, onClick }) => {
             </p>
             {student.current_enrollment && (
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                {student.current_enrollment.class} · {student.current_enrollment.section}
+                Class {student.current_enrollment.class} · Section {student.current_enrollment.section}
               </p>
             )}
           </div>
@@ -274,7 +303,7 @@ const StudentCard = ({ student, onClick }) => (
       </p>
       {student.current_enrollment && (
         <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-          {student.current_enrollment.class} · {student.current_enrollment.section}
+          Class {student.current_enrollment.class} · Section {student.current_enrollment.section}
         </p>
       )}
     </div>

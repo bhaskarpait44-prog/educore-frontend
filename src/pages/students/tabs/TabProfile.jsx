@@ -1,5 +1,5 @@
 // src/pages/students/tabs/TabProfile.jsx
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Pencil, Clock } from 'lucide-react'
 import { formatDate } from '@/utils/helpers'
 import Button from '@/components/ui/Button'
@@ -13,6 +13,22 @@ import { useForm } from 'react-hook-form'
 
 const BLOOD_GROUPS = ['A+','A-','B+','B-','AB+','AB-','O+','O-','unknown']
   .map(v => ({ value: v, label: v }))
+
+const PROFILE_FIELDS = [
+  'address',
+  'city',
+  'state',
+  'pincode',
+  'phone',
+  'email',
+  'father_name',
+  'father_phone',
+  'mother_name',
+  'mother_phone',
+  'emergency_contact',
+  'blood_group',
+  'medical_notes',
+]
 
 const InfoRow = ({ label, value }) => (
   <div className="py-2.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -29,11 +45,28 @@ const TabProfile = ({ student, studentId }) => {
   const { updateProfile, isSaving } = useStudentStore()
   const { toastSuccess, toastError } = useToast()
 
-  const { register, handleSubmit } = useForm({ defaultValues: student })
+  const defaultValues = useMemo(
+    () => PROFILE_FIELDS.reduce((acc, field) => {
+      acc[field] = student?.[field] ?? ''
+      return acc
+    }, { change_reason: '' }),
+    [student]
+  )
+
+  const { register, handleSubmit, reset } = useForm({ defaultValues })
+
+  useEffect(() => {
+    reset(defaultValues)
+  }, [defaultValues, reset])
 
   const onSave = async (data) => {
     const { change_reason, ...profileData } = data
-    const result = await updateProfile(studentId, { ...profileData, change_reason })
+    const sanitizedProfileData = PROFILE_FIELDS.reduce((acc, field) => {
+      acc[field] = profileData[field] ?? ''
+      return acc
+    }, {})
+
+    const result = await updateProfile(studentId, { ...sanitizedProfileData, change_reason })
     if (result.success) {
       toastSuccess('Profile updated')
       setEditOpen(false)
@@ -65,6 +98,8 @@ const TabProfile = ({ student, studentId }) => {
 
       {/* Profile grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+        <InfoRow label="Class Name"       value={student.current_enrollment?.class} />
+        <InfoRow label="Section"          value={student.current_enrollment?.section} />
         <InfoRow label="Address"          value={[student.address, student.city, student.state, student.pincode].filter(Boolean).join(', ')} />
         <InfoRow label="Phone"            value={student.phone} />
         <InfoRow label="Email"            value={student.email} />

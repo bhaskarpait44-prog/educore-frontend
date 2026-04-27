@@ -1,33 +1,41 @@
 // src/hooks/useAuth.js
-// Convenience hook — wraps authStore, provides role helpers
+// Convenience hook - wraps authStore, provides role helpers
 
+import { useShallow } from 'zustand/react/shallow'
 import useAuthStore from '@/store/authStore'
 import { ROLES } from '@/constants/app'
 
 const useAuth = () => {
-  const store = useAuthStore()
+  const store = useAuthStore(useShallow((state) => ({
+    user        : state.user,
+    token       : state.token,
+    isLoading   : state.isLoading,
+    error       : state.error,
+    login       : state.login,
+    loginStudent: state.loginStudent,
+    logout      : state.logout,
+    clearError  : state.clearError,
+  })))
 
   return {
-    // State
     user           : store.user,
     token          : store.token,
     isLoading      : store.isLoading,
     error          : store.error,
     isAuthenticated: !!store.token,
 
-    // Role checks
-    isAdmin      : store.user?.role === ROLES.ADMIN,
+    isAdmin      : [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(store.user?.role),
     isTeacher    : store.user?.role === ROLES.TEACHER,
     isAccountant : store.user?.role === ROLES.ACCOUNTANT,
     isStaff      : store.user?.role === ROLES.STAFF,
+    isStudent    : store.user?.role === ROLES.STUDENT,
 
-    // Role-based permission helper
     hasRole: (...roles) => roles.includes(store.user?.role),
 
-    // Actions
-    login     : store.login,
-    logout    : store.logout,
-    clearError: store.clearError,
+    login       : store.login,
+    loginStudent: store.loginStudent,
+    logout      : store.logout,
+    clearError  : store.clearError,
   }
 }
 

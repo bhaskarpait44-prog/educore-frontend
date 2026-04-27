@@ -8,11 +8,12 @@ const useAuthStore = create(
   persist(
     (set, get) => ({
       // ── State ─────────────────────────────────────────────────────────
-      token        : null,
-      refreshToken : null,
-      user         : null,
-      isLoading    : false,
-      error        : null,
+      token: null,
+      refreshToken: null,
+      user: null,
+      isLoading: false,
+      error: null,
+      isHydrated: false,  // Track if persist has finished loading
 
       // ── Actions ───────────────────────────────────────────────────────
 
@@ -20,28 +21,75 @@ const useAuthStore = create(
         set({ isLoading: true, error: null })
         try {
           const res = await authApi.login(credentials)
-          const { token, refresh_token, user } = res.data
 
-          // Persist tokens to localStorage for Axios interceptor
-          localStorage.setItem(STORAGE_KEYS.TOKEN, token)
-          if (refresh_token) {
-            localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token)
+          // support both formats:
+          // 1) { data: { token, refresh_token, user } }
+          // 2) { token, refresh_token, user }
+          const { data, message } = res
+          const payload = data || res
+
+          const { token, refresh_token, user } = payload || {}
+
+          if (!token || !user) {
+            throw new Error(message || 'Login failed - invalid response')
           }
+
+          localStorage.setItem(STORAGE_KEYS.TOKEN, token)
+          if (refresh_token) localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token)
 
           set({
             token,
-            refreshToken : refresh_token || null,
-            user,
-            isLoading    : false,
-            error        : null,
+            refreshToken: refresh_token || null,
+            user: {
+              ...user,
+              // ensure permissions always exist (important)
+              permissions: Array.isArray(user.permissions) ? user.permissions : [],
+            },
+            isLoading: false,
+            error: null,
           })
 
           return { success: true, user }
+
         } catch (err) {
           set({ isLoading: false, error: err.message || 'Login failed' })
           return { success: false, message: err.message }
         }
       },
+
+      loginStudent: async (credentials) => {
+        set({ isLoading: true, error: null })
+        try {
+          const res = await authApi.studentLogin(credentials)
+          const { data, message } = res
+          const payload = data || res
+          const { token, refresh_token, user } = payload || {}
+
+          if (!token || !user) {
+            throw new Error(message || 'Student login failed - invalid response')
+          }
+
+          localStorage.setItem(STORAGE_KEYS.TOKEN, token)
+          if (refresh_token) localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token)
+
+          set({
+            token,
+            refreshToken: refresh_token || null,
+            user: {
+              ...user,
+              permissions: Array.isArray(user.permissions) ? user.permissions : [],
+            },
+            isLoading: false,
+            error: null,
+          })
+
+          return { success: true, user }
+        } catch (err) {
+          set({ isLoading: false, error: err.message || 'Student login failed' })
+          return { success: false, message: err.message }
+        }
+      },
+
 
       logout: () => {
         localStorage.removeItem(STORAGE_KEYS.TOKEN)
@@ -57,16 +105,33 @@ const useAuthStore = create(
         if (refreshToken) localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken)
         set({ token, refreshToken: refreshToken || get().refreshToken })
       },
+
+      // Mark as hydrated after persist loads
+      setHydrated: () => set({ isHydrated: true }),
     }),
     {
-      name      : 'educore_auth',
+      name: 'educore_auth',
       partialize: (state) => ({
-        token       : state.token,
-        refreshToken: state.refreshToken,
-        user        : state.user,
+        token: state.token,
+        user: state.user,
       }),
     }
   )
 )
+
+// Subscribe to rehydration completion
+if (useAuthStore.persist) {
+  useAuthStore.persist.onFinishHydration(() => {
+    useAuthStore.getState().setHydrated()
+  })
+}
+
+// Fallback: mark as hydrated after a short timeout in case persist doesn't trigger
+setTimeout(() => {
+  const state = useAuthStore.getState()
+  if (!state.isHydrated) {
+    state.setHydrated()
+  }
+}, 100)
 
 export default useAuthStore

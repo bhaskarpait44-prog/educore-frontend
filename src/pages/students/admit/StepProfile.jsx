@@ -1,5 +1,7 @@
 // src/pages/students/admit/StepProfile.jsx
 import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import Input    from '@/components/ui/Input'
 import Select   from '@/components/ui/Select'
 import Textarea from '@/components/ui/Textarea'
@@ -9,8 +11,31 @@ import { SectionHeading } from './StepIdentity'
 const BLOOD_GROUPS = ['A+','A-','B+','B-','AB+','AB-','O+','O-','unknown']
   .map(v => ({ value: v, label: v }))
 
+const schema = z.object({
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  pincode: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email('A valid student email is required'),
+  father_name: z.string().optional(),
+  father_phone: z.string().optional(),
+  mother_name: z.string().optional(),
+  mother_phone: z.string().optional(),
+  emergency_contact: z.string().optional(),
+  blood_group: z.string().optional(),
+  medical_notes: z.string().optional(),
+})
+
 const StepProfile = ({ defaultValues, onNext, onBack }) => {
-  const { register, handleSubmit } = useForm({ defaultValues })
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    defaultValues,
+    resolver: zodResolver(schema),
+  })
 
   return (
     <form onSubmit={handleSubmit(onNext)}>
@@ -28,7 +53,14 @@ const StepProfile = ({ defaultValues, onNext, onBack }) => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input label="Phone"  type="tel" placeholder="+91-9876543210" {...register('phone')} />
-          <Input label="Email"  type="email" placeholder="student@email.com" {...register('email')} />
+          <Input
+            label="Student Email"
+            type="email"
+            placeholder="student@email.com"
+            required
+            error={errors.email?.message}
+            {...register('email')}
+          />
         </div>
 
         {/* Parents */}

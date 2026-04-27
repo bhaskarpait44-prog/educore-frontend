@@ -23,10 +23,13 @@
   --color-text-muted:    #94a3b8;
 
   /* Sidebar */
-  --color-sidebar-bg:    #1e293b;
-  --color-sidebar-text:  #cbd5e1;
+  --color-sidebar-bg:    #f8fbff;
+  --color-sidebar-text:  #334155;
+  --color-sidebar-muted: #64748b;
   --color-sidebar-active:#2563eb;
-  --color-sidebar-hover: #334155;
+  --color-sidebar-hover: #e8f0ff;
+  --color-sidebar-border:#dbe7f5;
+  --color-sidebar-card:  #ffffff;
 
   /* Status */
   --color-success:       #16a34a;
@@ -68,8 +71,11 @@
   --color-text-muted:    #475569;
 
   --color-sidebar-bg:    #0f172a;
-  --color-sidebar-text:  #94a3b8;
-  --color-sidebar-hover: #1e293b;
+  --color-sidebar-text:  #cbd5e1;
+  --color-sidebar-muted: #94a3b8;
+  --color-sidebar-hover: #162338;
+  --color-sidebar-border:#1e293b;
+  --color-sidebar-card:  rgba(15, 23, 42, 0.72);
 }
 
 /* ── Base resets ────────────────────────────────────────────────────────── */
@@ -136,5 +142,38 @@ body {
   .main-content-collapsed,
   .main-content-expanded {
     margin-left: 0;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .student-report-print-root,
+  .student-report-print-root * {
+    visibility: visible !important;
+  }
+
+  .student-report-print-root {
+    position: absolute !important;
+    inset: 0 auto auto 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .student-report-no-print {
+    display: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 10mm;
   }
 }

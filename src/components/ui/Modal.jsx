@@ -32,12 +32,12 @@ const Modal = ({ open, onClose, title, children, size = 'md', footer }) => {
     <div
       ref={overlayRef}
       onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
     >
       <div
         className={cn(
-          'w-full rounded-2xl shadow-2xl flex flex-col max-h-[90vh]',
+          'my-4 w-full rounded-2xl shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] sm:max-h-[90vh]',
           'animate-in fade-in zoom-in-95 duration-200',
           sizeMap[size] || sizeMap.md,
         )}
@@ -48,7 +48,7 @@ const Modal = ({ open, onClose, title, children, size = 'md', footer }) => {
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-6 py-4 shrink-0"
+          className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 shrink-0"
           style={{ borderBottom: '1px solid var(--color-border)' }}
         >
           <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>
@@ -66,14 +66,14 @@ const Modal = ({ open, onClose, title, children, size = 'md', footer }) => {
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5">
+        <div className="overflow-y-auto flex-1 px-4 py-4 sm:px-6 sm:py-5">
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
           <div
-            className="px-6 py-4 shrink-0 flex items-center justify-end gap-3"
+            className="px-4 py-4 sm:px-6 shrink-0 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3"
             style={{ borderTop: '1px solid var(--color-border)' }}
           >
             {footer}

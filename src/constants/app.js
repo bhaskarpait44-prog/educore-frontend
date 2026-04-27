@@ -15,10 +15,15 @@ export const STORAGE_KEYS = {
 
 // ── User roles (must match backend ENUM) ─────────────────────────────────
 export const ROLES = {
+  SUPER_ADMIN: 'super_admin',
   ADMIN: 'admin',
   TEACHER: 'teacher',
   ACCOUNTANT: 'accountant',
   STAFF: 'staff',
+  STUDENT: 'student',
+  PARENT: 'parent',
+  LIBRARIAN: 'librarian',
+  RECEPTIONIST: 'receptionist',
 }
 
 // ── Route paths — single source of truth for navigation ──────────────────
@@ -27,6 +32,59 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   DASHBOARD: '/dashboard',
+
+  // Accountant Portal
+  ACCOUNTANT_ROOT: '/accountant',
+  ACCOUNTANT_DASHBOARD: '/accountant/dashboard',
+  ACCOUNTANT_COLLECTION: '/accountant/collect',
+  ACCOUNTANT_STUDENTS: '/accountant/students',
+  ACCOUNTANT_STUDENT_DETAIL: '/accountant/students/:id/fees',
+  ACCOUNTANT_STUDENT_SEARCH: '/accountant/students/search',
+  ACCOUNTANT_STUDENT_FEES: '/accountant/students/fees',
+  ACCOUNTANT_STUDENT_PAYMENTS: '/accountant/students/payments',
+  ACCOUNTANT_FEE_STRUCTURE: '/accountant/fee-structure',
+  ACCOUNTANT_FEE_STRUCTURE_MANAGE: '/accountant/fee-structure/manage',
+  ACCOUNTANT_INVOICES: '/accountant/invoices',
+  ACCOUNTANT_INVOICES_PENDING: '/accountant/invoices/pending',
+  ACCOUNTANT_INVOICES_OVERDUE: '/accountant/invoices/overdue',
+  ACCOUNTANT_RECEIPTS: '/accountant/receipts',
+  ACCOUNTANT_RECEIPTS_HISTORY: '/accountant/receipts/history',
+  ACCOUNTANT_DEFAULTERS: '/accountant/defaulters',
+  ACCOUNTANT_REMINDERS: '/accountant/defaulters/reminders',
+  ACCOUNTANT_CONCESSIONS: '/accountant/concessions',
+  ACCOUNTANT_CONCESSIONS_APPLY: '/accountant/concessions/apply',
+  ACCOUNTANT_REPORTS: '/accountant/reports',
+  ACCOUNTANT_REPORT_DAILY: '/accountant/reports/daily',
+  ACCOUNTANT_REPORT_MONTHLY: '/accountant/reports/monthly',
+  ACCOUNTANT_REPORT_CLASSWISE: '/accountant/reports/classwise',
+  ACCOUNTANT_REPORT_SESSION: '/accountant/reports/session',
+  ACCOUNTANT_REPORT_DEFAULTERS: '/accountant/reports/defaulters',
+  ACCOUNTANT_REPORT_CONCESSIONS: '/accountant/reports/concessions',
+  ACCOUNTANT_REPORT_CUSTOM: '/accountant/reports/custom',
+  ACCOUNTANT_CARRY_FORWARD: '/accountant/carry-forward',
+  ACCOUNTANT_REFUNDS: '/accountant/refunds',
+  ACCOUNTANT_CHEQUES: '/accountant/cheques',
+  ACCOUNTANT_PROFILE: '/accountant/profile',
+
+  // Student Portal
+  STUDENT_ROOT: '/student',
+  STUDENT_DASHBOARD: '/student/dashboard',
+  STUDENT_ATTENDANCE: '/student/attendance',
+  STUDENT_RESULTS: '/student/results',
+  STUDENT_REPORT_CARD: '/student/results/report-card',
+  STUDENT_FEES: '/student/fees',
+  STUDENT_FEE_PAYMENTS: '/student/fees/payments',
+  STUDENT_TIMETABLE: '/student/timetable',
+  STUDENT_HOMEWORK: '/student/homework',
+  STUDENT_HOMEWORK_SUBMISSIONS: '/student/homework/submissions',
+  STUDENT_NOTICES: '/student/notices',
+  STUDENT_CHAT: '/student/chat',
+  STUDENT_PROFILE: '/student/profile',
+  STUDENT_PROFILE_CORRECTION: '/student/profile/correction',
+  STUDENT_PROFILE_PASSWORD: '/student/profile/password',
+  STUDENT_HISTORY: '/student/history',
+  STUDENT_ACHIEVEMENTS: '/student/achievements',
+  STUDENT_MATERIALS: '/student/materials',
   
 
   // Students
@@ -35,10 +93,15 @@ export const ROUTES = {
   STUDENT_DETAIL: '/students/:id',
   STUDENT_EDIT: '/students/:id/edit',
 
+  // Classes
+  CLASSES: '/classes',
+  CLASS_DETAIL: '/classes/:id',
+
   // Sessions
   SESSIONS: '/sessions',
   SESSION_NEW: '/sessions/new',
   SESSION_DETAIL: '/sessions/:id',
+  ADMIN_PROMOTIONS: '/admin/promotions',
 
   // Enrollments
   ENROLLMENTS: '/enrollments',
@@ -59,6 +122,34 @@ export const ROUTES = {
 
   // Audit
   AUDIT: '/audit',
+
+  // Users
+  USERS: '/users',
+  USER_NEW: '/users/new',
+  USER_IMPORT: '/users/import',
+  USER_DETAIL: '/users/:id',
+  TEACHERS: '/teachers',
+  TEACHER_DETAIL: '/teachers/:id',
+  TEACHER_NEW: '/teachers/new',
+  ADMIN_TEACHER_CONTROL: '/admin/teacher-control',
+
+  // Teacher Portal
+  TEACHER_CLASSES: '/teacher/classes',
+  TEACHER_ATTENDANCE_MARK: '/teacher/attendance/mark',
+  TEACHER_ATTENDANCE_REGISTER: '/teacher/attendance/register',
+  TEACHER_ATTENDANCE_REPORTS: '/teacher/attendance/reports',
+  TEACHER_MARKS_ENTER: '/teacher/marks/enter',
+  TEACHER_MARKS_SUMMARY: '/teacher/marks/summary',
+  TEACHER_STUDENTS: '/teacher/students',
+  TEACHER_STUDENT_DETAIL: '/teacher/students/:id',
+  TEACHER_STUDENT_REMARKS: '/teacher/students/remarks',
+  TEACHER_TIMETABLE: '/teacher/timetable',
+  TEACHER_HOMEWORK: '/teacher/homework',
+  TEACHER_CHAT: '/teacher/chat',
+  TEACHER_NOTICES: '/teacher/notices',
+  TEACHER_NOTICE_NEW: '/teacher/notices/new',
+  TEACHER_LEAVE: '/teacher/leave',
+  TEACHER_PROFILE: '/teacher/profile',
 
   // Settings
   SETTINGS: '/settings',

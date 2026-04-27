@@ -1,16 +1,14 @@
 // src/store/uiStore.js
-// Global UI state — theme, sidebar, toasts
+// Global UI state - theme, sidebar, toasts
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { STORAGE_KEYS } from '@/constants/app'
-
-let toastId = 0
+import { toast } from 'react-hot-toast'
 
 const useUiStore = create(
   persist(
     (set, get) => ({
-      // ── Theme ─────────────────────────────────────────────────────────
+      // Theme
       theme: 'light',   // 'light' | 'dark'
 
       toggleTheme: () => {
@@ -25,7 +23,7 @@ const useUiStore = create(
         document.documentElement.classList.toggle('dark', theme === 'dark')
       },
 
-      // ── Sidebar ───────────────────────────────────────────────────────
+      // Sidebar
       sidebarCollapsed: false,
 
       toggleSidebar: () =>
@@ -34,39 +32,32 @@ const useUiStore = create(
       setSidebarCollapsed: (value) =>
         set({ sidebarCollapsed: value }),
 
-      // ── Toast notifications ───────────────────────────────────────────
-      toasts: [],
-
-      /**
-       * Show a toast notification
-       * @param {{ message: string, type?: 'success'|'error'|'warning'|'info', duration?: number }} opts
-       */
+      // Toast notifications
       toast: ({ message, type = 'info', duration = 4000 }) => {
-        const id = ++toastId
-        set((s) => ({
-          toasts: [...s.toasts, { id, message, type, duration }],
-        }))
-        // Auto-remove after duration
-        setTimeout(() => {
-          set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }))
-        }, duration)
-        return id
+        if (type === 'warning') {
+          return toast(message, {
+            duration,
+            icon: '!',
+          })
+        }
+
+        const variant = toast[type] || toast
+        return variant(message, { duration })
       },
 
-      removeToast: (id) =>
-        set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+      removeToast: (id) => toast.dismiss(id),
 
       // Convenience helpers
       toastSuccess: (message) => get().toast({ message, type: 'success' }),
-      toastError  : (message) => get().toast({ message, type: 'error',   duration: 6000 }),
+      toastError: (message) => get().toast({ message, type: 'error', duration: 6000 }),
       toastWarning: (message) => get().toast({ message, type: 'warning' }),
-      toastInfo   : (message) => get().toast({ message, type: 'info' }),
+      toastInfo: (message) => get().toast({ message, type: 'info' }),
     }),
     {
-      name      : 'educore_ui',
-      // Only persist theme and sidebar state — not toasts
+      name: 'educore_ui',
+      // Only persist theme and sidebar state - not toasts
       partialize: (state) => ({
-        theme           : state.theme,
+        theme: state.theme,
         sidebarCollapsed: state.sidebarCollapsed,
       }),
     }

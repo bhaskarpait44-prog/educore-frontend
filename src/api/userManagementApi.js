@@ -1,0 +1,20 @@
+// src/api/userManagementApi.js
+import api from './axios'
+
+export const getUsers             = p      => api.get('/admin/users', { params: p })
+export const getUser              = id     => api.get(`/admin/users/${id}`)
+export const createUser           = d      => api.post('/admin/users', d)
+export const updateUser           = (id,d) => api.patch(`/admin/users/${id}`, d)
+export const deleteUser           = id     => api.delete(`/admin/users/${id}`)
+export const toggleUserStatus     = id     => api.patch(`/admin/users/${id}/status`)
+export const updateUserPermissions= (id,d) => api.patch(`/admin/users/${id}/permissions`, d)
+export const resetUserPassword    = (id,d) => api.post(`/admin/users/${id}/reset-password`, d)
+export const getUserAudit         = (id,p) => api.get(`/admin/users/${id}/audit`, { params: p })
+export const getPermissionTemplates= ()    => api.get('/admin/permission-templates')
+export const createTemplate       = d      => api.post('/admin/permission-templates', d)
+export const updateTemplate       = (id,d) => api.patch(`/admin/permission-templates/${id}`, d)
+export const deleteTemplate       = id     => api.delete(`/admin/permission-templates/${id}`)
+export const getImportTemplate    = ()     => api.get('/admin/users/import/template')
+export const previewImport        = d      => api.post('/admin/users/import/preview', d)
+export const confirmImport        = d      => api.post('/admin/users/import/confirm', d)
+export const getImportStatus      = id     => api.get(`/admin/users/import/${id}/status`)

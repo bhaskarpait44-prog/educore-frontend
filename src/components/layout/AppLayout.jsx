@@ -15,6 +15,15 @@ const AppLayout = () => {
 
   // Mobile drawer state
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  // Handle window resize for responsive layout
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024)
+    checkDesktop()
+    window.addEventListener('resize', checkDesktop)
+    return () => window.removeEventListener('resize', checkDesktop)
+  }, [])
 
   // Fetch current session once on mount
   useEffect(() => {
@@ -60,7 +69,7 @@ const AppLayout = () => {
         className="flex flex-col min-h-screen transition-all duration-300"
         style={{
           // On desktop: offset by sidebar. On mobile: no offset.
-          marginLeft  : window.innerWidth >= 1024 ? `${sidebarW}px` : 0,
+          marginLeft  : isDesktop ? `${sidebarW}px` : 0,
           paddingTop  : 'var(--header-height)',
         }}
       >

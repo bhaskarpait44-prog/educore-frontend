@@ -65,6 +65,22 @@ const useStudentStore = create((set, get) => ({
     }
   },
 
+  deleteStudent: async (id, data) => {
+    set({ isSaving: true })
+    try {
+      await studentsApi.deleteStudent(id, data)
+      set(s => ({
+        students       : s.students.filter(student => student.id !== Number(id)),
+        selectedStudent: s.selectedStudent?.id === Number(id) ? null : s.selectedStudent,
+        isSaving      : false,
+      }))
+      return { success: true }
+    } catch (err) {
+      set({ isSaving: false })
+      return { success: false, message: err.message, errors: err.errors || [] }
+    }
+  },
+
   // ── Update identity ─────────────────────────────────────────────────────
   updateIdentity: async (id, data) => {
     set({ isSaving: true })

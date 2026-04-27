@@ -1,7 +1,7 @@
 // src/pages/attendance/AttendanceRegisterPage.jsx
 import { useState, useEffect, useMemo } from 'react'
 import { FileSpreadsheet, FileText, ChevronLeft, ChevronRight } from 'lucide-react'
-import { getClasses, getSections } from '@/api/classes'
+import { getClasses, getClassOptions, getSections } from '@/api/classApi'
 import useAttendanceStore from '@/store/attendanceStore'
 import useSessionStore from '@/store/sessionStore'
 import usePageTitle from '@/hooks/usePageTitle'
@@ -12,98 +12,112 @@ import AttendanceOverrideModal from './AttendanceOverrideModal'
 import { cn } from '@/utils/helpers'
 
 const STATUS_CELL = {
-  present  : { label: 'P', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
-  absent   : { label: 'A', bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
-  late     : { label: 'L', bg: '#fffbeb', color: '#d97706', border: '#fde68a' },
-  half_day : { label: 'H', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' },
-  holiday  : { label: '—', bg: '#f1f5f9', color: '#94a3b8', border: '#e2e8f0' },
-  none     : { label: '·', bg: 'transparent', color: '#cbd5e1', border: 'transparent' },
+  present: { label: 'P', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
+  absent: { label: 'A', bg: '#fef2f2', color: '#dc2626', border: '#fecaca' },
+  late: { label: 'L', bg: '#fffbeb', color: '#d97706', border: '#fde68a' },
+  half_day: { label: 'H', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' },
+  holiday: { label: '-', bg: '#f1f5f9', color: '#94a3b8', border: '#e2e8f0' },
+  none: { label: '.', bg: 'transparent', color: '#cbd5e1', border: 'transparent' },
 }
 
-const AttendanceRegisterPage = () => {
+const AttendanceRegisterPage = ({ mode = 'register' }) => {
   usePageTitle('Attendance Register')
   const { toastError } = useToast()
   const { sessionReport, isLoading, fetchSessionReport } = useAttendanceStore()
   const { sessions, currentSession, fetchSessions } = useSessionStore()
+  const isOverrideMode = mode === 'override'
 
-  const [classes,    setClasses]    = useState([])
-  const [sections,   setSections]   = useState([])
-  const [sessionId,  setSessionId]  = useState('')
-  const [classId,    setClassId]    = useState('')
-  const [sectionId,  setSectionId]  = useState('')
-  const [month,      setMonth]      = useState(new Date().getMonth())
-  const [year,       setYear]       = useState(new Date().getFullYear())
-  const [override,   setOverride]   = useState(null)  // { record, student }
+  const [classes, setClasses] = useState([])
+  const [sections, setSections] = useState([])
+  const [sessionId, setSessionId] = useState('')
+  const [classId, setClassId] = useState('')
+  const [sectionId, setSectionId] = useState('')
+  const [month, setMonth] = useState(new Date().getMonth())
+  const [year, setYear] = useState(new Date().getFullYear())
+  const [override, setOverride] = useState(null)
 
   useEffect(() => {
     fetchSessions().catch(() => {})
     getClasses()
-      .then(r => setClasses((r.data || []).map(c => ({ value: String(c.id), label: c.name }))))
+      .then((response) => setClasses(getClassOptions(response)))
       .catch(() => {})
   }, [])
 
   useEffect(() => {
     if (currentSession && !sessionId) setSessionId(String(currentSession.id))
-  }, [currentSession])
+  }, [currentSession, sessionId])
 
   useEffect(() => {
-    if (!classId) { setSections([]); return }
+    if (!classId) {
+      setSections([])
+      return
+    }
+
     getSections(classId)
-      .then(r => setSections((r.data || []).map(s => ({ value: String(s.id), label: `Section ${s.name}` }))))
+      .then((response) => setSections((response.data || []).map((section) => ({ value: String(section.id), label: `Section ${section.name}` }))))
       .catch(() => {})
   }, [classId])
 
   useEffect(() => {
     if (!sessionId) return
+
     fetchSessionReport(sessionId, { class_id: classId, section_id: sectionId })
       .catch(() => toastError('Failed to load register'))
-  }, [sessionId, classId, sectionId])
+  }, [sessionId, classId, sectionId, fetchSessionReport, toastError])
 
-  // Generate days for the selected month
   const daysInMonth = useMemo(() => {
     const days = []
     const count = new Date(year, month + 1, 0).getDate()
-    for (let d = 1; d <= count; d++) {
-      const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
-      const dow  = new Date(date).getDay()
-      days.push({ date, day: d, isWeekend: dow === 0 || dow === 6 })
+
+    for (let day = 1; day <= count; day += 1) {
+      const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      const dow = new Date(date).getDay()
+      days.push({ date, day, isWeekend: dow === 0 || dow === 6 })
     }
+
     return days
   }, [month, year])
 
-  const prevMonth = () => {
-    if (month === 0) { setMonth(11); setYear(y => y - 1) }
-    else setMonth(m => m - 1)
-  }
-  const nextMonth = () => {
-    if (month === 11) { setMonth(0); setYear(y => y + 1) }
-    else setMonth(m => m + 1)
-  }
-
   const monthName = new Date(year, month).toLocaleString('default', { month: 'long', year: 'numeric' })
 
-  // Build lookup: student_id → date → record
   const attendanceLookup = useMemo(() => {
     const map = {}
-    sessionReport.forEach(row => {
+    sessionReport.forEach((row) => {
       map[row.enrollment_id || row.id] = {}
-      ;(row.attendance || []).forEach(a => {
-        map[row.enrollment_id || row.id][a.date] = a
+      ;(row.attendance || []).forEach((attendance) => {
+        map[row.enrollment_id || row.id][attendance.date] = attendance
       })
     })
     return map
   }, [sessionReport])
 
+  const prevMonth = () => {
+    if (month === 0) {
+      setMonth(11)
+      setYear((value) => value - 1)
+      return
+    }
+    setMonth((value) => value - 1)
+  }
+
+  const nextMonth = () => {
+    if (month === 11) {
+      setMonth(0)
+      setYear((value) => value + 1)
+      return
+    }
+    setMonth((value) => value + 1)
+  }
+
   return (
     <div className="space-y-5">
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="flex-1">
           <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-            Attendance Register
+            {isOverrideMode ? 'Override Attendance' : 'Attendance Register'}
           </h1>
-          <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            Full calendar view · Click any cell to override
+          <p className="mt-0.5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            {isOverrideMode ? 'Full calendar view - click any recorded day to edit attendance' : 'Full calendar view - click any cell to override'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -112,50 +126,55 @@ const AttendanceRegisterPage = () => {
         </div>
       </div>
 
-      {/* ── Filters ─────────────────────────────────────────────────────── */}
       <div
-        className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl"
+        className="grid grid-cols-2 gap-3 rounded-2xl p-4 sm:grid-cols-4"
         style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
       >
         <Select
           label="Session"
           value={sessionId}
-          onChange={e => setSessionId(e.target.value)}
-          options={(sessions || []).map(s => ({ value: String(s.id), label: s.name }))}
+          onChange={(event) => setSessionId(event.target.value)}
+          options={(sessions || []).map((session) => ({ value: String(session.id), label: session.name }))}
         />
         <Select
           label="Class"
           value={classId}
-          onChange={e => { setClassId(e.target.value); setSectionId('') }}
+          onChange={(event) => {
+            setClassId(event.target.value)
+            setSectionId('')
+          }}
           options={classes}
           placeholder="All classes"
         />
         <Select
           label="Section"
           value={sectionId}
-          onChange={e => setSectionId(e.target.value)}
+          onChange={(event) => setSectionId(event.target.value)}
           options={sections}
           disabled={!classId}
           placeholder="All sections"
         />
-        {/* Month navigation */}
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>Month</label>
           <div className="flex items-center gap-1">
-            <button onClick={prevMonth} className="p-2 rounded-lg transition-colors"
+            <button
+              onClick={prevMonth}
+              className="rounded-lg p-2 transition-colors"
               style={{ color: 'var(--color-text-secondary)' }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              onMouseEnter={(event) => { event.currentTarget.style.backgroundColor = 'var(--color-surface-raised)' }}
+              onMouseLeave={(event) => { event.currentTarget.style.backgroundColor = 'transparent' }}
             >
               <ChevronLeft size={16} />
             </button>
             <span className="flex-1 text-center text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>
               {monthName}
             </span>
-            <button onClick={nextMonth} className="p-2 rounded-lg transition-colors"
+            <button
+              onClick={nextMonth}
+              className="rounded-lg p-2 transition-colors"
               style={{ color: 'var(--color-text-secondary)' }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              onMouseEnter={(event) => { event.currentTarget.style.backgroundColor = 'var(--color-surface-raised)' }}
+              onMouseLeave={(event) => { event.currentTarget.style.backgroundColor = 'transparent' }}
             >
               <ChevronRight size={16} />
             </button>
@@ -163,17 +182,16 @@ const AttendanceRegisterPage = () => {
         </div>
       </div>
 
-      {/* ── Legend ─────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-4">
         {Object.entries(STATUS_CELL)
-          .filter(([k]) => k !== 'none')
-          .map(([key, cfg]) => (
+          .filter(([key]) => key !== 'none')
+          .map(([key, config]) => (
             <span key={key} className="flex items-center gap-1.5 text-xs">
               <span
-                className="w-5 h-5 rounded text-center text-xs font-bold flex items-center justify-center"
-                style={{ backgroundColor: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}
+                className="flex h-5 w-5 items-center justify-center rounded text-center text-xs font-bold"
+                style={{ backgroundColor: config.bg, color: config.color, border: `1px solid ${config.border}` }}
               >
-                {cfg.label}
+                {config.label}
               </span>
               <span style={{ color: 'var(--color-text-muted)' }}>
                 {key === 'half_day' ? 'Half Day' : key.charAt(0).toUpperCase() + key.slice(1)}
@@ -182,25 +200,23 @@ const AttendanceRegisterPage = () => {
           ))}
       </div>
 
-      {/* ── Calendar grid ───────────────────────────────────────────────── */}
       {isLoading ? (
         <RegisterSkeleton />
       ) : (
         <div
-          className="rounded-2xl overflow-hidden"
+          className="overflow-hidden rounded-2xl"
           style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
         >
           <div className="overflow-x-auto">
             <table className="min-w-full" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  {/* Sticky student name column */}
                   <th
-                    className="sticky left-0 z-10 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider min-w-40"
+                    className="sticky left-0 z-10 min-w-40 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
                     style={{
-                      backgroundColor : 'var(--color-surface)',
-                      color           : 'var(--color-text-muted)',
-                      borderRight     : '1px solid var(--color-border)',
+                      backgroundColor: 'var(--color-surface)',
+                      color: 'var(--color-text-muted)',
+                      borderRight: '1px solid var(--color-border)',
                     }}
                   >
                     Student
@@ -208,19 +224,16 @@ const AttendanceRegisterPage = () => {
                   {daysInMonth.map(({ day, date, isWeekend }) => (
                     <th
                       key={date}
-                      className="px-1 py-3 text-center text-xs font-semibold w-9 min-w-[36px]"
+                      className="w-9 min-w-[36px] px-1 py-3 text-center text-xs font-semibold"
                       style={{
-                        color           : isWeekend ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
-                        backgroundColor : isWeekend ? 'var(--color-surface-raised)' : 'var(--color-surface)',
+                        color: isWeekend ? 'var(--color-text-muted)' : 'var(--color-text-secondary)',
+                        backgroundColor: isWeekend ? 'var(--color-surface-raised)' : 'var(--color-surface)',
                       }}
                     >
                       {day}
                     </th>
                   ))}
-                  <th
-                    className="px-3 py-3 text-center text-xs font-semibold"
-                    style={{ color: 'var(--color-text-muted)' }}
-                  >
+                  <th className="px-3 py-3 text-center text-xs font-semibold" style={{ color: 'var(--color-text-muted)' }}>
                     %
                   </th>
                 </tr>
@@ -233,38 +246,36 @@ const AttendanceRegisterPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  sessionReport.map((row, ri) => {
+                  sessionReport.map((row, rowIndex) => {
                     const enrollmentId = row.enrollment_id || row.id
-                    const lookup       = attendanceLookup[enrollmentId] || {}
-                    const pct          = parseFloat(row.percentage || 0)
-                    const pctColor     = pct >= 75 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626'
+                    const lookup = attendanceLookup[enrollmentId] || {}
+                    const pct = parseFloat(row.percentage || 0)
+                    const pctColor = pct >= 75 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626'
 
                     return (
                       <tr
                         key={enrollmentId}
-                        style={{ borderBottom: ri < sessionReport.length - 1 ? '1px solid var(--color-border)' : 'none' }}
+                        style={{ borderBottom: rowIndex < sessionReport.length - 1 ? '1px solid var(--color-border)' : 'none' }}
                       >
-                        {/* Sticky name cell */}
                         <td
                           className="sticky left-0 z-10 px-4 py-2.5"
                           style={{
-                            backgroundColor : 'var(--color-surface)',
-                            borderRight     : '1px solid var(--color-border)',
+                            backgroundColor: 'var(--color-surface)',
+                            borderRight: '1px solid var(--color-border)',
                           }}
                         >
-                          <p className="text-sm font-medium truncate max-w-36" style={{ color: 'var(--color-text-primary)' }}>
+                          <p className="max-w-36 truncate text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
                             {row.student_name}
                           </p>
                           <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
-                            Roll {row.roll_number || '—'}
+                            Roll {row.roll_number || '-'}
                           </p>
                         </td>
 
-                        {/* Date cells */}
                         {daysInMonth.map(({ date, isWeekend }) => {
                           const record = lookup[date]
                           const status = record?.status || (isWeekend ? 'holiday' : 'none')
-                          const cfg    = STATUS_CELL[status] || STATUS_CELL.none
+                          const config = STATUS_CELL[status] || STATUS_CELL.none
 
                           return (
                             <td
@@ -276,24 +287,23 @@ const AttendanceRegisterPage = () => {
                                 onClick={() => record && setOverride({ record, student: row })}
                                 disabled={!record}
                                 className={cn(
-                                  'w-7 h-7 rounded text-[10px] font-bold mx-auto flex items-center justify-center',
+                                  'mx-auto flex h-7 w-7 items-center justify-center rounded text-[10px] font-bold',
                                   'transition-all duration-100',
                                   record ? 'cursor-pointer hover:scale-110 hover:shadow-sm' : 'cursor-default',
                                 )}
                                 style={{
-                                  backgroundColor : cfg.bg,
-                                  color           : cfg.color,
-                                  border          : `1px solid ${cfg.border}`,
+                                  backgroundColor: config.bg,
+                                  color: config.color,
+                                  border: `1px solid ${config.border}`,
                                 }}
-                                title={record ? `${row.student_name} — ${status} — Click to override` : undefined}
+                                title={record ? `${row.student_name} - ${status} - Click to override` : undefined}
                               >
-                                {cfg.label}
+                                {config.label}
                               </button>
                             </td>
                           )
                         })}
 
-                        {/* Percentage */}
                         <td className="px-3 py-2.5 text-center">
                           <span className="text-xs font-bold" style={{ color: pctColor }}>
                             {pct.toFixed(0)}%
@@ -309,10 +319,9 @@ const AttendanceRegisterPage = () => {
         </div>
       )}
 
-      {/* Override modal */}
       {override && (
         <AttendanceOverrideModal
-          open={true}
+          open
           record={override.record}
           student={override.student}
           onClose={() => setOverride(null)}
@@ -327,12 +336,12 @@ const AttendanceRegisterPage = () => {
 }
 
 const RegisterSkeleton = () => (
-  <div className="p-5 space-y-3 animate-pulse">
-    {[...Array(5)].map((_, i) => (
-      <div key={i} className="flex items-center gap-2">
-        <div className="w-36 h-8 rounded-lg" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-        {[...Array(15)].map((_, j) => (
-          <div key={j} className="w-7 h-7 rounded" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
+  <div className="space-y-3 p-5 animate-pulse">
+    {[...Array(5)].map((_, rowIndex) => (
+      <div key={rowIndex} className="flex items-center gap-2">
+        <div className="h-8 w-36 rounded-lg" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
+        {[...Array(15)].map((__, cellIndex) => (
+          <div key={cellIndex} className="h-7 w-7 rounded" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
         ))}
       </div>
     ))}
