@@ -1,8 +1,7 @@
 // src/components/layout/Breadcrumb.jsx
-import { Link, useLocation, useMatches } from 'react-router-dom'
-import { ChevronRight, Home } from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
 import { ROUTES } from '@/constants/app'
-import { cn } from '@/utils/helpers'
 
 // ── Map routes to human-readable labels ──────────────────────────────────
 const ROUTE_LABELS = {
@@ -51,7 +50,7 @@ const Breadcrumb = () => {
     // Just show page title when at root level
     return (
       <h1
-        className="text-base font-semibold leading-none"
+        className="truncate text-base font-semibold leading-none"
         style={{ color: 'var(--color-text-primary)' }}
       >
         {crumbs[0]?.label || 'Dashboard'}
@@ -60,13 +59,13 @@ const Breadcrumb = () => {
   }
 
   return (
-    <nav aria-label="Breadcrumb">
-      <ol className="flex items-center gap-1 flex-wrap">
+    <nav aria-label="Breadcrumb" className="min-w-0 overflow-hidden">
+      <ol className="flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap">
         {crumbs.map((crumb, index) => {
           const isLast = index === crumbs.length - 1
 
           return (
-            <li key={crumb.path} className="flex items-center gap-1">
+            <li key={crumb.path} className="flex min-w-0 items-center gap-1">
               {index > 0 && (
                 <ChevronRight
                   size={13}
@@ -77,7 +76,7 @@ const Breadcrumb = () => {
 
               {isLast ? (
                 <span
-                  className="text-sm font-semibold truncate max-w-40"
+                  className="max-w-[min(40vw,16rem)] truncate text-sm font-semibold"
                   style={{ color: 'var(--color-text-primary)' }}
                 >
                   {crumb.label}
@@ -85,7 +84,7 @@ const Breadcrumb = () => {
               ) : (
                 <Link
                   to={crumb.path}
-                  className="text-sm truncate max-w-28 transition-colors hover:underline"
+                  className="max-w-[min(28vw,11rem)] truncate text-sm transition-colors hover:underline"
                   style={{ color: 'var(--color-text-muted)' }}
                   onMouseEnter={e => e.currentTarget.style.color = 'var(--color-brand)'}
                   onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}

@@ -157,17 +157,14 @@ const Header = ({ onMenuClick }) => {
 
   return (
     <header
-      className="fixed top-0 right-0 z-30 flex flex-col transition-all duration-300"
+      className="flex h-full min-w-0 flex-col transition-all duration-300"
       style={{
-        left            : `var(--header-left, 0px)`,
-        height          : 'var(--header-height)',
         backgroundColor : 'var(--color-surface)',
         borderBottom    : '1px solid var(--color-border)',
-        // Dynamic left offset via CSS var set on AppLayout
       }}
     >
       {/* ── Main header row ──────────────────────────────────────────── */}
-      <div className="flex items-center h-full px-4 sm:px-6 gap-3">
+      <div className="flex h-full min-w-0 items-center gap-3 px-4 sm:px-6">
 
         {/* Mobile hamburger */}
         <button
@@ -182,12 +179,12 @@ const Header = ({ onMenuClick }) => {
         </button>
 
         {/* Breadcrumb */}
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 flex-1 overflow-hidden pr-2 sm:pr-4">
           <Breadcrumb />
         </div>
 
         {/* Right actions */}
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
 
           {/* Current session badge */}
           {currentSession && (

@@ -59,6 +59,7 @@ const AppLayout = () => {
         className="fixed top-0 right-0 z-30 transition-all duration-300"
         style={{
           left: `${sidebarW}px`,
+          height: 'var(--header-height)',
         }}
       >
         <Header onMenuClick={() => setMobileOpen(true)} />
