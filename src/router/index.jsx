@@ -3,7 +3,6 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { ROUTES, ROLES } from '@/constants/app'
 import useAuthStore from '@/store/authStore'
 import AppLayout from '@/components/layout/AppLayout'
-import AccountantLayout from '@/components/layout/AccountantLayout'
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import StudentLayout from '@/layouts/StudentLayout'
 import LoginPage from '@/pages/LoginPage'
@@ -13,6 +12,13 @@ const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
 
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
+const AccountantDashboard = lazy(() => import('@/pages/accountant/AccountantDashboard'))
+const AccountantCollectionPage = lazy(() => import('@/pages/accountant/AccountantCollectionPage'))
+const AccountantStudentFeesPage = lazy(() => import('@/pages/accountant/AccountantStudentFeesPage'))
+const AccountantInvoicesPage = lazy(() => import('@/pages/accountant/AccountantInvoicesPage'))
+const AccountantReceiptsPage = lazy(() => import('@/pages/accountant/AccountantReceiptsPage'))
+const AccountantDefaultersPage = lazy(() => import('@/pages/accountant/AccountantDefaultersPage'))
+const AccountantProfilePage = lazy(() => import('@/pages/accountant/AccountantProfilePage'))
 const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard'))
 const TeacherMyClasses = lazy(() => import('@/pages/teacher/TeacherMyClasses'))
 const TeacherMarkAttendance = lazy(() => import('@/pages/teacher/attendance/MarkAttendance'))
@@ -69,25 +75,6 @@ const CorrectionRequest = lazy(() => import('@/pages/student/profile/CorrectionR
 const ChangePassword = lazy(() => import('@/pages/student/profile/ChangePassword'))
 const AcademicHistory = lazy(() => import('@/pages/student/AcademicHistory'))
 const StudyMaterials = lazy(() => import('@/pages/student/StudyMaterials'))
-const AccountantDashboard = lazy(() => import('@/pages/accountant/AccountantDashboard'))
-const AccountantFeeCollection = lazy(() => import('@/pages/accountant/FeeCollection'))
-const AccountantDefaulters = lazy(() => import('@/pages/accountant/DefaultersList'))
-const AccountantStudentFeeList = lazy(() => import('@/pages/accountant/StudentFeeList'))
-const AccountantStudentFeeDetail = lazy(() => import('@/pages/accountant/StudentFeeDetail'))
-const AccountantFeeStructureView = lazy(() => import('@/pages/accountant/structure/FeeStructureView'))
-const AccountantFeeStructureManage = lazy(() => import('@/pages/accountant/structure/FeeStructureManage'))
-const AccountantProfile = lazy(() => import('@/pages/accountant/AccountantProfile'))
-const AllInvoices = lazy(() => import('@/pages/accountant/AllInvoices'))
-const OverdueInvoices = lazy(() => import('@/pages/accountant/OverdueInvoices'))
-const DueTodayInvoices = lazy(() => import('@/pages/accountant/DueTodayInvoices'))
-const ReceiptList = lazy(() => import('@/pages/accountant/ReceiptList'))
-const ReminderManager = lazy(() => import('@/pages/accountant/ReminderManager'))
-const ConcessionList = lazy(() => import('@/pages/accountant/ConcessionList'))
-const ApplyConcession = lazy(() => import('@/pages/accountant/ApplyConcession'))
-const ReportsHub = lazy(() => import('@/pages/accountant/ReportsHub'))
-const CarryForwardPage = lazy(() => import('@/pages/accountant/CarryForwardPage'))
-const RefundsPage = lazy(() => import('@/pages/accountant/RefundsPage'))
-const ChequeManagement = lazy(() => import('@/pages/accountant/ChequeManagement'))
 
 const PageLoader = () => (
   <div className="flex min-h-[50vh] items-center justify-center">
@@ -116,7 +103,7 @@ const DashboardGate = () => {
   }
 
   if (role === ROLES.ACCOUNTANT) {
-    return <Navigate to={ROUTES.ACCOUNTANT_DASHBOARD} replace />
+    return <Lazy component={AccountantDashboard} />
   }
 
   return <Lazy component={DashboardPage} />
@@ -129,10 +116,6 @@ const StaffShell = () => {
   }
   return <AppLayout />
 }
-
-const AccountantPlaceholder = ({ title }) => (
-  <Lazy component={PlaceholderPage} title={title} />
-)
 
 const router = createBrowserRouter([
   { path: ROUTES.LOGIN, element: <LoginPage /> },
@@ -169,48 +152,6 @@ const router = createBrowserRouter([
   },
 
   {
-    path: ROUTES.ACCOUNTANT_ROOT,
-    element: (
-      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
-        <AccountantLayout />
-      </ProtectedRoute>
-    ),
-    children: [
-      { index: true, element: <Navigate to={ROUTES.ACCOUNTANT_DASHBOARD} replace /> },
-      { path: ROUTES.ACCOUNTANT_DASHBOARD, element: <Lazy component={AccountantDashboard} /> },
-      { path: ROUTES.ACCOUNTANT_COLLECTION, element: <Lazy component={AccountantFeeCollection} /> },
-      { path: ROUTES.ACCOUNTANT_STUDENTS, element: <Lazy component={AccountantStudentFeeList} /> },
-      { path: ROUTES.ACCOUNTANT_STUDENT_DETAIL, element: <Lazy component={AccountantStudentFeeDetail} /> },
-      { path: ROUTES.ACCOUNTANT_STUDENT_SEARCH, element: <Navigate to={ROUTES.ACCOUNTANT_STUDENTS} replace /> },
-      { path: ROUTES.ACCOUNTANT_STUDENT_FEES, element: <Navigate to={ROUTES.ACCOUNTANT_STUDENTS} replace /> },
-      { path: ROUTES.ACCOUNTANT_STUDENT_PAYMENTS, element: <Navigate to={ROUTES.ACCOUNTANT_STUDENTS} replace /> },
-      { path: ROUTES.ACCOUNTANT_FEE_STRUCTURE, element: <Lazy component={AccountantFeeStructureView} /> },
-      { path: ROUTES.ACCOUNTANT_FEE_STRUCTURE_MANAGE, element: <Lazy component={AccountantFeeStructureManage} /> },
-      { path: ROUTES.ACCOUNTANT_INVOICES, element: <Lazy component={AllInvoices} /> },
-      { path: ROUTES.ACCOUNTANT_INVOICES_PENDING, element: <Lazy component={DueTodayInvoices} /> },
-      { path: ROUTES.ACCOUNTANT_INVOICES_OVERDUE, element: <Lazy component={OverdueInvoices} /> },
-      { path: ROUTES.ACCOUNTANT_RECEIPTS, element: <Lazy component={ReceiptList} /> },
-      { path: ROUTES.ACCOUNTANT_RECEIPTS_HISTORY, element: <Lazy component={ReceiptList} /> },
-      { path: ROUTES.ACCOUNTANT_DEFAULTERS, element: <Lazy component={AccountantDefaulters} /> },
-      { path: ROUTES.ACCOUNTANT_REMINDERS, element: <Lazy component={ReminderManager} /> },
-      { path: ROUTES.ACCOUNTANT_CONCESSIONS, element: <Lazy component={ConcessionList} /> },
-      { path: ROUTES.ACCOUNTANT_CONCESSIONS_APPLY, element: <Lazy component={ApplyConcession} /> },
-      { path: ROUTES.ACCOUNTANT_REPORTS, element: <Navigate to={ROUTES.ACCOUNTANT_REPORT_DAILY} replace /> },
-      { path: ROUTES.ACCOUNTANT_REPORT_DAILY, element: <Lazy component={ReportsHub} reportKey="daily" /> },
-      { path: ROUTES.ACCOUNTANT_REPORT_MONTHLY, element: <Lazy component={ReportsHub} reportKey="monthly" /> },
-      { path: ROUTES.ACCOUNTANT_REPORT_CLASSWISE, element: <Lazy component={ReportsHub} reportKey="classwise" /> },
-      { path: ROUTES.ACCOUNTANT_REPORT_SESSION, element: <Lazy component={ReportsHub} reportKey="session" /> },
-      { path: ROUTES.ACCOUNTANT_REPORT_DEFAULTERS, element: <Lazy component={ReportsHub} reportKey="defaulters" /> },
-      { path: ROUTES.ACCOUNTANT_REPORT_CONCESSIONS, element: <Lazy component={ReportsHub} reportKey="concessions" /> },
-      { path: ROUTES.ACCOUNTANT_REPORT_CUSTOM, element: <Lazy component={ReportsHub} reportKey="custom" /> },
-      { path: ROUTES.ACCOUNTANT_CARRY_FORWARD, element: <Lazy component={CarryForwardPage} /> },
-      { path: ROUTES.ACCOUNTANT_REFUNDS, element: <Lazy component={RefundsPage} /> },
-      { path: ROUTES.ACCOUNTANT_CHEQUES, element: <Lazy component={ChequeManagement} /> },
-      { path: ROUTES.ACCOUNTANT_PROFILE, element: <Lazy component={AccountantProfile} /> },
-    ],
-  },
-
-  {
     path: '/',
     element: (
       <ProtectedRoute>
@@ -240,7 +181,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.STUDENTS,
         element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER]}>
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER, ROLES.ACCOUNTANT]}>
             <Lazy component={StudentsPage} />
           </ProtectedRoute>
         ),
@@ -256,7 +197,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.STUDENT_DETAIL,
         element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER]}>
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER, ROLES.ACCOUNTANT]}>
             <Lazy component={StudentDetailPage} />
           </ProtectedRoute>
         ),
@@ -312,7 +253,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.ADMIN_TEACHER_CONTROL,
         element: (
-          <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
             <Lazy component={AdminTeacherControlPage} />
           </ProtectedRoute>
         ),
@@ -320,7 +261,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.ADMIN_PROMOTIONS,
         element: (
-          <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
             <Lazy component={AdminPromotionPage} />
           </ProtectedRoute>
         ),
@@ -329,7 +270,63 @@ const router = createBrowserRouter([
         path: ROUTES.FEES,
         element: (
           <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
+            <Lazy component={AccountantDashboard} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.FEE_COLLECTION,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
+            <Lazy component={AccountantCollectionPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.FEE_STUDENT_LEDGER,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
+            <Lazy component={AccountantStudentFeesPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.FEE_STRUCTURES,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
             <Lazy component={FeesPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.FEE_INVOICES,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
+            <Lazy component={AccountantInvoicesPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.FEE_RECEIPTS,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
+            <Lazy component={AccountantReceiptsPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.FEE_DEFAULTERS,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
+            <Lazy component={AccountantDefaultersPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.ACCOUNTANT_PROFILE,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
+            <Lazy component={AccountantProfilePage} />
           </ProtectedRoute>
         ),
       },
@@ -353,7 +350,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.USERS,
         element: (
-          <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
             <Lazy component={UserListPage} />
           </ProtectedRoute>
         ),
@@ -361,7 +358,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.USER_NEW,
         element: (
-          <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
             <Lazy component={CreateUserPage} />
           </ProtectedRoute>
         ),
@@ -369,7 +366,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.USER_IMPORT,
         element: (
-          <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
             <Lazy component={BulkImportPage} />
           </ProtectedRoute>
         ),
@@ -377,7 +374,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.TEACHERS,
         element: (
-          <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
             <Lazy component={CreateTeacherPage} />
           </ProtectedRoute>
         ),
@@ -389,7 +386,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.TEACHER_DETAIL,
         element: (
-          <ProtectedRoute roles={[ROLES.SUPER_ADMIN, ROLES.ADMIN]}>
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
             <Lazy component={TeacherDetailPage} />
           </ProtectedRoute>
         ),

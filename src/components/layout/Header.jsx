@@ -31,8 +31,14 @@ const Header = ({ onMenuClick }) => {
 
   const isDark     = theme === 'dark'
   const initials   = getInitials(user?.name)
-  const profileRoute = user?.role === 'teacher' ? ROUTES.TEACHER_PROFILE : ROUTES.SETTINGS
-  const isAdminUser = [ROLES.ADMIN, ROLES.SUPER_ADMIN].includes(user?.role)
+  const profileRoute = user?.role === 'teacher'
+    ? ROUTES.TEACHER_PROFILE
+    : user?.role === ROLES.ACCOUNTANT
+    ? ROUTES.ACCOUNTANT_PROFILE
+    : ROUTES.SETTINGS
+  const secondaryRoute = user?.role === ROLES.ACCOUNTANT ? ROUTES.FEES : ROUTES.SETTINGS
+  const secondaryLabel = user?.role === ROLES.ACCOUNTANT ? 'Portal Home' : 'Settings'
+  const isAdminUser = user?.role === ROLES.ADMIN
   const isTeacherUser = user?.role === ROLES.TEACHER
   const isStudentUser = user?.role === ROLES.STUDENT
   const unreadCount = notifications.reduce((sum, item) => sum + Number(item.count || 0), 0)
@@ -393,8 +399,8 @@ const Header = ({ onMenuClick }) => {
                   />
                   <DropdownItem
                     icon={Settings}
-                    label="Settings"
-                    onClick={() => { navigate(ROUTES.SETTINGS); setUserMenuOpen(false) }}
+                    label={secondaryLabel}
+                    onClick={() => { navigate(secondaryRoute); setUserMenuOpen(false) }}
                   />
                 </div>
 

@@ -66,25 +66,13 @@ export const PERMISSION = {
 }
 
 // Roles with full access — bypass permission checks in UI
-const ADMIN_ROLES = ['admin', 'super_admin']
-const ACCOUNTANT_PORTAL_DEFAULTS = [
-  PERMISSION.FEES_VIEW,
-  PERMISSION.FEES_COLLECT,
-  PERMISSION.FEES_EDIT,
-  PERMISSION.FEES_WAIVE,
-  PERMISSION.FEES_REPORT,
-  PERMISSION.FEES_REFUND,
-  PERMISSION.STUDENTS_VIEW,
-  PERMISSION.REPORTS_FEES,
-  PERMISSION.REPORTS_EXPORT,
-  PERMISSION.AUDIT_VIEW,
-]
+const ADMIN_ROLES = ['admin']
 
 /**
  * hasPermission(user, permission)
  *
  * Check if a user has a specific permission.
- * Admin and super_admin always return true.
+ * Admin users always return true.
  *
  * @param {Object} user - User object from auth store ({ role, permissions: string[] })
  * @param {string} permission - Permission string e.g. 'fees.view'
@@ -124,7 +112,13 @@ export function hasAllPermissions(user, permissions = []) {
  */
 export function getDefaultPermissionsForRole(role) {
   const defaults = {
-    accountant : ACCOUNTANT_PORTAL_DEFAULTS,
+    accountant : [
+      PERMISSION.FEES_VIEW,
+      PERMISSION.FEES_COLLECT,
+      PERMISSION.FEES_EDIT,
+      PERMISSION.FEES_REPORT,
+      PERMISSION.STUDENTS_VIEW,
+    ],
     teacher    : [
       PERMISSION.STUDENTS_VIEW,
       PERMISSION.ATTENDANCE_VIEW, PERMISSION.ATTENDANCE_MARK,
@@ -242,19 +236,6 @@ export const PERMISSION_CATEGORIES = [
 
 // ── Template presets ──────────────────────────────────────────────────────
 export const PERMISSION_TEMPLATES = {
-  full_accountant: {
-    label: 'Full Accountant',
-    permissions: ACCOUNTANT_PORTAL_DEFAULTS,
-  },
-  senior_accountant: {
-    label: 'Senior Accountant',
-    permissions: [
-      PERMISSION.FEES_VIEW, PERMISSION.FEES_COLLECT, PERMISSION.FEES_EDIT,
-      PERMISSION.FEES_WAIVE, PERMISSION.FEES_REPORT, PERMISSION.FEES_REFUND,
-      PERMISSION.STUDENTS_VIEW, PERMISSION.REPORTS_FEES,
-      PERMISSION.REPORTS_EXPORT, PERMISSION.AUDIT_VIEW,
-    ],
-  },
   class_teacher: {
     label: 'Class Teacher',
     permissions: [

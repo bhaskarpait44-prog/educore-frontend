@@ -36,7 +36,7 @@ const ProtectedRoute = ({ children, roles = [] }) => {
     return (
       <Navigate
         to={ROUTES.LOGIN}
-        state={{ from: location.pathname }}
+        state={{ from: `${location.pathname}${location.search || ''}` }}
         replace
       />
     )

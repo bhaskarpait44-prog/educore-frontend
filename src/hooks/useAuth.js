@@ -24,7 +24,7 @@ const useAuth = () => {
     error          : store.error,
     isAuthenticated: !!store.token,
 
-    isAdmin      : [ROLES.SUPER_ADMIN, ROLES.ADMIN].includes(store.user?.role),
+    isAdmin      : store.user?.role === ROLES.ADMIN,
     isTeacher    : store.user?.role === ROLES.TEACHER,
     isAccountant : store.user?.role === ROLES.ACCOUNTANT,
     isStaff      : store.user?.role === ROLES.STAFF,

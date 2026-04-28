@@ -13,6 +13,7 @@ import Modal from '@/components/ui/Modal'
 import { getInitials } from '@/utils/helpers'
 import { ROUTES } from '@/constants/app'
 import * as studentApi from '@/api/students'
+import useAuth from '@/hooks/useAuth'
 import TabIdentity from './tabs/TabIdentity'
 import TabProfile from './tabs/TabProfile'
 import TabEnrollment from './tabs/TabEnrollment'
@@ -62,6 +63,7 @@ const StudentDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { toastError, toastSuccess } = useToast()
+  const { isAdmin } = useAuth()
   const { selectedStudent: student, fetchStudent, clearSelected, deleteStudent, isSaving } = useStudentStore()
   const [activeTab, setActiveTab] = useState('identity')
   const [pageLoading, setPageLoading] = useState(true)
@@ -173,31 +175,33 @@ const StudentDetailPage = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={KeyRound}
-              onClick={() => {
-                setTempPassword('')
-                setResetResult(null)
-                setPasswordOpen(true)
-              }}
-            >
-              Reset Password
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              icon={Trash2}
-              onClick={() => {
-                setConfirmName('')
-                setDeleteOpen(true)
-              }}
-            >
-              Delete
-            </Button>
-          </div>
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={KeyRound}
+                onClick={() => {
+                  setTempPassword('')
+                  setResetResult(null)
+                  setPasswordOpen(true)
+                }}
+              >
+                Reset Password
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                icon={Trash2}
+                onClick={() => {
+                  setConfirmName('')
+                  setDeleteOpen(true)
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -234,7 +238,7 @@ const StudentDetailPage = () => {
       </div>
 
       <Modal
-        open={deleteOpen}
+        open={isAdmin && deleteOpen}
         onClose={() => !isSaving && setDeleteOpen(false)}
         title="Delete Student"
         size="sm"
@@ -280,7 +284,7 @@ const StudentDetailPage = () => {
       </Modal>
 
       <Modal
-        open={passwordOpen}
+        open={isAdmin && passwordOpen}
         onClose={() => !isResettingPassword && setPasswordOpen(false)}
         title="Reset Student Password"
         footer={(

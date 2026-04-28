@@ -15,6 +15,7 @@ import Badge from '@/components/ui/Badge'
 import EmptyState from '@/components/ui/EmptyState'
 import { formatDate, getInitials, debounce } from '@/utils/helpers'
 import { ROUTES } from '@/constants/app'
+import useAuth from '@/hooks/useAuth'
 
 const GENDER_BADGE = {
   male   : { label: 'Male',   variant: 'blue'  },
@@ -26,6 +27,7 @@ const StudentsPage = () => {
   usePageTitle('Students')
   const navigate = useNavigate()
   const { toastError } = useToast()
+  const { isAdmin } = useAuth()
   const { students, pagination, isLoading, fetchStudents } = useStudentStore()
   const { classes, fetchClasses } = useClasses()
   const { currentSession } = useSessionStore()
@@ -74,9 +76,11 @@ const StudentsPage = () => {
               : 'Manage current-session student admissions and profiles'}
           </p>
         </div>
-        <Button icon={Plus} onClick={() => navigate(ROUTES.STUDENT_NEW)}>
-          Admit New Student
-        </Button>
+        {isAdmin && (
+          <Button icon={Plus} onClick={() => navigate(ROUTES.STUDENT_NEW)}>
+            Admit New Student
+          </Button>
+        )}
       </div>
 
       {/* ── Search + filters ────────────────────────────────────────────── */}
@@ -140,7 +144,7 @@ const StudentsPage = () => {
             icon={Users}
             title={hasActiveFilters ? 'No students match' : 'No students yet'}
             description={hasActiveFilters ? 'Try adjusting your search.' : 'Admit your first student to get started.'}
-            action={!hasActiveFilters && (
+            action={!hasActiveFilters && isAdmin && (
               <Button icon={Plus} onClick={() => navigate(ROUTES.STUDENT_NEW)}>Admit New Student</Button>
             )}
             className="border-0 rounded-none"

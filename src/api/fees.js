@@ -9,3 +9,7 @@ export const recordPayment       = (data)           => api.post('/fees/payment',
 export const carryForwardFees    = (data)           => api.post('/fees/carry-forward', data)
 export const generateInvoices    = (data)           => api.post('/fees/generate', data)
 export const getFeeReport        = (params)         => api.get('/fees/report', { params })
+export const getFeeDashboard     = (params)         => api.get('/fees/dashboard', { params })
+export const getFeeInvoices      = (params)         => api.get('/fees/invoices', { params })
+export const getFeeReceipts      = (params)         => api.get('/fees/receipts', { params })
+export const getFeeDefaulters    = (params)         => api.get('/fees/defaulters', { params })

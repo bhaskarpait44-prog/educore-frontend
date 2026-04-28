@@ -4,6 +4,16 @@ import { persist } from 'zustand/middleware'
 import { STORAGE_KEYS } from '@/constants/app'
 import * as authApi from '@/api/auth'
 
+const normalizeUser = (user) => {
+  if (!user) return null
+
+  return {
+    ...user,
+    role: user.role === 'super_admin' ? 'admin' : user.role,
+    permissions: Array.isArray(user.permissions) ? user.permissions : [],
+  }
+}
+
 const useAuthStore = create(
   persist(
     (set, get) => ({
@@ -40,11 +50,7 @@ const useAuthStore = create(
           set({
             token,
             refreshToken: refresh_token || null,
-            user: {
-              ...user,
-              // ensure permissions always exist (important)
-              permissions: Array.isArray(user.permissions) ? user.permissions : [],
-            },
+            user: normalizeUser(user),
             isLoading: false,
             error: null,
           })
@@ -75,10 +81,7 @@ const useAuthStore = create(
           set({
             token,
             refreshToken: refresh_token || null,
-            user: {
-              ...user,
-              permissions: Array.isArray(user.permissions) ? user.permissions : [],
-            },
+            user: normalizeUser(user),
             isLoading: false,
             error: null,
           })
@@ -122,6 +125,10 @@ const useAuthStore = create(
 // Subscribe to rehydration completion
 if (useAuthStore.persist) {
   useAuthStore.persist.onFinishHydration(() => {
+    const state = useAuthStore.getState()
+    if (state.user) {
+      useAuthStore.setState({ user: normalizeUser(state.user) })
+    }
     useAuthStore.getState().setHydrated()
   })
 }
@@ -129,6 +136,9 @@ if (useAuthStore.persist) {
 // Fallback: mark as hydrated after a short timeout in case persist doesn't trigger
 setTimeout(() => {
   const state = useAuthStore.getState()
+  if (state.user) {
+    useAuthStore.setState({ user: normalizeUser(state.user) })
+  }
   if (!state.isHydrated) {
     state.setHydrated()
   }

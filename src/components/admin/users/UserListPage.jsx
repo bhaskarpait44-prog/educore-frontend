@@ -13,11 +13,8 @@ import Modal from '@/components/ui/Modal'
 import PermissionSelector from '@/components/admin/PermissionSelector'
 
 const ROLE_STYLES = {
-  super_admin : { label: 'Super Admin', bg: '#ede9fe', color: '#5b21b6' },
   admin       : { label: 'Admin', bg: '#dbeafe', color: '#1d4ed8' },
   accountant  : { label: 'Accountant', bg: '#fef3c7', color: '#b45309' },
-  teacher     : { label: 'Teacher', bg: '#d1fae5', color: '#065f46' },
-  student     : { label: 'Student', bg: '#e0e7ff', color: '#3730a3' },
   parent      : { label: 'Parent', bg: '#dcfce7', color: '#15803d' },
   librarian   : { label: 'Librarian', bg: '#fee2e2', color: '#b91c1c' },
   receptionist: { label: 'Receptionist', bg: '#fce7f3', color: '#be185d' },
@@ -45,18 +42,6 @@ const RoleBadge = ({ role }) => {
       style={{ backgroundColor: s.bg, color: s.color }}
     >
       {s.label}
-    </span>
-  )
-}
-
-const SourceBadge = ({ sourceType }) => {
-  if (sourceType !== 'student_portal') return null
-  return (
-    <span
-      className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold"
-      style={{ backgroundColor: '#eef2ff', color: '#4338ca' }}
-    >
-      Student Portal
     </span>
   )
 }
@@ -383,8 +368,6 @@ const UserListPage = () => {
     [roleCounts]
   )
 
-  const isManagedFromStudents = (user) => user.source_type === 'student_portal'
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -511,7 +494,6 @@ const UserListPage = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{user.name}</p>
-                            <SourceBadge sourceType={user.source_type} />
                           </div>
                           <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{user.email || user.employee_id}</p>
                         </div>
@@ -526,11 +508,9 @@ const UserListPage = () => {
                     </td>
                     <td className="px-5 py-4">
                       <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                        {isManagedFromStudents(user)
-                          ? 'Managed from Students'
-                          : ['admin', 'super_admin'].includes(user.role)
-                            ? 'All (Admin)'
-                            : `${user.permission_count || 0} permissions`}
+                        {user.role === 'admin'
+                          ? 'All (Admin)'
+                          : `${user.permission_count || 0} permissions`}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-xs" style={{ color: 'var(--color-text-muted)' }}>
@@ -539,37 +519,37 @@ const UserListPage = () => {
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1">
                         <ActionButton
-                          title={isManagedFromStudents(user) ? 'Managed from Students module' : 'Edit'}
-                          onClick={() => isManagedFromStudents(user) ? toastError('Edit this student from the Students module') : openEditModal(user)}
+                          title="Edit"
+                          onClick={() => openEditModal(user)}
                           disabled={isSaving}
                         >
                           <Pencil size={13} />
                         </ActionButton>
                         <ActionButton
-                          title={isManagedFromStudents(user) ? 'Managed from Students module' : 'Edit permissions'}
-                          onClick={() => isManagedFromStudents(user) ? toastError('Manage this student from the Students module') : openPermissionsModal(user)}
-                          disabled={isSaving || isManagedFromStudents(user)}
+                          title="Edit permissions"
+                          onClick={() => openPermissionsModal(user)}
+                          disabled={isSaving}
                         >
                           <ShieldCheck size={13} />
                         </ActionButton>
                         <ActionButton
-                          title={isManagedFromStudents(user) ? 'Managed from Students module' : 'Reset password'}
-                          onClick={() => isManagedFromStudents(user) ? toastError('Reset this student password from the student portal flow') : openResetModal(user)}
-                          disabled={isSaving || isManagedFromStudents(user)}
+                          title="Reset password"
+                          onClick={() => openResetModal(user)}
+                          disabled={isSaving}
                         >
                           <KeyRound size={13} />
                         </ActionButton>
                         <ActionButton
-                          title={isManagedFromStudents(user) ? 'Managed from Students module' : 'View audit'}
-                          onClick={() => isManagedFromStudents(user) ? toastError('View this student from the Students module') : openAuditModal(user)}
-                          disabled={isSaving || isManagedFromStudents(user)}
+                          title="View audit"
+                          onClick={() => openAuditModal(user)}
+                          disabled={isSaving}
                         >
                           <ScrollText size={13} />
                         </ActionButton>
                         <ActionButton
                           title={user.is_active ? 'Deactivate' : 'Activate'}
-                          onClick={() => isManagedFromStudents(user) ? toastError('Change this student status from the Students module') : handleToggle(user)}
-                          disabled={isSaving || isManagedFromStudents(user)}
+                          onClick={() => handleToggle(user)}
+                          disabled={isSaving}
                         >
                           {user.is_active ? <ToggleRight size={15} style={{ color: '#16a34a' }} /> : <ToggleLeft size={15} />}
                         </ActionButton>

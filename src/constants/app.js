@@ -15,7 +15,6 @@ export const STORAGE_KEYS = {
 
 // ── User roles (must match backend ENUM) ─────────────────────────────────
 export const ROLES = {
-  SUPER_ADMIN: 'super_admin',
   ADMIN: 'admin',
   TEACHER: 'teacher',
   ACCOUNTANT: 'accountant',
@@ -32,39 +31,6 @@ export const ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   DASHBOARD: '/dashboard',
-
-  // Accountant Portal
-  ACCOUNTANT_ROOT: '/accountant',
-  ACCOUNTANT_DASHBOARD: '/accountant/dashboard',
-  ACCOUNTANT_COLLECTION: '/accountant/collect',
-  ACCOUNTANT_STUDENTS: '/accountant/students',
-  ACCOUNTANT_STUDENT_DETAIL: '/accountant/students/:id/fees',
-  ACCOUNTANT_STUDENT_SEARCH: '/accountant/students/search',
-  ACCOUNTANT_STUDENT_FEES: '/accountant/students/fees',
-  ACCOUNTANT_STUDENT_PAYMENTS: '/accountant/students/payments',
-  ACCOUNTANT_FEE_STRUCTURE: '/accountant/fee-structure',
-  ACCOUNTANT_FEE_STRUCTURE_MANAGE: '/accountant/fee-structure/manage',
-  ACCOUNTANT_INVOICES: '/accountant/invoices',
-  ACCOUNTANT_INVOICES_PENDING: '/accountant/invoices/pending',
-  ACCOUNTANT_INVOICES_OVERDUE: '/accountant/invoices/overdue',
-  ACCOUNTANT_RECEIPTS: '/accountant/receipts',
-  ACCOUNTANT_RECEIPTS_HISTORY: '/accountant/receipts/history',
-  ACCOUNTANT_DEFAULTERS: '/accountant/defaulters',
-  ACCOUNTANT_REMINDERS: '/accountant/defaulters/reminders',
-  ACCOUNTANT_CONCESSIONS: '/accountant/concessions',
-  ACCOUNTANT_CONCESSIONS_APPLY: '/accountant/concessions/apply',
-  ACCOUNTANT_REPORTS: '/accountant/reports',
-  ACCOUNTANT_REPORT_DAILY: '/accountant/reports/daily',
-  ACCOUNTANT_REPORT_MONTHLY: '/accountant/reports/monthly',
-  ACCOUNTANT_REPORT_CLASSWISE: '/accountant/reports/classwise',
-  ACCOUNTANT_REPORT_SESSION: '/accountant/reports/session',
-  ACCOUNTANT_REPORT_DEFAULTERS: '/accountant/reports/defaulters',
-  ACCOUNTANT_REPORT_CONCESSIONS: '/accountant/reports/concessions',
-  ACCOUNTANT_REPORT_CUSTOM: '/accountant/reports/custom',
-  ACCOUNTANT_CARRY_FORWARD: '/accountant/carry-forward',
-  ACCOUNTANT_REFUNDS: '/accountant/refunds',
-  ACCOUNTANT_CHEQUES: '/accountant/cheques',
-  ACCOUNTANT_PROFILE: '/accountant/profile',
 
   // Student Portal
   STUDENT_ROOT: '/student',
@@ -113,8 +79,13 @@ export const ROUTES = {
 
   // Fees
   FEES: '/fees',
+  FEE_COLLECTION: '/fees/collection',
+  FEE_STUDENT_LEDGER: '/fees/student-fees',
   FEE_STRUCTURES: '/fees/structures',
   FEE_INVOICES: '/fees/invoices',
+  FEE_RECEIPTS: '/fees/receipts',
+  FEE_DEFAULTERS: '/fees/defaulters',
+  ACCOUNTANT_PROFILE: '/accountant/my-profile',
 
   // Exams
   EXAMS: '/exams',

@@ -14,7 +14,7 @@ const AttendancePage = () => {
   usePageTitle('Attendance')
 
   const role = useAuthStore((state) => state.user?.role)
-  const isAdmin = role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN
+  const isAdmin = role === ROLES.ADMIN
   const tabs = useMemo(() => ([
     { key: 'mark', label: 'Mark Attendance', icon: ClipboardCheck },
     { key: 'register', label: 'Register', icon: Grid3x3 },

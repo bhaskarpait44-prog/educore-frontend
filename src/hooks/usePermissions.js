@@ -33,7 +33,7 @@ const usePermissions = () => {
     role: user?.role || null,
 
     /** Is the user an admin (bypasses all permission checks) */
-    isAdmin: ['admin', 'super_admin'].includes(user?.role),
+    isAdmin: user?.role === 'admin',
 
     /** Is authenticated at all */
     isAuthenticated: !!user,

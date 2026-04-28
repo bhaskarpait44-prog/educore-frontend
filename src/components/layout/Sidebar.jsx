@@ -8,6 +8,7 @@ import { cn } from '@/utils/helpers'
 
 const getNavGroups = (user) => {
   const isTeacher = user?.role === ROLES.TEACHER
+  const isAccountant = user?.role === ROLES.ACCOUNTANT
   const canPostNotices = Array.isArray(user?.permissions) && user.permissions.includes('notices.post')
 
   if (isTeacher) {
@@ -56,6 +57,35 @@ const getNavGroups = (user) => {
     ]
   }
 
+  if (isAccountant) {
+    return [
+      {
+        label: 'Portal',
+        items: [
+          { label: 'Dashboard', icon: 'LayoutDashboard', path: ROUTES.FEES },
+          { label: 'Fee Collection', icon: 'HandCoins', path: ROUTES.FEE_COLLECTION },
+          { label: 'Student Fee', icon: 'WalletCards', path: ROUTES.FEE_STUDENT_LEDGER },
+          { label: 'Fee Structure', icon: 'Landmark', path: ROUTES.FEE_STRUCTURES },
+          { label: 'Invoices', icon: 'Files', path: ROUTES.FEE_INVOICES },
+          { label: 'Receipts', icon: 'Receipt', path: ROUTES.FEE_RECEIPTS },
+          { label: 'Defaulters', icon: 'TriangleAlert', path: ROUTES.FEE_DEFAULTERS },
+        ],
+      },
+      {
+        label: 'Student Access',
+        items: [
+          { label: 'Students', icon: 'Users', path: ROUTES.STUDENTS },
+        ],
+      },
+      {
+        label: 'Account',
+        items: [
+          { label: 'My Profile', icon: 'UserRound', path: ROUTES.ACCOUNTANT_PROFILE },
+        ],
+      },
+    ]
+  }
+
   return [
     {
       label: null,
@@ -76,24 +106,24 @@ const getNavGroups = (user) => {
     {
       label: 'Teachers',
       items: [
-        { label: 'Teachers', icon: 'UsersRound', path: ROUTES.TEACHERS, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
-        { label: 'Teacher Control', icon: 'ShieldEllipsis', path: ROUTES.ADMIN_TEACHER_CONTROL, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
+        { label: 'Teachers', icon: 'UsersRound', path: ROUTES.TEACHERS, roles: [ROLES.ADMIN] },
+        { label: 'Teacher Control', icon: 'ShieldEllipsis', path: ROUTES.ADMIN_TEACHER_CONTROL, roles: [ROLES.ADMIN] },
       ],
     },
       {
         label: 'Administration',
         items: [
-          { label: 'Sessions', icon: 'CalendarDays', path: ROUTES.SESSIONS, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
-          { label: 'Promotions', icon: 'ArrowUpWideNarrow', path: ROUTES.ADMIN_PROMOTIONS, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
-          { label: 'Users', icon: 'UserCog', path: ROUTES.USERS, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
-          { label: 'Fees', icon: 'IndianRupee', path: ROUTES.FEES, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.ACCOUNTANT] },
-          { label: 'Audit Logs', icon: 'ScrollText', path: ROUTES.AUDIT, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
+          { label: 'Sessions', icon: 'CalendarDays', path: ROUTES.SESSIONS, roles: [ROLES.ADMIN] },
+          { label: 'Promotions', icon: 'ArrowUpWideNarrow', path: ROUTES.ADMIN_PROMOTIONS, roles: [ROLES.ADMIN] },
+          { label: 'Users', icon: 'UserCog', path: ROUTES.USERS, roles: [ROLES.ADMIN] },
+          { label: 'Fees', icon: 'IndianRupee', path: ROUTES.FEES, roles: [ROLES.ADMIN] },
+          { label: 'Audit Logs', icon: 'ScrollText', path: ROUTES.AUDIT, roles: [ROLES.ADMIN] },
         ],
       },
     {
       label: 'System',
       items: [
-        { label: 'Settings', icon: 'Settings', path: ROUTES.SETTINGS, roles: [ROLES.SUPER_ADMIN, ROLES.ADMIN] },
+        { label: 'Settings', icon: 'Settings', path: ROUTES.SETTINGS, roles: [ROLES.ADMIN] },
       ],
     },
   ]
@@ -281,7 +311,11 @@ const SidebarContent = ({ collapsed, toggleCollapsed, user, initials, navGroups,
             {APP_NAME}
           </p>
           <p className="text-xs truncate leading-tight uppercase tracking-[0.18em]" style={{ color: 'var(--color-sidebar-muted)' }}>
-            {user?.role === ROLES.TEACHER ? 'Teacher Portal' : 'Academic Suite'}
+            {user?.role === ROLES.TEACHER
+              ? 'Teacher Portal'
+              : user?.role === ROLES.ACCOUNTANT
+              ? 'Accountant Portal'
+              : 'Academic Suite'}
           </p>
         </div>
       )}

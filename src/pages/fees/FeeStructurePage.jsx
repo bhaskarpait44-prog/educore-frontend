@@ -1,6 +1,6 @@
 // src/pages/fees/FeeStructurePage.jsx
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Settings2, Zap } from 'lucide-react'
+import { Plus, Trash2, Settings2 } from 'lucide-react'
 import useFeeStore from '@/store/feeStore'
 import useSessionStore from '@/store/sessionStore'
 import useToast from '@/hooks/useToast'
@@ -13,7 +13,6 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import AddFeeComponentModal from './AddFeeComponentModal'
 import { formatCurrency } from '@/utils/helpers'
 import { getClasses, getClassOptions } from '@/api/classApi'
-import { generateInvoices } from '@/api/fees'
 
 const FREQUENCY_BADGE = {
   monthly    : { label: 'Monthly',    variant: 'blue'  },
@@ -32,7 +31,6 @@ const FeeStructurePage = () => {
   const [classId,      setClassId]      = useState('')
   const [addModal,     setAddModal]     = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
-  const [generating,   setGenerating]   = useState(false)
 
   useEffect(() => {
     fetchSessions().catch(() => {})
@@ -56,19 +54,6 @@ const FeeStructurePage = () => {
     setDeleteTarget(null)
     if (result.success) toastSuccess('Fee component removed')
     else toastError(result.message || 'Failed to delete')
-  }
-
-  const handleGenerateInvoices = async () => {
-    if (!sessionId) return
-    setGenerating(true)
-    try {
-      const res = await generateInvoices({ session_id: parseInt(sessionId) })
-      toastSuccess(`${res.data?.invoicesCreated || 0} invoices generated`)
-    } catch (err) {
-      toastError(err.message || 'Failed to generate invoices')
-    } finally {
-      setGenerating(false)
-    }
   }
 
   return (
@@ -96,15 +81,6 @@ const FeeStructurePage = () => {
         <div className="flex items-end gap-2">
           <Button icon={Plus} onClick={() => setAddModal(true)}>
             Add Component
-          </Button>
-          <Button
-            variant="outline"
-            icon={Zap}
-            onClick={handleGenerateInvoices}
-            loading={generating}
-            title="Generate invoices for all enrolled students"
-          >
-            Generate Invoices
           </Button>
         </div>
       </div>

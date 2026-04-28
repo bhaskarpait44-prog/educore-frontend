@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
-  ArrowLeft, AlertCircle, Copy, KeyRound, Mail, ShieldCheck, UserRound, IdCard,
+  ArrowLeft, AlertCircle, Copy, KeyRound, Mail, ShieldCheck, UserRound,
 } from 'lucide-react'
 import * as api from '@/api/userManagementApi'
 import usePageTitle from '@/hooks/usePageTitle'
@@ -23,9 +23,8 @@ const schema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Valid email required'),
   phone: z.string().optional(),
-  role: z.enum(['admin', 'accountant', 'teacher', 'student', 'parent']),
+  role: z.enum(['admin', 'accountant']),
   employee_id: z.string().optional(),
-  admission_no: z.string().optional(),
   department: z.string().optional(),
   designation: z.string().optional(),
   joining_date: z.string().optional(),
@@ -36,21 +35,9 @@ const schema = z.object({
   force_password_change: z.boolean().optional(),
   password: z.string().optional(),
   internal_notes: z.string().optional(),
-}).superRefine((value, ctx) => {
-  if (value.role === 'student') {
-    if (!value.admission_no?.trim()) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['admission_no'], message: 'Admission number is required for students' })
-    }
-    if (!value.date_of_birth) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['date_of_birth'], message: 'Date of birth is required for students' })
-    }
-    if (!value.gender) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['gender'], message: 'Gender is required for students' })
-    }
-  }
 })
 
-const ROLES = ['admin', 'accountant', 'teacher', 'student', 'parent']
+const ROLES = ['admin', 'accountant']
 
 const Field = ({ label, error, children, required, hint }) => (
   <div className="flex flex-col gap-1.5">
@@ -102,9 +89,8 @@ const defaultValues = {
   name: '',
   email: '',
   phone: '',
-  role: 'teacher',
+  role: 'admin',
   employee_id: '',
-  admission_no: '',
   department: '',
   designation: '',
   joining_date: '',
@@ -122,7 +108,7 @@ const CreateUserPage = () => {
 
   const navigate = useNavigate()
   const { toastSuccess, toastError, toastInfo } = useToast()
-  const [permissions, setPermissions] = useState(getDefaultPermissionsForRole('teacher'))
+  const [permissions, setPermissions] = useState(getDefaultPermissionsForRole('admin'))
   const [isSaving, setIsSaving] = useState(false)
   const [createdAccount, setCreatedAccount] = useState(null)
 
@@ -136,12 +122,11 @@ const CreateUserPage = () => {
   const role = watch('role')
   const autoPassword = watch('auto_password')
   const email = watch('email')
-  const studentAdmissionNo = watch('admission_no')
   const roleDefaults = useMemo(() => getDefaultPermissionsForRole(role), [role])
 
   const handleRoleChange = (nextRole) => {
     setValue('role', nextRole)
-    setPermissions(nextRole === 'student' ? [] : getDefaultPermissionsForRole(nextRole))
+    setPermissions(getDefaultPermissionsForRole(nextRole))
   }
 
   const handleCopy = async (value) => {
@@ -159,9 +144,7 @@ const CreateUserPage = () => {
     try {
       const payload = {
         ...data,
-        employee_id: role === 'student' ? '' : data.employee_id,
-        admission_no: role === 'student' ? data.admission_no : '',
-        permission_names: role === 'student' ? [] : permissions,
+        permission_names: permissions,
       }
 
       const result = await api.createUser(payload)
@@ -169,18 +152,15 @@ const CreateUserPage = () => {
 
       setCreatedAccount({
         name: response.user?.name || data.name,
-        email: response.student_portal?.login_email || response.user?.email || data.email,
-        login_id: role === 'student'
-          ? (response.student_portal?.login_email || response.student_portal?.admission_no || data.admission_no)
-          : (response.user?.email || data.email),
+        email: response.user?.email || data.email,
+        login_id: response.user?.email || data.email,
         generated_password: response.generated_password || '',
-        admission_no: response.student_portal?.admission_no || data.admission_no || '',
         role,
       })
 
-      toastSuccess(role === 'student' ? 'Student account created successfully' : 'User created successfully')
+      toastSuccess('User created successfully')
       reset(defaultValues)
-      setPermissions(getDefaultPermissionsForRole('teacher'))
+      setPermissions(getDefaultPermissionsForRole('admin'))
     } catch (e) {
       toastError(e.message || 'Failed to create user')
     } finally {
@@ -197,17 +177,17 @@ const CreateUserPage = () => {
             Users
           </button>
           <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-            {role === 'student' ? 'Create Student Account' : 'Create New User'}
+            Create New User
           </h1>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <Section title="Basic Information">
             <div className="grid grid-cols-2 gap-4">
-              <Field label={role === 'student' ? 'Student Name' : 'Full Name'} error={errors.name?.message} required>
+              <Field label="Full Name" error={errors.name?.message} required>
                 <input {...register('name')} placeholder="Priya Sharma" className={inputClassName(!!errors.name)} autoFocus />
               </Field>
-              <Field label="Email" error={errors.email?.message} required hint={role === 'student' ? 'This email can be used for student login.' : undefined}>
+              <Field label="Email" error={errors.email?.message} required>
                 <input {...register('email')} type="email" placeholder="priya@school.edu.in" className={inputClassName(!!errors.email)} />
               </Field>
             </div>
@@ -225,44 +205,20 @@ const CreateUserPage = () => {
             </div>
           </Section>
 
-          <Section title={role === 'student' ? 'Student Portal Setup' : 'Account Settings'}>
+          <Section title="Account Settings">
             <div className="grid grid-cols-2 gap-4">
-              {role === 'student' ? (
-                <>
-                  <Field label="Admission Number" error={errors.admission_no?.message} required>
-                    <input {...register('admission_no')} placeholder="ADM-2026-1001" className={inputClassName(!!errors.admission_no)} />
-                  </Field>
-                  <Field label="Date of Birth" error={errors.date_of_birth?.message} required>
-                    <input {...register('date_of_birth')} type="date" className={inputClassName(!!errors.date_of_birth)} />
-                  </Field>
-                  <Field label="Gender" error={errors.gender?.message} required>
-                    <select {...register('gender')} className={inputClassName(!!errors.gender)}>
-                      <option value="">Select gender</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                    </select>
-                  </Field>
-                  <Field label="Address">
-                    <input {...register('address')} placeholder="Residential address" className={inputClassName(false)} />
-                  </Field>
-                </>
-              ) : (
-                <>
-                  <Field label="Employee ID">
-                    <input {...register('employee_id')} placeholder="TCH-001" className={inputClassName(false)} />
-                  </Field>
-                  <Field label="Joining Date">
-                    <input {...register('joining_date')} type="date" className={inputClassName(false)} />
-                  </Field>
-                  <Field label="Department">
-                    <input {...register('department')} placeholder="Science" className={inputClassName(false)} />
-                  </Field>
-                  <Field label="Designation">
-                    <input {...register('designation')} placeholder="Senior Teacher" className={inputClassName(false)} />
-                  </Field>
-                </>
-              )}
+              <Field label="Employee ID">
+                <input {...register('employee_id')} placeholder="ADM-001" className={inputClassName(false)} />
+              </Field>
+              <Field label="Joining Date">
+                <input {...register('joining_date')} type="date" className={inputClassName(false)} />
+              </Field>
+              <Field label="Department">
+                <input {...register('department')} placeholder="Administration" className={inputClassName(false)} />
+              </Field>
+              <Field label="Designation">
+                <input {...register('designation')} placeholder="Operations Manager" className={inputClassName(false)} />
+              </Field>
             </div>
 
             <div className="mt-1 rounded-2xl p-4" style={{ backgroundColor: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}>
@@ -270,13 +226,13 @@ const CreateUserPage = () => {
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>Login Method</p>
                   <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                    {role === 'student' ? 'Email or admission number' : 'Email + password'}
+                    Email + password
                   </p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>Login ID Preview</p>
                   <p className="mt-1 text-sm font-semibold break-all" style={{ color: 'var(--color-text-primary)' }}>
-                    {role === 'student' ? (email || studentAdmissionNo || 'Will be ready after create') : (email || 'Will use email')}
+                    {email || 'Will use email'}
                   </p>
                 </div>
                 <div>
@@ -309,14 +265,12 @@ const CreateUserPage = () => {
             </div>
           </Section>
 
-          {role !== 'student' && (
-            <Section title={`Permissions (${permissions.length} selected)`}>
-              <PermissionSelector selected={permissions} onChange={setPermissions} />
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                Default permissions for this role: {roleDefaults.length}
-              </p>
-            </Section>
-          )}
+          <Section title={`Permissions (${permissions.length} selected)`}>
+            <PermissionSelector selected={permissions} onChange={setPermissions} />
+            <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+              Default permissions for this role: {roleDefaults.length}
+            </p>
+          </Section>
 
           <Section title="Internal Notes">
             <textarea {...register('internal_notes')} rows={3} placeholder="Admin-only notes about this user..." className={`${inputClassName(false)} resize-none`} />
@@ -344,7 +298,7 @@ const CreateUserPage = () => {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
               )}
-              {isSaving ? 'Creating...' : role === 'student' ? 'Create Student Account' : 'Create User'}
+              {isSaving ? 'Creating...' : 'Create User'}
             </button>
           </div>
         </form>
@@ -353,7 +307,7 @@ const CreateUserPage = () => {
       <Modal
         open={!!createdAccount}
         onClose={() => setCreatedAccount(null)}
-        title={createdAccount?.role === 'student' ? 'Student Created Successfully' : 'User Created Successfully'}
+        title="User Created Successfully"
         footer={(
           <>
             <Button variant="secondary" onClick={() => setCreatedAccount(null)}>
@@ -371,19 +325,14 @@ const CreateUserPage = () => {
               Share these credentials with {createdAccount?.name || 'the user'}.
             </p>
             <p className="mt-1 text-sm" style={{ color: '#166534' }}>
-              {createdAccount?.role === 'student'
-                ? 'The student portal account is ready now and can log in with email or admission number.'
-                : 'The account is ready now and the first login will require a password change.'}
+              The account is ready now and the first login will require a password change.
             </p>
           </div>
 
-          <CredentialRow icon={UserRound} label={createdAccount?.role === 'student' ? 'Student' : 'User'} value={createdAccount?.name} onCopy={handleCopy} />
-          {createdAccount?.role === 'student' && (
-            <CredentialRow icon={IdCard} label="Admission Number" value={createdAccount?.admission_no} onCopy={handleCopy} />
-          )}
+          <CredentialRow icon={UserRound} label="User" value={createdAccount?.name} onCopy={handleCopy} />
           <CredentialRow icon={Mail} label="Login Email" value={createdAccount?.email} onCopy={handleCopy} />
           <CredentialRow icon={KeyRound} label="Temporary Password" value={createdAccount?.generated_password} onCopy={handleCopy} />
-          <CredentialRow icon={ShieldCheck} label="Login Method" value={createdAccount?.role === 'student' ? 'Email or admission number' : 'Email'} onCopy={handleCopy} />
+          <CredentialRow icon={ShieldCheck} label="Login Method" value="Email" onCopy={handleCopy} />
         </div>
       </Modal>
     </>

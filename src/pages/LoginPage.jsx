@@ -18,11 +18,8 @@ const loginSchema = z.object({
 })
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const isAccountantRoute = (path) => typeof path === 'string' && path.startsWith('/accountant')
-
 function getFallbackRouteForRole(role) {
   if (role === ROLES.STUDENT) return ROUTES.STUDENT_DASHBOARD
-  if (role === ROLES.ACCOUNTANT) return ROUTES.ACCOUNTANT_DASHBOARD
   return ROUTES.DASHBOARD
 }
 
@@ -31,11 +28,6 @@ function getPostLoginTarget(role, from) {
 
   if (!from || from === ROUTES.LOGIN) {
     return fallbackRoute
-  }
-
-  // Admins can access accountant routes, but should not land there by default after login.
-  if ((role === ROLES.ADMIN || role === ROLES.SUPER_ADMIN) && isAccountantRoute(from)) {
-    return ROUTES.DASHBOARD
   }
 
   return from

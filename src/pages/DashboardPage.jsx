@@ -216,7 +216,7 @@ const DashboardPage = () => {
             {[
               { label: 'Mark Attendance',    icon: CalendarCheck, color: '#16a34a', route: ROUTES.ATTENDANCE       },
               { label: 'Admit Student',      icon: Plus,          color: '#2563eb', route: ROUTES.STUDENT_NEW      },
-              { label: 'Record Payment',     icon: IndianRupee,   color: '#d97706', route: ROUTES.FEES             },
+              { label: 'Manage Fees',        icon: IndianRupee,   color: '#d97706', route: ROUTES.FEES },
               { label: 'Enter Exam Marks',   icon: ClipboardCheck,color: '#7c3aed', route: ROUTES.EXAMS           },
             ].map(action => (
               <button
@@ -306,7 +306,7 @@ const DashboardPage = () => {
         <SectionCard
           title="Fee Defaulters"
           titleBadge={feeDefaulters.length > 0 ? feeDefaulters.length : null}
-          action={{ label: 'Fee Management', onClick: () => navigate(ROUTES.FEES) }}
+          action={{ label: 'Open Fees', onClick: () => navigate(ROUTES.FEES) }}
         >
           {isLoading ? (
             <ListSkeleton rows={5} />
