@@ -145,6 +145,26 @@ body {
   }
 }
 
+/* ✅ Mobile navbar improvements */
+@media (max-width: 640px) {
+  /* Prevent body scroll when mobile menu is open */
+  body.menu-open {
+    overflow: hidden;
+  }
+
+  /* Smaller touch targets for mobile nav */
+  .mobile-nav-item {
+    min-height: 48px;
+  }
+}
+
+/* ✅ Safe area padding for mobile devices with notches */
+@supports (padding: max(0px)) {
+  .safe-pb {
+    padding-bottom: max(env(safe-area-inset-bottom), 8px);
+  }
+}
+
 @media print {
   body {
     background: #ffffff !important;

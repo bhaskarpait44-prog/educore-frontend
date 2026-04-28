@@ -174,9 +174,9 @@ const StudentLayout = () => {
           className="fixed inset-y-0 left-0 z-40 hidden w-72 border-r xl:block"
           style={{ backgroundColor: 'var(--color-sidebar-bg)', borderColor: 'var(--color-sidebar-border)' }}
         >
-          <div className="flex h-full flex-col px-5 py-6">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--student-accent)] text-sm font-semibold text-white shadow-lg shadow-violet-500/20">
+          <div className="flex h-full flex-col px-4 py-5">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--student-accent)] text-sm font-semibold text-white shadow-lg shadow-violet-500/20 shrink-0">
                 {getInitials(studentName)}
               </div>
               <div className="min-w-0">
@@ -185,18 +185,18 @@ const StudentLayout = () => {
               </div>
             </div>
 
-            <StudentSurface className="mb-5 px-4 py-3">
+            <StudentSurface className="mb-4 px-3 py-2.5">
               <p className="text-xs uppercase tracking-[0.18em] text-[var(--color-text-muted)]">Session View</p>
-              <p className="mt-2 text-sm font-semibold text-[var(--color-text-primary)]">Everything here is personal to your account only.</p>
+              <p className="mt-1.5 text-sm font-semibold text-[var(--color-text-primary)]">Everything here is personal to your account only.</p>
             </StudentSurface>
 
             <nav className="flex-1 overflow-y-auto pr-1">
               {studentMenu.map((group) => (
-                <div key={group.label} className="mb-6">
-                  <p className="mb-3 px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-sidebar-muted)]">
+                <div key={group.label} className="mb-5">
+                  <p className="mb-2.5 px-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--color-sidebar-muted)]">
                     {group.label}
                   </p>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {group.items.map((item) => {
                       const Icon = item.icon
                       return (
@@ -205,7 +205,7 @@ const StudentLayout = () => {
                           to={item.path}
                           className={({ isActive }) =>
                             cn(
-                              'flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all duration-200',
+                              'flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-medium transition-all duration-200',
                               isActive && 'shadow-lg shadow-violet-500/10'
                             )
                           }
@@ -215,9 +215,9 @@ const StudentLayout = () => {
                           })}
                         >
                           <Icon size={18} />
-                          <span>{item.label}</span>
+                          <span className="truncate">{item.label}</span>
                           {item.path === ROUTES.STUDENT_NOTICES && unreadNotices > 0 ? (
-                            <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                            <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white shrink-0">
                               {unreadNotices}
                             </span>
                           ) : null}
@@ -240,12 +240,12 @@ const StudentLayout = () => {
               aria-label="Close navigation menu"
             />
             <aside
-              className="absolute inset-y-0 left-0 flex w-[84vw] max-w-xs flex-col border-r px-4 py-5"
+              className="absolute inset-y-0 left-0 flex w-[85vw] sm:w-80 max-w-xs flex-col border-r px-3 sm:px-4 py-4 sm:py-5"
               style={{ backgroundColor: 'var(--color-sidebar-bg)', borderColor: 'var(--color-sidebar-border)' }}
             >
-              <div className="mb-5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--student-accent)] text-sm font-semibold text-white">
+              <div className="mb-4 sm:mb-5 flex items-center justify-between">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl bg-[var(--student-accent)] text-sm font-semibold text-white shrink-0">
                     {getInitials(studentName)}
                   </div>
                   <div className="min-w-0">
@@ -256,7 +256,7 @@ const StudentLayout = () => {
                 <button
                   type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex h-10 w-10 items-center justify-center rounded-2xl border"
+                  className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-2xl border shrink-0"
                   style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
                   aria-label="Close navigation"
                 >
@@ -264,29 +264,29 @@ const StudentLayout = () => {
                 </button>
               </div>
 
-              <div className="space-y-6 overflow-y-auto pb-10">
+              <div className="space-y-5 sm:space-y-6 overflow-y-auto pb-10">
                 {studentMenu.map((group) => (
                   <div key={group.label}>
-                    <p className="mb-3 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-sidebar-muted)]">
+                    <p className="mb-2 sm:mb-3 px-1 text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-sidebar-muted)]">
                       {group.label}
                     </p>
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {group.items.map((item) => {
                         const Icon = item.icon
                         return (
                           <NavLink
                             key={item.path}
                             to={item.path}
-                            className={({ isActive }) => 'flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium transition-all duration-200'}
+                            className={({ isActive }) => 'flex items-center gap-2.5 sm:gap-3 rounded-2xl px-2.5 sm:px-3 py-2.5 sm:py-3 text-sm font-medium transition-all duration-200'}
                             style={({ isActive }) => ({
                               backgroundColor: isActive ? 'var(--color-sidebar-active)' : 'transparent',
                               color: isActive ? '#fff' : 'var(--color-sidebar-text)',
                             })}
                           >
                             <Icon size={18} />
-                            <span>{item.label}</span>
+                            <span className="truncate">{item.label}</span>
                             {item.path === ROUTES.STUDENT_NOTICES && unreadNotices > 0 ? (
-                              <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                              <span className="ml-auto rounded-full bg-red-500 px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold text-white shrink-0">
                                 {unreadNotices}
                               </span>
                             ) : null}
@@ -304,16 +304,16 @@ const StudentLayout = () => {
         <div className="xl:pl-72">
           <header className="sticky top-0 z-30 border-b bg-[color:var(--student-tab-bg)] backdrop-blur-xl" style={{ borderColor: 'var(--color-border)' }}>
             {isOffline && (
-              <div className="border-b px-4 py-2 text-center text-xs font-medium text-amber-900 dark:text-amber-100" style={{ backgroundColor: '#fde68a', borderColor: '#fcd34d' }}>
+              <div className="border-b px-3 sm:px-4 py-2 text-center text-xs font-medium text-amber-900 dark:text-amber-100" style={{ backgroundColor: '#fde68a', borderColor: '#fcd34d' }}>
                 You are offline. Showing last saved data.
               </div>
             )}
 
-            <div className="flex items-center gap-3 px-4 py-3 sm:px-5">
+            <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5">
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border xl:hidden"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border xl:hidden shrink-0"
                 style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
                 aria-label="Open navigation"
               >
@@ -328,7 +328,7 @@ const StudentLayout = () => {
               <button
                 type="button"
                 onClick={toggleTheme}
-                className="flex h-11 w-11 items-center justify-center rounded-2xl border"
+                className="flex h-10 w-10 items-center justify-center rounded-2xl border shrink-0"
                 style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
                 aria-label="Toggle dark mode"
               >
@@ -338,7 +338,7 @@ const StudentLayout = () => {
               <button
                 type="button"
                 onClick={logout}
-                className="hidden rounded-2xl border px-4 py-2.5 text-sm font-medium sm:inline-flex"
+                className="hidden sm:inline-flex rounded-2xl border px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium shrink-0"
                 style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
               >
                 Sign Out
@@ -351,8 +351,8 @@ const StudentLayout = () => {
           </main>
         </div>
 
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t px-2 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] pt-2 xl:hidden" style={{ backgroundColor: 'var(--student-tab-bg)', borderColor: 'var(--color-border)', backdropFilter: 'blur(16px)' }}>
-          <div className="grid grid-cols-5 gap-1">
+        <nav className="fixed inset-x-0 bottom-0 z-40 border-t px-1 pb-[calc(env(safe-area-inset-bottom,0px)+8px)] pt-1 xl:hidden" style={{ backgroundColor: 'var(--student-tab-bg)', borderColor: 'var(--color-border)', backdropFilter: 'blur(16px)' }}>
+          <div className="grid grid-cols-5 gap-0.5">
             {mobileTabs.map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.path
@@ -360,16 +360,16 @@ const StudentLayout = () => {
                 <NavLink
                   key={tab.path}
                   to={tab.path}
-                  className="flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-2xl px-1 py-2 text-[11px] font-medium"
+                  className="flex min-h-[56px] sm:min-h-[62px] flex-col items-center justify-center gap-0.5 sm:gap-1 rounded-xl px-0.5 py-1.5 text-[10px] sm:text-[11px] font-medium active-zone"
                   style={{
                     backgroundColor: isActive ? 'var(--student-accent-soft)' : 'transparent',
                     color: isActive ? 'var(--student-accent)' : 'var(--color-text-secondary)',
                   }}
                 >
                   <Icon size={18} />
-                  <span>{tab.label}</span>
+                  <span className="truncate w-full text-center">{tab.label}</span>
                   {tab.path === ROUTES.STUDENT_NOTICES && unreadNotices > 0 ? (
-                    <span className="absolute right-2 top-2 min-w-4 rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    <span className="absolute right-1.5 top-1.5 min-w-4 h-4 rounded-full bg-red-500 px-0.5 text-[9px] sm:text-[10px] font-bold text-white flex items-center justify-center">
                       {unreadNotices}
                     </span>
                   ) : null}

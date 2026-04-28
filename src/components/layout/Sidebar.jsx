@@ -1,3 +1,4 @@
+// src/components/layout/Sidebar.jsx
 import { useEffect, useMemo, useRef } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import * as Icons from 'lucide-react'
@@ -6,8 +7,9 @@ import useAuth from '@/hooks/useAuth'
 import { APP_NAME, ROUTES, ROLES } from '@/constants/app'
 import { cn } from '@/utils/helpers'
 
+/* ─────────────────────────── nav config ─────────────────────────── */
 const getNavGroups = (user) => {
-  const isTeacher = user?.role === ROLES.TEACHER
+  const isTeacher    = user?.role === ROLES.TEACHER
   const isAccountant = user?.role === ROLES.ACCOUNTANT
   const canPostNotices = Array.isArray(user?.permissions) && user.permissions.includes('notices.post')
 
@@ -16,34 +18,34 @@ const getNavGroups = (user) => {
       {
         label: 'Main',
         items: [
-          { label: 'Dashboard', icon: 'LayoutDashboard', path: ROUTES.DASHBOARD },
-          { label: 'My Classes', icon: 'School2', path: ROUTES.TEACHER_CLASSES },
-          { label: 'Timetable', icon: 'CalendarRange', path: ROUTES.TEACHER_TIMETABLE },
+          { label: 'Dashboard',   icon: 'LayoutDashboard', path: ROUTES.DASHBOARD },
+          { label: 'My Classes',  icon: 'School2',         path: ROUTES.TEACHER_CLASSES },
+          { label: 'Timetable',   icon: 'CalendarRange',   path: ROUTES.TEACHER_TIMETABLE },
         ],
       },
       {
         label: 'Attendance',
         items: [
-          { label: 'Mark Attendance', icon: 'ClipboardCheck', path: ROUTES.TEACHER_ATTENDANCE_MARK },
-          { label: 'Attendance Register', icon: 'Table2', path: ROUTES.TEACHER_ATTENDANCE_REGISTER },
-          { label: 'Attendance Reports', icon: 'BarChart3', path: ROUTES.TEACHER_ATTENDANCE_REPORTS },
+          { label: 'Mark Attendance',      icon: 'ClipboardCheck', path: ROUTES.TEACHER_ATTENDANCE_MARK },
+          { label: 'Attendance Register',  icon: 'Table2',         path: ROUTES.TEACHER_ATTENDANCE_REGISTER },
+          { label: 'Attendance Reports',   icon: 'BarChart3',      path: ROUTES.TEACHER_ATTENDANCE_REPORTS },
         ],
       },
       {
         label: 'Academics',
         items: [
-          { label: 'Enter Marks', icon: 'PenSquare', path: ROUTES.TEACHER_MARKS_ENTER },
-          { label: 'Marks Summary', icon: 'LineChart', path: ROUTES.TEACHER_MARKS_SUMMARY },
-          { label: 'Student List', icon: 'Users', path: ROUTES.TEACHER_STUDENTS },
-          { label: 'Student Remarks', icon: 'MessageSquareQuote', path: ROUTES.TEACHER_STUDENT_REMARKS },
-          { label: 'Homework', icon: 'NotebookPen', path: ROUTES.TEACHER_HOMEWORK },
+          { label: 'Enter Marks',       icon: 'PenSquare',          path: ROUTES.TEACHER_MARKS_ENTER },
+          { label: 'Marks Summary',     icon: 'LineChart',           path: ROUTES.TEACHER_MARKS_SUMMARY },
+          { label: 'Student List',      icon: 'Users',               path: ROUTES.TEACHER_STUDENTS },
+          { label: 'Student Remarks',   icon: 'MessageSquareQuote',  path: ROUTES.TEACHER_STUDENT_REMARKS },
+          { label: 'Homework',          icon: 'NotebookPen',         path: ROUTES.TEACHER_HOMEWORK },
         ],
       },
       {
         label: 'Communication',
         items: [
-          { label: 'Chat', icon: 'MessageSquare', path: ROUTES.TEACHER_CHAT },
-          { label: 'View Notices', icon: 'BellRing', path: ROUTES.TEACHER_NOTICES },
+          { label: 'Chat',          icon: 'MessageSquare', path: ROUTES.TEACHER_CHAT },
+          { label: 'View Notices',  icon: 'BellRing',      path: ROUTES.TEACHER_NOTICES },
           ...(canPostNotices ? [{ label: 'Post Notice', icon: 'Send', path: ROUTES.TEACHER_NOTICE_NEW }] : []),
         ],
       },
@@ -51,7 +53,7 @@ const getNavGroups = (user) => {
         label: 'Account',
         items: [
           { label: 'Leave Application', icon: 'PlaneTakeoff', path: ROUTES.TEACHER_LEAVE },
-          { label: 'My Profile', icon: 'UserRound', path: ROUTES.TEACHER_PROFILE },
+          { label: 'My Profile',        icon: 'UserRound',    path: ROUTES.TEACHER_PROFILE },
         ],
       },
     ]
@@ -62,13 +64,13 @@ const getNavGroups = (user) => {
       {
         label: 'Portal',
         items: [
-          { label: 'Dashboard', icon: 'LayoutDashboard', path: ROUTES.FEES },
-          { label: 'Fee Collection', icon: 'HandCoins', path: ROUTES.FEE_COLLECTION },
-          { label: 'Student Fee', icon: 'WalletCards', path: ROUTES.FEE_STUDENT_LEDGER },
-          { label: 'Fee Structure', icon: 'Landmark', path: ROUTES.FEE_STRUCTURES },
-          { label: 'Invoices', icon: 'Files', path: ROUTES.FEE_INVOICES },
-          { label: 'Receipts', icon: 'Receipt', path: ROUTES.FEE_RECEIPTS },
-          { label: 'Defaulters', icon: 'TriangleAlert', path: ROUTES.FEE_DEFAULTERS },
+          { label: 'Dashboard',    icon: 'LayoutDashboard', path: ROUTES.FEES },
+          { label: 'Fee Collection', icon: 'HandCoins',     path: ROUTES.FEE_COLLECTION },
+          { label: 'Student Fee',  icon: 'WalletCards',     path: ROUTES.FEE_STUDENT_LEDGER },
+          { label: 'Fee Structure', icon: 'Landmark',       path: ROUTES.FEE_STRUCTURES },
+          { label: 'Invoices',     icon: 'Files',           path: ROUTES.FEE_INVOICES },
+          { label: 'Receipts',     icon: 'Receipt',         path: ROUTES.FEE_RECEIPTS },
+          { label: 'Defaulters',   icon: 'TriangleAlert',   path: ROUTES.FEE_DEFAULTERS },
         ],
       },
       {
@@ -96,30 +98,30 @@ const getNavGroups = (user) => {
     {
       label: 'Students',
       items: [
-        { label: 'Classes', icon: 'School', path: ROUTES.CLASSES, roles: [ROLES.ADMIN, ROLES.TEACHER] },
-        { label: 'Students', icon: 'Users', path: ROUTES.STUDENTS, roles: [ROLES.ADMIN, ROLES.TEACHER] },
-        { label: 'Enrollment', icon: 'BookOpenCheck', path: ROUTES.ENROLLMENTS, roles: [ROLES.ADMIN, ROLES.TEACHER] },
-        { label: 'Attendance', icon: 'CalendarCheck', path: ROUTES.ATTENDANCE, roles: [ROLES.ADMIN, ROLES.TEACHER] },
-        { label: 'Exams & Results', icon: 'ClipboardList', path: ROUTES.EXAMS, roles: [ROLES.ADMIN, ROLES.TEACHER] },
+        { label: 'Classes',       icon: 'School',         path: ROUTES.CLASSES,      roles: [ROLES.ADMIN, ROLES.TEACHER] },
+        { label: 'Students',      icon: 'Users',          path: ROUTES.STUDENTS,     roles: [ROLES.ADMIN, ROLES.TEACHER] },
+        { label: 'Enrollment',    icon: 'BookOpenCheck',  path: ROUTES.ENROLLMENTS,  roles: [ROLES.ADMIN, ROLES.TEACHER] },
+        { label: 'Attendance',    icon: 'CalendarCheck',  path: ROUTES.ATTENDANCE,   roles: [ROLES.ADMIN, ROLES.TEACHER] },
+        { label: 'Exams & Results', icon: 'ClipboardList', path: ROUTES.EXAMS,       roles: [ROLES.ADMIN, ROLES.TEACHER] },
       ],
     },
     {
       label: 'Teachers',
       items: [
-        { label: 'Teachers', icon: 'UsersRound', path: ROUTES.TEACHERS, roles: [ROLES.ADMIN] },
+        { label: 'Teachers',        icon: 'UsersRound',     path: ROUTES.TEACHERS,              roles: [ROLES.ADMIN] },
         { label: 'Teacher Control', icon: 'ShieldEllipsis', path: ROUTES.ADMIN_TEACHER_CONTROL, roles: [ROLES.ADMIN] },
       ],
     },
-      {
-        label: 'Administration',
-        items: [
-          { label: 'Sessions', icon: 'CalendarDays', path: ROUTES.SESSIONS, roles: [ROLES.ADMIN] },
-          { label: 'Promotions', icon: 'ArrowUpWideNarrow', path: ROUTES.ADMIN_PROMOTIONS, roles: [ROLES.ADMIN] },
-          { label: 'Users', icon: 'UserCog', path: ROUTES.USERS, roles: [ROLES.ADMIN] },
-          { label: 'Fees', icon: 'IndianRupee', path: ROUTES.FEES, roles: [ROLES.ADMIN] },
-          { label: 'Audit Logs', icon: 'ScrollText', path: ROUTES.AUDIT, roles: [ROLES.ADMIN] },
-        ],
-      },
+    {
+      label: 'Administration',
+      items: [
+        { label: 'Sessions',   icon: 'CalendarDays',       path: ROUTES.SESSIONS,          roles: [ROLES.ADMIN] },
+        { label: 'Promotions', icon: 'ArrowUpWideNarrow',  path: ROUTES.ADMIN_PROMOTIONS,  roles: [ROLES.ADMIN] },
+        { label: 'Users',      icon: 'UserCog',            path: ROUTES.USERS,             roles: [ROLES.ADMIN] },
+        { label: 'Fees',       icon: 'IndianRupee',        path: ROUTES.FEES,              roles: [ROLES.ADMIN] },
+        { label: 'Audit Logs', icon: 'ScrollText',         path: ROUTES.AUDIT,             roles: [ROLES.ADMIN] },
+      ],
+    },
     {
       label: 'System',
       items: [
@@ -129,7 +131,8 @@ const getNavGroups = (user) => {
   ]
 }
 
-const NavIcon = ({ name, size = 18 }) => {
+/* ─────────────────────────── sub-components ─────────────────────── */
+const NavIcon = ({ name, size = 17 }) => {
   const LucideIcon = Icons[name]
   return LucideIcon ? <LucideIcon size={size} /> : null
 }
@@ -141,48 +144,63 @@ const NavItem = ({ item, collapsed }) => (
     end={item.path === ROUTES.DASHBOARD}
     className={() =>
       cn(
-        'group relative flex items-center gap-3 rounded-2xl px-3 py-2.5',
-        'text-sm font-medium transition-all duration-200 select-none',
-        collapsed && 'justify-center px-0 mx-auto w-11 h-11'
+        'group relative flex items-center gap-3 rounded-xl px-3 py-2.5',
+        'text-sm font-medium select-none outline-none',
+        'transition-all duration-200 ease-out',
+        collapsed && 'justify-center px-0 mx-auto w-10 h-10 rounded-xl'
       )
     }
     style={({ isActive }) => ({
-      color: isActive ? '#fff' : 'var(--color-sidebar-text)',
-      backgroundColor: isActive ? 'var(--color-sidebar-active)' : 'transparent',
-      boxShadow: isActive ? '0 10px 24px rgba(16, 185, 129, 0.18)' : 'none',
+      color           : isActive ? '#fff' : 'var(--color-sidebar-text)',
+      backgroundColor : isActive ? 'var(--color-sidebar-active)' : 'transparent',
+      boxShadow       : isActive ? '0 4px 14px rgba(16,185,129,0.25)' : 'none',
     })}
     onMouseEnter={e => {
       if (e.currentTarget.getAttribute('aria-current') !== 'page') {
         e.currentTarget.style.backgroundColor = 'var(--color-sidebar-hover)'
+        e.currentTarget.style.color           = 'var(--color-text-primary)'
       }
     }}
     onMouseLeave={e => {
       if (e.currentTarget.getAttribute('aria-current') !== 'page') {
         e.currentTarget.style.backgroundColor = 'transparent'
+        e.currentTarget.style.color           = 'var(--color-sidebar-text)'
       }
     }}
   >
     {({ isActive }) => (
       <>
-        <span className="shrink-0" style={{ opacity: isActive ? 1 : 0.9 }}>
-          <NavIcon name={item.icon} size={18} />
+        <span
+          className="shrink-0 transition-transform duration-200"
+          style={{
+            opacity   : isActive ? 1 : 0.75,
+            transform : isActive ? 'scale(1.05)' : 'scale(1)',
+          }}
+        >
+          <NavIcon name={item.icon} size={17} />
         </span>
 
-        {!collapsed && <span className="truncate leading-none">{item.label}</span>}
+        {!collapsed && (
+          <span className="truncate leading-none tracking-[-0.01em]">
+            {item.label}
+          </span>
+        )}
 
+        {/* Collapsed tooltip */}
         {collapsed && (
           <span
             className={cn(
               'absolute left-full ml-3 px-2.5 py-1.5 rounded-lg text-xs font-medium',
-              'whitespace-nowrap pointer-events-none',
-              'opacity-0 group-hover:opacity-100 translate-x-0',
-              'transition-opacity duration-150 z-50'
+              'whitespace-nowrap pointer-events-none z-50',
+              'opacity-0 group-hover:opacity-100',
+              'translate-x-1 group-hover:translate-x-0',
+              'transition-all duration-150 ease-out'
             )}
             style={{
-              backgroundColor: 'var(--color-sidebar-card)',
-              color: 'var(--color-text-primary)',
-              border: '1px solid var(--color-sidebar-border)',
-              boxShadow: '0 14px 28px rgba(15,23,42,0.14)',
+              backgroundColor : 'var(--color-sidebar-card)',
+              color           : 'var(--color-text-primary)',
+              border          : '1px solid var(--color-sidebar-border)',
+              boxShadow       : '0 8px 24px rgba(15,23,42,0.18)',
             }}
           >
             {item.label}
@@ -193,11 +211,12 @@ const NavItem = ({ item, collapsed }) => (
   </NavLink>
 )
 
+/* ─────────────────────────── Sidebar ────────────────────────────── */
 const Sidebar = ({ mobileOpen, onMobileClose }) => {
   const { sidebarCollapsed, toggleSidebar } = useUiStore()
   const { user, hasRole } = useAuth()
   const overlayRef = useRef(null)
-  const location = useLocation()
+  const location   = useLocation()
 
   useEffect(() => {
     if (mobileOpen) onMobileClose?.()
@@ -215,34 +234,42 @@ const Sidebar = ({ mobileOpen, onMobileClose }) => {
 
   const navGroups = useMemo(() => {
     const groups = getNavGroups(user)
-    return groups.map(group => ({
-      ...group,
-      items: group.items.filter(item => !item.roles || item.roles.length === 0 || hasRole(...item.roles)),
-    })).filter(group => group.items.length > 0)
+    return groups
+      .map(group => ({
+        ...group,
+        items: group.items.filter(item => !item.roles || item.roles.length === 0 || hasRole(...item.roles)),
+      }))
+      .filter(group => group.items.length > 0)
   }, [user, hasRole])
 
   return (
     <>
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           ref={overlayRef}
           onClick={handleOverlayClick}
           className="fixed inset-0 z-40 lg:hidden"
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(2px)' }}
+          style={{
+            backgroundColor : 'rgba(0,0,0,0.45)',
+            backdropFilter  : 'blur(3px)',
+            WebkitBackdropFilter: 'blur(3px)',
+            animation       : 'fadeIn 0.2s ease-out',
+          }}
         />
       )}
 
+      {/* Desktop sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 h-screen z-50 flex flex-col',
-          'transition-all duration-300 ease-in-out',
+          'fixed top-0 left-0 h-screen z-50 flex-col',
           'hidden lg:flex',
+          'transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
           sidebarCollapsed ? 'lg:w-[72px]' : 'lg:w-64'
         )}
         style={{
-          backgroundColor: 'var(--color-sidebar-bg)',
-          borderRight: '1px solid var(--color-sidebar-border)',
-          boxShadow: '0 0 0 1px rgba(255,255,255,0.02)',
+          backgroundColor : 'var(--color-sidebar-bg)',
+          borderRight     : '1px solid var(--color-sidebar-border)',
         }}
       >
         <SidebarContent
@@ -255,17 +282,18 @@ const Sidebar = ({ mobileOpen, onMobileClose }) => {
         />
       </aside>
 
+      {/* Mobile sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 h-screen z-50 flex flex-col w-64',
+          'fixed top-0 left-0 h-screen z-50 flex flex-col w-full',
           'lg:hidden',
-          'transition-transform duration-300 ease-in-out',
+          'transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         style={{
-          backgroundColor: 'var(--color-sidebar-bg)',
-          borderRight: '1px solid var(--color-sidebar-border)',
-          boxShadow: '0 24px 80px rgba(15,23,42,0.28)',
+          backgroundColor : 'var(--color-sidebar-bg)',
+          borderRight     : '1px solid var(--color-sidebar-border)',
+          boxShadow       : mobileOpen ? '0 0 60px rgba(0,0,0,0.3)' : 'none',
         }}
       >
         <SidebarContent
@@ -282,35 +310,43 @@ const Sidebar = ({ mobileOpen, onMobileClose }) => {
   )
 }
 
+/* ─────────────────────────── SidebarContent ─────────────────────── */
 const SidebarContent = ({ collapsed, toggleCollapsed, user, initials, navGroups, isMobile, onClose }) => (
   <div className="flex flex-col h-full overflow-hidden">
+
+    {/* Logo / brand row */}
     <div
       className={cn(
-        'flex items-center h-18 shrink-0 px-4',
+        'flex items-center h-[60px] shrink-0 px-4',
         collapsed && !isMobile ? 'justify-center px-0' : 'gap-3'
       )}
       style={{ borderBottom: '1px solid var(--color-sidebar-border)' }}
     >
+      {/* Logo mark */}
       <div
-        className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
         style={{
-          background: user?.role === ROLES.TEACHER
-            ? 'linear-gradient(135deg, #0f766e 0%, #10b981 100%)'
-            : 'linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-light) 100%)',
-          boxShadow: user?.role === ROLES.TEACHER
-            ? '0 10px 24px rgba(16, 185, 129, 0.26)'
-            : '0 10px 24px rgba(37, 99, 235, 0.28)',
+          background : user?.role === ROLES.TEACHER
+            ? 'linear-gradient(135deg,#0f766e 0%,#10b981 100%)'
+            : 'linear-gradient(135deg,var(--color-brand) 0%,var(--color-brand-light) 100%)',
+          boxShadow  : '0 4px 12px rgba(16,185,129,0.25)',
         }}
       >
-        <Icons.GraduationCap size={18} color="#fff" />
+        <Icons.GraduationCap size={17} color="#fff" />
       </div>
 
       {(!collapsed || isMobile) && (
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+          <p
+            className="text-sm font-bold truncate leading-tight tracking-[-0.02em]"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
             {APP_NAME}
           </p>
-          <p className="text-xs truncate leading-tight uppercase tracking-[0.18em]" style={{ color: 'var(--color-sidebar-muted)' }}>
+          <p
+            className="text-[10px] truncate leading-tight uppercase tracking-[0.15em] mt-0.5"
+            style={{ color: 'var(--color-sidebar-muted)' }}
+          >
             {user?.role === ROLES.TEACHER
               ? 'Teacher Portal'
               : user?.role === ROLES.ACCOUNTANT
@@ -320,52 +356,71 @@ const SidebarContent = ({ collapsed, toggleCollapsed, user, initials, navGroups,
         </div>
       )}
 
+      {/* Mobile close */}
       {isMobile && (
-        <button onClick={onClose} className="p-2 rounded-xl transition-colors" style={{ color: 'var(--color-sidebar-muted)' }}>
-          <Icons.X size={18} />
+        <button
+          onClick={onClose}
+          className="p-2 rounded-xl transition-all duration-150 ml-auto"
+          style={{ color: 'var(--color-sidebar-muted)' }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--color-sidebar-hover)'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--color-sidebar-muted)' }}
+        >
+          <Icons.X size={17} />
         </button>
       )}
 
+      {/* Desktop collapse toggle */}
       {!isMobile && !collapsed && (
         <button
           onClick={toggleCollapsed}
-          className="p-2 rounded-xl transition-colors ml-auto"
+          className="p-1.5 rounded-lg transition-all duration-150 ml-auto"
           style={{ color: 'var(--color-sidebar-muted)' }}
           title="Collapse sidebar"
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--color-sidebar-hover)'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--color-sidebar-muted)' }}
         >
-          <Icons.PanelLeftClose size={16} />
+          <Icons.PanelLeftClose size={15} />
         </button>
       )}
     </div>
 
+    {/* Expand button when collapsed */}
     {!isMobile && collapsed && (
       <button
         onClick={toggleCollapsed}
-        className="mt-3 mx-auto flex w-10 h-10 items-center justify-center rounded-2xl transition-colors"
+        className="mt-3 mx-auto flex w-9 h-9 items-center justify-center rounded-xl transition-all duration-150"
         style={{
-          color: 'var(--color-sidebar-muted)',
-          backgroundColor: 'var(--color-sidebar-card)',
-          border: '1px solid var(--color-sidebar-border)',
+          color           : 'var(--color-sidebar-muted)',
+          backgroundColor : 'var(--color-sidebar-card)',
+          border          : '1px solid var(--color-sidebar-border)',
         }}
         title="Expand sidebar"
+        onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--color-sidebar-hover)'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
+        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'var(--color-sidebar-card)'; e.currentTarget.style.color = 'var(--color-sidebar-muted)' }}
       >
-        <Icons.PanelLeftOpen size={16} />
+        <Icons.PanelLeftOpen size={15} />
       </button>
     )}
 
-    <nav className="flex-1 overflow-y-auto overflow-x-hidden py-5 px-3 space-y-6">
+    {/* Nav */}
+    <nav className="flex-1 overflow-y-auto overflow-x-hidden py-4 px-2.5 space-y-5 scrollbar-thin">
       {navGroups.map((group, index) => (
         <div key={`${group.label || 'root'}-${index}`}>
           {group.label && !collapsed && (
-            <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'var(--color-sidebar-muted)' }}>
+            <p
+              className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-[0.16em]"
+              style={{ color: 'var(--color-sidebar-muted)' }}
+            >
               {group.label}
             </p>
           )}
           {group.label && collapsed && index > 0 && (
-            <div className="mx-auto mb-2 w-6 h-px" style={{ backgroundColor: 'var(--color-sidebar-border)' }} />
+            <div
+              className="mx-auto mb-2 w-5 h-px"
+              style={{ backgroundColor: 'var(--color-sidebar-border)' }}
+            />
           )}
-
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {group.items.map(item => (
               <li key={item.path}>
                 <NavItem item={item} collapsed={collapsed && !isMobile} />
@@ -376,17 +431,19 @@ const SidebarContent = ({ collapsed, toggleCollapsed, user, initials, navGroups,
       ))}
     </nav>
 
-    <div className="shrink-0 p-3" style={{ borderTop: '1px solid var(--color-sidebar-border)' }}>
+    {/* User card */}
+    <div
+      className="shrink-0 p-3"
+      style={{ borderTop: '1px solid var(--color-sidebar-border)' }}
+    >
       {collapsed && !isMobile ? (
         <div
-          className="w-10 h-10 rounded-2xl flex items-center justify-center mx-auto text-xs font-bold text-white cursor-default"
+          className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto text-xs font-bold text-white cursor-default"
           style={{
             background: user?.role === ROLES.TEACHER
-              ? 'linear-gradient(135deg, #0f766e 0%, #10b981 100%)'
-              : 'linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-light) 100%)',
-            boxShadow: user?.role === ROLES.TEACHER
-              ? '0 8px 20px rgba(16, 185, 129, 0.22)'
-              : '0 8px 20px rgba(37, 99, 235, 0.24)',
+              ? 'linear-gradient(135deg,#0f766e 0%,#10b981 100%)'
+              : 'linear-gradient(135deg,var(--color-brand) 0%,var(--color-brand-light) 100%)',
+            boxShadow: '0 4px 12px rgba(16,185,129,0.2)',
           }}
           title={user?.name}
         >
@@ -394,27 +451,33 @@ const SidebarContent = ({ collapsed, toggleCollapsed, user, initials, navGroups,
         </div>
       ) : (
         <div
-          className="flex items-center gap-3 px-3 py-3 rounded-2xl"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
           style={{
-            backgroundColor: 'var(--color-sidebar-card)',
-            border: '1px solid var(--color-sidebar-border)',
+            backgroundColor : 'var(--color-sidebar-card)',
+            border          : '1px solid var(--color-sidebar-border)',
           }}
         >
           <div
-            className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 text-xs font-bold text-white"
+            className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold text-white"
             style={{
               background: user?.role === ROLES.TEACHER
-                ? 'linear-gradient(135deg, #0f766e 0%, #10b981 100%)'
-                : 'linear-gradient(135deg, var(--color-brand) 0%, var(--color-brand-light) 100%)',
+                ? 'linear-gradient(135deg,#0f766e 0%,#10b981 100%)'
+                : 'linear-gradient(135deg,var(--color-brand) 0%,var(--color-brand-light) 100%)',
             }}
           >
             {initials}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <p
+              className="text-sm font-semibold truncate leading-tight tracking-[-0.01em]"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
               {user?.name || 'User'}
             </p>
-            <p className="text-xs uppercase tracking-[0.14em] truncate leading-tight" style={{ color: 'var(--color-sidebar-muted)' }}>
+            <p
+              className="text-[10px] uppercase tracking-[0.12em] truncate leading-tight mt-0.5"
+              style={{ color: 'var(--color-sidebar-muted)' }}
+            >
               {user?.role || 'staff'}
             </p>
           </div>
