@@ -23,7 +23,7 @@ const STATUS_CELL = {
 const AttendanceRegisterPage = ({ mode = 'register' }) => {
   usePageTitle('Attendance Register')
   const { toastError } = useToast()
-  const { sessionReport, isLoading, fetchSessionReport } = useAttendanceStore()
+  const { sessionReport, isLoading, fetchClassRegister } = useAttendanceStore()
   const { sessions, currentSession, fetchSessions } = useSessionStore()
   const isOverrideMode = mode === 'override'
 
@@ -59,11 +59,17 @@ const AttendanceRegisterPage = ({ mode = 'register' }) => {
   }, [classId])
 
   useEffect(() => {
-    if (!sessionId) return
+    if (!sessionId || !classId || !sectionId) return
 
-    fetchSessionReport(sessionId, { class_id: classId, section_id: sectionId })
-      .catch(() => toastError('Failed to load register'))
-  }, [sessionId, classId, sectionId, fetchSessionReport, toastError])
+    fetchClassRegister({
+      session_id: sessionId,
+      class_id: classId,
+      section_id: sectionId,
+      month: month + 1,
+      year,
+    })
+      .catch((error) => toastError(error?.message || 'Failed to load attendance register.'))
+  }, [sessionId, classId, sectionId, month, year, fetchClassRegister, toastError])
 
   const daysInMonth = useMemo(() => {
     const days = []
@@ -249,7 +255,7 @@ const AttendanceRegisterPage = ({ mode = 'register' }) => {
                   sessionReport.map((row, rowIndex) => {
                     const enrollmentId = row.enrollment_id || row.id
                     const lookup = attendanceLookup[enrollmentId] || {}
-                    const pct = parseFloat(row.percentage || 0)
+                    const pct = parseFloat(row.percentage || row.attendance_percentage || 0)
                     const pctColor = pct >= 75 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626'
 
                     return (
@@ -327,7 +333,13 @@ const AttendanceRegisterPage = ({ mode = 'register' }) => {
           onClose={() => setOverride(null)}
           onSuccess={() => {
             setOverride(null)
-            fetchSessionReport(sessionId, { class_id: classId, section_id: sectionId })
+            fetchClassRegister({
+              session_id: sessionId,
+              class_id: classId,
+              section_id: sectionId,
+              month: month + 1,
+              year,
+            })
           }}
         />
       )}

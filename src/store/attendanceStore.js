@@ -2,17 +2,15 @@
 import { create } from 'zustand'
 import * as api from '@/api/attendance'
 
-const useAttendanceStore = create((set, get) => ({
-  // ── State ──────────────────────────────────────────────────────────────
-  classAttendance   : [],   // students + today's status for mark page
-  sessionReport     : [],   // all students × all dates for register
-  studentSummary    : null, // single student summary
-  studentRecords    : [],   // individual student daily records
+const useAttendanceStore = create((set) => ({
+  classAttendance   : [],
+  sessionReport     : [],
+  studentSummary    : null,
+  studentRecords    : [],
   isLoading         : false,
   isSaving          : false,
   error             : null,
 
-  // ── Mark attendance (bulk) ──────────────────────────────────────────────
   markBulk: async (data) => {
     set({ isSaving: true })
     try {
@@ -25,7 +23,6 @@ const useAttendanceStore = create((set, get) => ({
     }
   },
 
-  // ── Override single record ──────────────────────────────────────────────
   overrideAttendance: async (id, data) => {
     set({ isSaving: true })
     try {
@@ -38,7 +35,6 @@ const useAttendanceStore = create((set, get) => ({
     }
   },
 
-  // ── Fetch session-wide report (register view) ───────────────────────────
   fetchSessionReport: async (sessionId, params = {}) => {
     set({ isLoading: true, error: null })
     try {
@@ -52,16 +48,28 @@ const useAttendanceStore = create((set, get) => ({
     }
   },
 
-  // ── Fetch single student attendance ────────────────────────────────────
+  fetchClassRegister: async (params = {}) => {
+    set({ isLoading: true, error: null })
+    try {
+      const res = await api.getClassRegister(params)
+      const rows = res.data?.students || []
+      set({ sessionReport: rows, isLoading: false })
+      return rows
+    } catch (err) {
+      set({ error: err.message, isLoading: false })
+      throw err
+    }
+  },
+
   fetchStudentAttendance: async (enrollmentId, params = {}) => {
     set({ isLoading: true, error: null })
     try {
       const res = await api.getEnrollmentAttendance(enrollmentId, params)
       const payload = res.data || {}
       set({
-        studentRecords : payload.records || [],
-        studentSummary : payload.summary || null,
-        isLoading      : false,
+        studentRecords: payload.records || [],
+        studentSummary: payload.summary || null,
+        isLoading: false,
       })
       return payload
     } catch (err) {

@@ -1,15 +1,14 @@
 // src/pages/attendance/MarkAttendancePage.jsx
-import { useState, useEffect, useCallback } from 'react'
-import { CheckCircle, Send, RefreshCw, Users, Calendar } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { CheckCircle, Send, RefreshCw, Users } from 'lucide-react'
 import { getClasses, getClassOptions, getSections } from '@/api/classApi'
-import { getSessionReport } from '@/api/attendance'
+import { getClassAttendance } from '@/api/attendance'
 import useAttendanceStore from '@/store/attendanceStore'
 import useSessionStore from '@/store/sessionStore'
 import usePageTitle from '@/hooks/usePageTitle'
 import useToast from '@/hooks/useToast'
 import Button from '@/components/ui/Button'
 import Select from '@/components/ui/Select'
-import Badge from '@/components/ui/Badge'
 import { cn, formatDate } from '@/utils/helpers'
 
 const STATUS_OPTIONS = [
@@ -72,23 +71,23 @@ const MarkAttendancePage = () => {
     setSubmitted(false)
 
     try {
-      const reportRes = await getSessionReport(currentSession.id, {
+      const classAttendanceRes = await getClassAttendance({
+        session_id: currentSession.id,
         class_id: classId,
         section_id: sectionId,
+        date,
       })
 
-      const reportRows = reportRes?.data || []
+      const payload = classAttendanceRes?.data || {}
+      const studentRows = payload.students || []
 
-      const hasRecords = reportRows.some((row) =>
-        row.attendance?.some((attendance) => attendance.date === date && attendance.status)
-      )
-      setAlreadyMarked(hasRecords)
+      setAlreadyMarked(!!payload.already_marked)
 
-      const studentList = reportRows.map((row) => ({
-        enrollment_id : row.enrollment_id || row.id,
-        name          : row.student_name || `${row.first_name || ''} ${row.last_name || ''}`.trim(),
+      const studentList = studentRows.map((row) => ({
+        enrollment_id : row.enrollment_id,
+        name          : `${row.first_name || ''} ${row.last_name || ''}`.trim(),
         roll_number   : row.roll_number,
-        currentStatus : row.attendance?.find((attendance) => attendance.date === date)?.status || 'present',
+        currentStatus : row.status || 'present',
       }))
 
       if (studentList.length === 0) {

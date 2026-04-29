@@ -139,6 +139,45 @@ const AdminTeacherControlPage = () => {
     )
   ), [assignments, slotForm.teacher_id, slotForm.class_id, slotForm.section_id])
 
+  const assignmentsByClass = useMemo(() => {
+    const groups = new Map()
+
+    assignments.forEach((item) => {
+      const key = `${item.class_id}:${item.section_id}`
+      if (!groups.has(key)) {
+        groups.set(key, {
+          key,
+          class_name: item.class_name,
+          section_name: item.section_name,
+          session_name: item.session_name,
+          classTeacher: null,
+          subjectTeachers: [],
+          inactiveCount: 0,
+        })
+      }
+
+      const group = groups.get(key)
+      if (!item.is_active) group.inactiveCount += 1
+
+      if (item.is_class_teacher) group.classTeacher = item
+      else group.subjectTeachers.push(item)
+    })
+
+    return Array.from(groups.values())
+      .map((group) => ({
+        ...group,
+        subjectTeachers: group.subjectTeachers.sort((a, b) => {
+          if (Number(b.is_active) !== Number(a.is_active)) return Number(b.is_active) - Number(a.is_active)
+          if ((a.subject_name || '') !== (b.subject_name || '')) return (a.subject_name || '').localeCompare(b.subject_name || '')
+          return (a.teacher_name || '').localeCompare(b.teacher_name || '')
+        }),
+      }))
+      .sort((a, b) => {
+        if ((a.class_name || '') !== (b.class_name || '')) return (a.class_name || '').localeCompare(b.class_name || '')
+        return (a.section_name || '').localeCompare(b.section_name || '')
+      })
+  }, [assignments])
+
   const classOptions = useMemo(() => classes.map((row) => ({ value: String(row.id), label: row.name })), [classes])
   const teacherOptions = useMemo(() => teachers.map((row) => ({ value: String(row.id), label: row.name })), [teachers])
   const assignmentSectionOptions = useMemo(() => (sectionsByClass[assignmentForm.class_id] || []).map((row) => ({ value: String(row.id), label: row.name })), [sectionsByClass, assignmentForm.class_id])
@@ -342,16 +381,8 @@ const AdminTeacherControlPage = () => {
           <Panel title="Current Assignments" icon={ClipboardList}>
             {loading ? <Skeleton rows={5} /> : !assignments.length ? <EmptyState icon={School2} title="No assignments yet" description="Create teacher assignments for the current session." /> : (
               <div className="space-y-3">
-                {assignments.map((item) => (
-                  <RowCard
-                    key={item.id}
-                    title={`${item.teacher_name} • ${item.class_name} ${item.section_name}`}
-                    meta={`${item.is_class_teacher ? 'Class teacher' : item.subject_name || 'Subject teacher'} | ${item.session_name}`}
-                    badge={item.is_active ? 'Active' : 'Inactive'}
-                    badgeVariant={item.is_active ? 'green' : 'grey'}
-                    actionLabel={item.is_active ? 'Deactivate' : 'Activate'}
-                    onAction={() => toggleAssignment(item)}
-                  />
+                {assignmentsByClass.map((group) => (
+                  <ClassAssignmentGroup key={group.key} group={group} onToggle={toggleAssignment} />
                 ))}
               </div>
             )}
@@ -587,6 +618,76 @@ const RowCard = ({ title, meta, badge, badgeVariant, actionLabel, onAction }) =>
       <Button variant="secondary" onClick={onAction}>{actionLabel}</Button>
     </div>
   </article>
+)
+
+const ClassAssignmentGroup = ({ group, onToggle }) => (
+  <article className="rounded-[24px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="blue">{group.class_name} {group.section_name}</Badge>
+          <Badge variant={group.inactiveCount ? 'yellow' : 'green'}>
+            {group.inactiveCount ? `${group.inactiveCount} inactive` : 'Fully active'}
+          </Badge>
+        </div>
+        <p className="mt-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{group.session_name}</p>
+      </div>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--color-text-muted)' }}>
+        {1 + group.subjectTeachers.length} assignment{1 + group.subjectTeachers.length === 1 ? '' : 's'}
+      </p>
+    </div>
+
+    <div className="mt-4 space-y-3">
+      {group.classTeacher ? (
+        <AssignmentLineItem
+          item={group.classTeacher}
+          label="Class Teacher"
+          detail={group.classTeacher.teacher_name}
+          onToggle={onToggle}
+        />
+      ) : (
+        <div className="rounded-2xl border border-dashed p-3" style={{ borderColor: 'var(--color-border)' }}>
+          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Class Teacher</p>
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>No class teacher assigned yet.</p>
+        </div>
+      )}
+
+      {group.subjectTeachers.length ? (
+        group.subjectTeachers.map((item) => (
+          <AssignmentLineItem
+            key={item.id}
+            item={item}
+            label={item.subject_name || 'Subject Teacher'}
+            detail={item.teacher_name}
+            onToggle={onToggle}
+          />
+        ))
+      ) : (
+        <div className="rounded-2xl border border-dashed p-3" style={{ borderColor: 'var(--color-border)' }}>
+          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Subject Teachers</p>
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>No subject teacher assignments for this class yet.</p>
+        </div>
+      )}
+    </div>
+  </article>
+)
+
+const AssignmentLineItem = ({ item, label, detail, onToggle }) => (
+  <div className="rounded-2xl border p-3" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={item.is_active ? 'green' : 'grey'}>{item.is_active ? 'Active' : 'Inactive'}</Badge>
+          <Badge variant={item.is_class_teacher ? 'teal' : 'blue'}>{label}</Badge>
+        </div>
+        <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{detail}</p>
+        <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          {item.is_class_teacher ? 'Full class responsibility' : `${item.subject_code ? `${item.subject_code} | ` : ''}Subject assignment`}
+        </p>
+      </div>
+      <Button variant="secondary" onClick={() => onToggle(item)}>{item.is_active ? 'Deactivate' : 'Activate'}</Button>
+    </div>
+  </div>
 )
 
 const WorkflowCard = ({ title, meta, description, status, onApprove, onReject }) => (

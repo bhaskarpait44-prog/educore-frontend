@@ -15,7 +15,9 @@ const useSessionStore = create((set, get) => ({
     set({ isLoading: true, error: null })
     try {
       const res = await api.getSessions(params)
-      set({ sessions: res.data, isLoading: false })
+      const sessions = Array.isArray(res.data) ? res.data : []
+      const currentSession = sessions.find((session) => session.is_current || session.status === 'active') || null
+      set({ sessions, currentSession, isLoading: false })
       return res.data
     } catch (err) {
       set({ error: err.message, isLoading: false })
