@@ -59,12 +59,6 @@ export const NAV_GROUPS = [
         allowedRoles: [ROLES.ADMIN],
       },
       {
-        label       : 'Fee Management',
-        icon        : 'IndianRupee',
-        path        : ROUTES.FEES,
-        allowedRoles: [ROLES.ADMIN],
-      },
-      {
         label       : 'Audit Logs',
         icon        : 'ScrollText',
         path        : ROUTES.AUDIT,

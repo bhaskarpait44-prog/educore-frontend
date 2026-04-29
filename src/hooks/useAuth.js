@@ -26,7 +26,6 @@ const useAuth = () => {
 
     isAdmin      : store.user?.role === ROLES.ADMIN,
     isTeacher    : store.user?.role === ROLES.TEACHER,
-    isAccountant : store.user?.role === ROLES.ACCOUNTANT,
     isStaff      : store.user?.role === ROLES.STAFF,
     isStudent    : store.user?.role === ROLES.STUDENT,
 

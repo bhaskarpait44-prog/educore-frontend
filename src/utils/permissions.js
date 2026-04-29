@@ -112,13 +112,6 @@ export function hasAllPermissions(user, permissions = []) {
  */
 export function getDefaultPermissionsForRole(role) {
   const defaults = {
-    accountant : [
-      PERMISSION.FEES_VIEW,
-      PERMISSION.FEES_COLLECT,
-      PERMISSION.FEES_EDIT,
-      PERMISSION.FEES_REPORT,
-      PERMISSION.STUDENTS_VIEW,
-    ],
     teacher    : [
       PERMISSION.STUDENTS_VIEW,
       PERMISSION.ATTENDANCE_VIEW, PERMISSION.ATTENDANCE_MARK,

@@ -38,13 +38,9 @@ const Header = ({ onMenuClick }) => {
   const isStudentUser  = user?.role === ROLES.STUDENT
   const unreadCount    = notifications.reduce((sum, item) => sum + Number(item.count || 0), 0)
 
-  const profileRoute    = user?.role === 'teacher'
-    ? ROUTES.TEACHER_PROFILE
-    : user?.role === ROLES.ACCOUNTANT
-    ? ROUTES.ACCOUNTANT_PROFILE
-    : ROUTES.SETTINGS
-  const secondaryRoute  = user?.role === ROLES.ACCOUNTANT ? ROUTES.FEES      : ROUTES.SETTINGS
-  const secondaryLabel  = user?.role === ROLES.ACCOUNTANT ? 'Portal Home'    : 'Settings'
+  const profileRoute    = user?.role === 'teacher' ? ROUTES.TEACHER_PROFILE : ROUTES.SETTINGS
+  const secondaryRoute  = ROUTES.SETTINGS
+  const secondaryLabel  = 'Settings'
 
   /* ── Close dropdowns on outside click ── */
   useEffect(() => {

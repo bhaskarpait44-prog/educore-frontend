@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -7,6 +7,7 @@ import {
   ArrowLeft, AlertCircle, Copy, KeyRound, Mail, ShieldCheck, UserRound,
 } from 'lucide-react'
 import * as api from '@/api/userManagementApi'
+import { ROUTES } from '@/constants/app'
 import usePageTitle from '@/hooks/usePageTitle'
 import useToast from '@/hooks/useToast'
 import PermissionSelector from '@/components/admin/PermissionSelector'
@@ -23,7 +24,7 @@ const schema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Valid email required'),
   phone: z.string().optional(),
-  role: z.enum(['admin', 'accountant']),
+  role: z.enum(['admin', 'teacher', 'student']),
   employee_id: z.string().optional(),
   department: z.string().optional(),
   designation: z.string().optional(),
@@ -37,7 +38,7 @@ const schema = z.object({
   internal_notes: z.string().optional(),
 })
 
-const ROLES = ['admin', 'accountant']
+const ROLES = ['admin', 'teacher', 'student']
 
 const Field = ({ label, error, children, required, hint }) => (
   <div className="flex flex-col gap-1.5">
@@ -85,11 +86,11 @@ const CredentialRow = ({ icon: Icon, label, value, onCopy }) => (
   </div>
 )
 
-const defaultValues = {
+const buildDefaultValues = (role) => ({
   name: '',
   email: '',
   phone: '',
-  role: 'admin',
+  role,
   employee_id: '',
   department: '',
   designation: '',
@@ -101,14 +102,17 @@ const defaultValues = {
   force_password_change: true,
   password: '',
   internal_notes: '',
-}
+})
 
 const CreateUserPage = () => {
   usePageTitle('Create User')
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { toastSuccess, toastError, toastInfo } = useToast()
-  const [permissions, setPermissions] = useState(getDefaultPermissionsForRole('admin'))
+  const requestedRole = searchParams.get('role')
+  const initialRole = ROLES.includes(requestedRole) ? requestedRole : 'admin'
+  const [permissions, setPermissions] = useState(getDefaultPermissionsForRole(initialRole))
   const [isSaving, setIsSaving] = useState(false)
   const [createdAccount, setCreatedAccount] = useState(null)
 
@@ -116,7 +120,7 @@ const CreateUserPage = () => {
     register, handleSubmit, watch, setValue, reset, formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues,
+    defaultValues: buildDefaultValues(initialRole),
   })
 
   const role = watch('role')
@@ -159,8 +163,8 @@ const CreateUserPage = () => {
       })
 
       toastSuccess('User created successfully')
-      reset(defaultValues)
-      setPermissions(getDefaultPermissionsForRole('admin'))
+      reset(buildDefaultValues(role))
+      setPermissions(getDefaultPermissionsForRole(role))
     } catch (e) {
       toastError(e.message || 'Failed to create user')
     } finally {
@@ -172,9 +176,13 @@ const CreateUserPage = () => {
     <>
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('/users')} className="flex items-center gap-1.5 text-sm transition-colors hover:opacity-70" style={{ color: 'var(--color-text-secondary)' }}>
+          <button
+            onClick={() => navigate(initialRole ? `${ROUTES.USER_MANAGE}?role=${initialRole}` : ROUTES.USERS)}
+            className="flex items-center gap-1.5 text-sm transition-colors hover:opacity-70"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
             <ArrowLeft size={15} />
-            Users
+            {`${initialRole.charAt(0).toUpperCase()}${initialRole.slice(1)} Users`}
           </button>
           <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
             Create New User
@@ -279,7 +287,7 @@ const CreateUserPage = () => {
           <div className="flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={() => navigate('/users')}
+              onClick={() => navigate(initialRole ? `${ROUTES.USER_MANAGE}?role=${initialRole}` : ROUTES.USERS)}
               disabled={isSaving}
               className="px-4 py-2.5 text-sm font-medium rounded-xl border"
               style={{ color: 'var(--color-text-secondary)', borderColor: 'var(--color-border)' }}
@@ -313,7 +321,7 @@ const CreateUserPage = () => {
             <Button variant="secondary" onClick={() => setCreatedAccount(null)}>
               Create Another
             </Button>
-            <Button onClick={() => navigate('/users')}>
+            <Button onClick={() => navigate(initialRole ? `${ROUTES.USER_MANAGE}?role=${initialRole}` : ROUTES.USERS)}>
               Go to Users
             </Button>
           </>

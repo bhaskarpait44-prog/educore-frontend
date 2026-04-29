@@ -12,13 +12,6 @@ const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
 
 const DashboardPage = lazy(() => import('@/pages/DashboardPage'))
-const AccountantDashboard = lazy(() => import('@/pages/accountant/AccountantDashboard'))
-const AccountantCollectionPage = lazy(() => import('@/pages/accountant/AccountantCollectionPage'))
-const AccountantStudentFeesPage = lazy(() => import('@/pages/accountant/AccountantStudentFeesPage'))
-const AccountantInvoicesPage = lazy(() => import('@/pages/accountant/AccountantInvoicesPage'))
-const AccountantReceiptsPage = lazy(() => import('@/pages/accountant/AccountantReceiptsPage'))
-const AccountantDefaultersPage = lazy(() => import('@/pages/accountant/AccountantDefaultersPage'))
-const AccountantProfilePage = lazy(() => import('@/pages/accountant/AccountantProfilePage'))
 const TeacherDashboard = lazy(() => import('@/pages/teacher/TeacherDashboard'))
 const TeacherMyClasses = lazy(() => import('@/pages/teacher/TeacherMyClasses'))
 const TeacherMarkAttendance = lazy(() => import('@/pages/teacher/attendance/MarkAttendance'))
@@ -45,10 +38,12 @@ const AdmitStudentPage = lazy(() => import('@/pages/students/AdmitStudentPage'))
 const StudentDetailPage = lazy(() => import('@/pages/students/StudentDetailPage'))
 const EnrollmentsPage = lazy(() => import('@/pages/enrollments/EnrollmentsPage'))
 const AttendancePage = lazy(() => import('@/pages/attendance/AttendancePage'))
-const FeesPage = lazy(() => import('@/pages/fees/FeesPage'))
+const FeeStructurePage = lazy(() => import('@/pages/fees/FeeStructurePage'))
+const FeeReportPage = lazy(() => import('@/pages/fees/FeeReportPage'))
 const ExamsPage = lazy(() => import('@/pages/exams/ExamsPage'))
 const AuditPage = lazy(() => import('@/pages/audit/AuditPage'))
 const ClassListPage = lazy(() => import('@/pages/classes/ClassListPage'))
+const UserManagementHomePage = lazy(() => import('@/components/admin/users/UserManagementHomePage'))
 const UserListPage = lazy(() => import('@/components/admin/users/UserListPage'))
 const CreateUserPage = lazy(() => import('@/components/admin/users/CreateUserPage'))
 const BulkImportPage = lazy(() => import('@/components/admin/users/BulkImportPage'))
@@ -100,10 +95,6 @@ const DashboardGate = () => {
 
   if (role === ROLES.TEACHER) {
     return <Lazy component={TeacherDashboard} />
-  }
-
-  if (role === ROLES.ACCOUNTANT) {
-    return <Lazy component={AccountantDashboard} />
   }
 
   return <Lazy component={DashboardPage} />
@@ -181,7 +172,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.STUDENTS,
         element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER, ROLES.ACCOUNTANT]}>
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER]}>
             <Lazy component={StudentsPage} />
           </ProtectedRoute>
         ),
@@ -197,7 +188,7 @@ const router = createBrowserRouter([
       {
         path: ROUTES.STUDENT_DETAIL,
         element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER, ROLES.ACCOUNTANT]}>
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER]}>
             <Lazy component={StudentDetailPage} />
           </ProtectedRoute>
         ),
@@ -267,70 +258,6 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: ROUTES.FEES,
-        element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
-            <Lazy component={AccountantDashboard} />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: ROUTES.FEE_COLLECTION,
-        element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
-            <Lazy component={AccountantCollectionPage} />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: ROUTES.FEE_STUDENT_LEDGER,
-        element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
-            <Lazy component={AccountantStudentFeesPage} />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: ROUTES.FEE_STRUCTURES,
-        element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
-            <Lazy component={FeesPage} />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: ROUTES.FEE_INVOICES,
-        element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
-            <Lazy component={AccountantInvoicesPage} />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: ROUTES.FEE_RECEIPTS,
-        element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
-            <Lazy component={AccountantReceiptsPage} />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: ROUTES.FEE_DEFAULTERS,
-        element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
-            <Lazy component={AccountantDefaultersPage} />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: ROUTES.ACCOUNTANT_PROFILE,
-        element: (
-          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
-            <Lazy component={AccountantProfilePage} />
-          </ProtectedRoute>
-        ),
-      },
-      {
         path: ROUTES.EXAMS,
         element: (
           <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER]}>
@@ -349,6 +276,14 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.USERS,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
+            <Lazy component={UserManagementHomePage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.USER_MANAGE,
         element: (
           <ProtectedRoute roles={[ROLES.ADMIN]}>
             <Lazy component={UserListPage} />

@@ -153,7 +153,6 @@ const DashboardPage = () => {
             stats?.fee_collection?.percentage
           }
           progressColor="#d97706"
-          onClick={() => navigate(ROUTES.FEES)}
         />
         <StatsCard
           theme={theme}
@@ -216,7 +215,6 @@ const DashboardPage = () => {
             {[
               { label: 'Mark Attendance',    icon: CalendarCheck, color: '#16a34a', route: ROUTES.ATTENDANCE       },
               { label: 'Admit Student',      icon: Plus,          color: '#2563eb', route: ROUTES.STUDENT_NEW      },
-              { label: 'Manage Fees',        icon: IndianRupee,   color: '#d97706', route: ROUTES.FEES },
               { label: 'Enter Exam Marks',   icon: ClipboardCheck,color: '#7c3aed', route: ROUTES.EXAMS           },
             ].map(action => (
               <button
@@ -306,7 +304,6 @@ const DashboardPage = () => {
         <SectionCard
           title="Fee Defaulters"
           titleBadge={feeDefaulters.length > 0 ? feeDefaulters.length : null}
-          action={{ label: 'Open Fees', onClick: () => navigate(ROUTES.FEES) }}
         >
           {isLoading ? (
             <ListSkeleton rows={5} />
@@ -337,15 +334,6 @@ const DashboardPage = () => {
                     <span className="text-sm font-bold" style={{ color: '#dc2626' }}>
                       {formatCurrency(student.pending || student.balance || student.total_pending || 0)}
                     </span>
-                    <button
-                      onClick={() => navigate(ROUTES.FEES)}
-                      className="px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors"
-                      style={{ backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' }}
-                      onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fee2e2'}
-                      onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fef2f2'}
-                    >
-                      Pay
-                    </button>
                   </div>
                 </div>
               ))}

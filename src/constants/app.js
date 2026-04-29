@@ -17,7 +17,6 @@ export const STORAGE_KEYS = {
 export const ROLES = {
   ADMIN: 'admin',
   TEACHER: 'teacher',
-  ACCOUNTANT: 'accountant',
   STAFF: 'staff',
   STUDENT: 'student',
   PARENT: 'parent',
@@ -82,10 +81,10 @@ export const ROUTES = {
   FEE_COLLECTION: '/fees/collection',
   FEE_STUDENT_LEDGER: '/fees/student-fees',
   FEE_STRUCTURES: '/fees/structures',
+  FEE_REPORT: '/fees/report',
   FEE_INVOICES: '/fees/invoices',
   FEE_RECEIPTS: '/fees/receipts',
   FEE_DEFAULTERS: '/fees/defaulters',
-  ACCOUNTANT_PROFILE: '/accountant/my-profile',
 
   // Exams
   EXAMS: '/exams',
@@ -96,6 +95,7 @@ export const ROUTES = {
 
   // Users
   USERS: '/users',
+  USER_MANAGE: '/users/manage',
   USER_NEW: '/users/new',
   USER_IMPORT: '/users/import',
   USER_DETAIL: '/users/:id',

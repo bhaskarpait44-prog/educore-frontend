@@ -17,6 +17,8 @@ const ROUTE_LABELS = {
   [ROUTES.SESSIONS]    : 'Sessions',
   [ROUTES.FEES]        : 'Fees',
   [ROUTES.FEE_STRUCTURES] : 'Fee Structures',
+  [ROUTES.FEE_REPORT] : 'Fee Report',
+  [ROUTES.FEE_DEFAULTERS] : 'Defaulters',
   [ROUTES.AUDIT]       : 'Audit Logs',
   [ROUTES.SETTINGS]    : 'Settings',
   [ROUTES.ADMIN_TEACHER_CONTROL] : 'Teacher Control',

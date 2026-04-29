@@ -157,7 +157,7 @@ const AddFeeComponentModal = ({ open, onClose, sessionId, classId: preSelectedCl
           className="rounded-xl p-3 text-xs"
           style={{ backgroundColor: 'var(--color-surface-raised)', color: 'var(--color-text-muted)' }}
         >
-          Add the fee component for the selected class and session. Collection, invoices, and receipts are handled from the accountant portal.
+          Add the fee component for the selected class and session.
         </div>
       </form>
     </Modal>

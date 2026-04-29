@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  Plus, Search, Pencil, Trash2, ShieldCheck,
+  ArrowLeft, Plus, Search, Pencil, Trash2, ShieldCheck,
   ToggleLeft, ToggleRight, KeyRound, ScrollText, X, Upload,
 } from 'lucide-react'
 import * as api from '@/api/userManagementApi'
@@ -14,11 +14,15 @@ import PermissionSelector from '@/components/admin/PermissionSelector'
 
 const ROLE_STYLES = {
   admin       : { label: 'Admin', bg: '#dbeafe', color: '#1d4ed8' },
-  accountant  : { label: 'Accountant', bg: '#fef3c7', color: '#b45309' },
+  teacher     : { label: 'Teacher', bg: '#dcfce7', color: '#15803d' },
+  student     : { label: 'Student', bg: '#ffedd5', color: '#c2410c' },
   parent      : { label: 'Parent', bg: '#dcfce7', color: '#15803d' },
   librarian   : { label: 'Librarian', bg: '#fee2e2', color: '#b91c1c' },
   receptionist: { label: 'Receptionist', bg: '#fce7f3', color: '#be185d' },
 }
+
+const MANAGED_ROLE_OPTIONS = ['admin', 'teacher', 'student']
+const DEFAULT_PAGINATION = { page: 1, totalPages: 1, total: 0, perPage: 20 }
 
 const EMPTY_EDIT_FORM = {
   name: '',
@@ -80,19 +84,20 @@ const normaliseDate = (value) => {
 const getUserRecordId = (user) => user?.source_id ?? user?.id ?? null
 
 const UserListPage = () => {
-  usePageTitle('User Management')
-
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { toastSuccess, toastError } = useToast()
+  const requestedRole = searchParams.get('role')
+  const initialRoleFilter = MANAGED_ROLE_OPTIONS.includes(requestedRole) ? requestedRole : ''
 
   const [users, setUsers] = useState([])
   const [roleCounts, setRoleCounts] = useState({})
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0, perPage: 20 })
+  const [pagination, setPagination] = useState(DEFAULT_PAGINATION)
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
-  const [roleFilter, setRoleFilter] = useState('')
+  const [roleFilter, setRoleFilter] = useState(initialRoleFilter)
   const [statusFilter, setStatusFilter] = useState('')
   const [selectedUser, setSelectedUser] = useState(null)
   const [editForm, setEditForm] = useState(EMPTY_EDIT_FORM)
@@ -103,6 +108,13 @@ const UserListPage = () => {
   const [activeModal, setActiveModal] = useState(null)
 
   const currentPage = pagination.page || 1
+  const activeRoleStyle = roleFilter ? ROLE_STYLES[roleFilter] : null
+  const activeRoleLabel = activeRoleStyle?.label || 'All'
+  const pageTitle = roleFilter ? `${activeRoleLabel} Users` : 'User Management'
+  const pageDescription = roleFilter
+    ? `Manage ${activeRoleLabel.toLowerCase()} accounts, permissions, passwords, and status.`
+    : `${pagination.total} user(s) total`
+  usePageTitle(pageTitle)
 
   const load = async (params = {}) => {
     const nextPage = params.page || currentPage
@@ -118,7 +130,7 @@ const UserListPage = () => {
 
       setUsers(response.data?.users || [])
       setRoleCounts(response.data?.roleCounts || {})
-      setPagination(response.data?.pagination || { page: 1, totalPages: 1, total: 0, perPage: 20 })
+      setPagination(response.data?.pagination || DEFAULT_PAGINATION)
     } catch (e) {
       toastError(e.message || 'Failed to load users')
     } finally {
@@ -136,8 +148,22 @@ const UserListPage = () => {
   }, [searchInput])
 
   useEffect(() => {
+    setRoleFilter(initialRoleFilter)
+  }, [initialRoleFilter])
+
+  useEffect(() => {
     load({ page: 1 })
   }, [search, roleFilter, statusFilter])
+
+  useEffect(() => {
+    const currentRole = requestedRole || ''
+    const nextRole = roleFilter || ''
+    if (currentRole === nextRole) return
+
+    const nextParams = new URLSearchParams()
+    if (nextRole) nextParams.set('role', nextRole)
+    setSearchParams(nextParams, { replace: true })
+  }, [roleFilter, requestedRole, setSearchParams])
 
   const closeModal = () => {
     setActiveModal(null)
@@ -372,14 +398,23 @@ const UserListPage = () => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
         <div className="flex-1">
-          <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>User Management</h1>
+          <button
+            type="button"
+            onClick={() => navigate(ROUTES.USERS)}
+            className="mb-3 inline-flex items-center gap-1.5 text-sm hover:opacity-75"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
+            <ArrowLeft size={15} />
+            User cards
+          </button>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>{pageTitle}</h1>
           <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-            {pagination.total} user(s) total
+            {pageDescription}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => navigate(ROUTES.USER_IMPORT)}
+            onClick={() => navigate(roleFilter ? `${ROUTES.USER_IMPORT}?role=${roleFilter}` : ROUTES.USER_IMPORT)}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl"
             style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
           >
@@ -387,7 +422,7 @@ const UserListPage = () => {
             Import Users
           </button>
           <button
-            onClick={() => navigate(ROUTES.USER_NEW)}
+            onClick={() => navigate(roleFilter ? `${ROUTES.USER_NEW}?role=${roleFilter}` : ROUTES.USER_NEW)}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white rounded-xl"
             style={{ backgroundColor: 'var(--color-brand)' }}
           >
@@ -507,7 +542,7 @@ const UserListPage = () => {
                       </span>
                     </td>
                     <td className="px-5 py-4">
-                      <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                        <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                         {user.role === 'admin'
                           ? 'All (Admin)'
                           : `${user.permission_count || 0} permissions`}

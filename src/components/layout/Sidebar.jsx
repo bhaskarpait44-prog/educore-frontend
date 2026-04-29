@@ -10,7 +10,6 @@ import { cn } from '@/utils/helpers'
 /* ─────────────────────────── nav config ─────────────────────────── */
 const getNavGroups = (user) => {
   const isTeacher    = user?.role === ROLES.TEACHER
-  const isAccountant = user?.role === ROLES.ACCOUNTANT
   const canPostNotices = Array.isArray(user?.permissions) && user.permissions.includes('notices.post')
 
   if (isTeacher) {
@@ -59,35 +58,6 @@ const getNavGroups = (user) => {
     ]
   }
 
-  if (isAccountant) {
-    return [
-      {
-        label: 'Portal',
-        items: [
-          { label: 'Dashboard',    icon: 'LayoutDashboard', path: ROUTES.FEES },
-          { label: 'Fee Collection', icon: 'HandCoins',     path: ROUTES.FEE_COLLECTION },
-          { label: 'Student Fee',  icon: 'WalletCards',     path: ROUTES.FEE_STUDENT_LEDGER },
-          { label: 'Fee Structure', icon: 'Landmark',       path: ROUTES.FEE_STRUCTURES },
-          { label: 'Invoices',     icon: 'Files',           path: ROUTES.FEE_INVOICES },
-          { label: 'Receipts',     icon: 'Receipt',         path: ROUTES.FEE_RECEIPTS },
-          { label: 'Defaulters',   icon: 'TriangleAlert',   path: ROUTES.FEE_DEFAULTERS },
-        ],
-      },
-      {
-        label: 'Student Access',
-        items: [
-          { label: 'Students', icon: 'Users', path: ROUTES.STUDENTS },
-        ],
-      },
-      {
-        label: 'Account',
-        items: [
-          { label: 'My Profile', icon: 'UserRound', path: ROUTES.ACCOUNTANT_PROFILE },
-        ],
-      },
-    ]
-  }
-
   return [
     {
       label: null,
@@ -118,7 +88,6 @@ const getNavGroups = (user) => {
         { label: 'Sessions',   icon: 'CalendarDays',       path: ROUTES.SESSIONS,          roles: [ROLES.ADMIN] },
         { label: 'Promotions', icon: 'ArrowUpWideNarrow',  path: ROUTES.ADMIN_PROMOTIONS,  roles: [ROLES.ADMIN] },
         { label: 'Users',      icon: 'UserCog',            path: ROUTES.USERS,             roles: [ROLES.ADMIN] },
-        { label: 'Fees',       icon: 'IndianRupee',        path: ROUTES.FEES,              roles: [ROLES.ADMIN] },
         { label: 'Audit Logs', icon: 'ScrollText',         path: ROUTES.AUDIT,             roles: [ROLES.ADMIN] },
       ],
     },
@@ -349,8 +318,6 @@ const SidebarContent = ({ collapsed, toggleCollapsed, user, initials, navGroups,
           >
             {user?.role === ROLES.TEACHER
               ? 'Teacher Portal'
-              : user?.role === ROLES.ACCOUNTANT
-              ? 'Accountant Portal'
               : 'Academic Suite'}
           </p>
         </div>

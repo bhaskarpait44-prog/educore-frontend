@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft, Upload, FileSpreadsheet, CheckCircle2,
   AlertCircle, Download, Loader2, ArrowRight,
@@ -7,8 +7,10 @@ import {
 import * as api from '@/api/userManagementApi'
 import usePageTitle from '@/hooks/usePageTitle'
 import useToast from '@/hooks/useToast'
+import { ROUTES } from '@/constants/app'
 
 const STEPS = ['Download Template', 'Upload File', 'Review & Validate', 'Processing', 'Summary']
+const IMPORTABLE_ROLES = ['admin', 'teacher', 'student']
 
 function parseCSV(text) {
   const lines = text.trim().split('\n')
@@ -35,7 +37,10 @@ const BulkImportPage = () => {
   usePageTitle('Bulk Import Users')
 
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { toastError } = useToast()
+  const requestedRole = searchParams.get('role')
+  const activeRole = IMPORTABLE_ROLES.includes(requestedRole) ? requestedRole : ''
   const fileRef = useRef(null)
   const pollRef = useRef(null)
 
@@ -53,7 +58,7 @@ const BulkImportPage = () => {
   const downloadTemplate = () => {
     const csv = [
       ['first_name', 'last_name', 'email', 'role', 'phone', 'employee_id', 'department', 'designation'].join(','),
-      ['Priya', 'Sharma', 'priya@school.edu.in', 'teacher', '9876543210', 'TCH-001', 'Science', 'Senior Teacher'].join(','),
+      ['Priya', 'Sharma', 'priya@school.edu.in', activeRole || 'teacher', '9876543210', 'TCH-001', 'Science', 'Senior Teacher'].join(','),
     ].join('\n')
 
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -141,9 +146,13 @@ const BulkImportPage = () => {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/users')} className="flex items-center gap-1.5 text-sm hover:opacity-70" style={{ color: 'var(--color-text-secondary)' }}>
+        <button
+          onClick={() => navigate(activeRole ? `${ROUTES.USER_MANAGE}?role=${activeRole}` : ROUTES.USERS)}
+          className="flex items-center gap-1.5 text-sm hover:opacity-70"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
           <ArrowLeft size={15} />
-          Users
+          {activeRole ? `${activeRole.charAt(0).toUpperCase()}${activeRole.slice(1)} Users` : 'Users'}
         </button>
         <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Bulk Import Users</h1>
       </div>
@@ -176,7 +185,7 @@ const BulkImportPage = () => {
             <ul className="space-y-1" style={{ color: 'var(--color-text-secondary)' }}>
               <li><code>first_name</code>, <code>last_name</code>, <code>email</code>, <code>role</code> are required</li>
               <li><code>phone</code>, <code>employee_id</code>, <code>department</code>, <code>designation</code> are optional</li>
-              <li>Valid roles: <code>admin, accountant, teacher, student, parent</code></li>
+              <li>Valid roles: <code>admin</code>, <code>teacher</code>, <code>student</code></li>
               <li>Passwords will be auto-generated for each user</li>
             </ul>
           </div>
@@ -340,7 +349,11 @@ const BulkImportPage = () => {
             <button onClick={() => { setStep(0); setPreview(null); setJobStatus(null) }} className="px-4 py-2.5 text-sm font-medium rounded-xl border" style={{ color: 'var(--color-text-secondary)', borderColor: 'var(--color-border)' }}>
               Import More
             </button>
-            <button onClick={() => navigate('/users')} className="px-4 py-2.5 text-sm font-semibold text-white rounded-xl" style={{ backgroundColor: 'var(--color-brand)' }}>
+            <button
+              onClick={() => navigate(activeRole ? `${ROUTES.USER_MANAGE}?role=${activeRole}` : ROUTES.USERS)}
+              className="px-4 py-2.5 text-sm font-semibold text-white rounded-xl"
+              style={{ backgroundColor: 'var(--color-brand)' }}
+            >
               View All Users
             </button>
           </div>

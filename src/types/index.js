@@ -7,7 +7,7 @@
  * @property {number} school_id
  * @property {string} name
  * @property {string} email
- * @property {'admin'|'teacher'|'accountant'|'staff'} role
+ * @property {'admin'|'teacher'|'staff'} role
  * @property {boolean} is_active
  */
 
