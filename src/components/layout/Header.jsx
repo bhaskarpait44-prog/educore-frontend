@@ -35,10 +35,15 @@ const Header = ({ onMenuClick }) => {
   const initials       = getInitials(user?.name)
   const isAdminUser    = user?.role === ROLES.ADMIN
   const isTeacherUser  = user?.role === ROLES.TEACHER
+  const isAccountantUser = user?.role === ROLES.ACCOUNTANT
   const isStudentUser  = user?.role === ROLES.STUDENT
   const unreadCount    = notifications.reduce((sum, item) => sum + Number(item.count || 0), 0)
 
-  const profileRoute    = user?.role === 'teacher' ? ROUTES.TEACHER_PROFILE : ROUTES.SETTINGS
+  const profileRoute    = user?.role === 'teacher'
+    ? ROUTES.TEACHER_PROFILE
+    : user?.role === ROLES.ACCOUNTANT
+      ? ROUTES.ACCOUNTANT_PROFILE
+      : ROUTES.SETTINGS
   const secondaryRoute  = ROUTES.SETTINGS
   const secondaryLabel  = 'Settings'
 
@@ -54,7 +59,7 @@ const Header = ({ onMenuClick }) => {
 
   /* ── Notification polling ── */
   useEffect(() => {
-    if (!isAdminUser && !isStudentUser && !isTeacherUser) {
+    if (!isAdminUser && !isStudentUser && !isTeacherUser && !isAccountantUser) {
       setNotifications([])
       setNotifLoading(false)
       return undefined
@@ -109,6 +114,19 @@ const Header = ({ onMenuClick }) => {
           return
         }
 
+        if (isAccountantUser) {
+          setNotifications([
+            {
+              id: 'accountant-collections',
+              title: 'Fee collection queue',
+              description: 'Open today pending collections and defaulters from the accountant dashboard.',
+              count: 1,
+              route: ROUTES.ACCOUNTANT_DASHBOARD,
+            },
+          ])
+          return
+        }
+
         const res      = await studentApi.getStudentHomework()
         if (!active) return
         const homework = Array.isArray(res?.data?.homework) ? res.data.homework : []
@@ -134,7 +152,7 @@ const Header = ({ onMenuClick }) => {
     loadNotifications()
     const timer = window.setInterval(loadNotifications, 30_000)
     return () => { active = false; window.clearInterval(timer) }
-  }, [isAdminUser, isStudentUser, isTeacherUser])
+  }, [isAdminUser, isStudentUser, isTeacherUser, isAccountantUser])
 
   const handleNotificationClick = (route) => { setNotifOpen(false); navigate(route) }
   const handleLogout = () => { logout(); toastSuccess('Signed out successfully'); navigate(ROUTES.LOGIN) }

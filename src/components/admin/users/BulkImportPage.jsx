@@ -10,7 +10,7 @@ import useToast from '@/hooks/useToast'
 import { ROUTES } from '@/constants/app'
 
 const STEPS = ['Download Template', 'Upload File', 'Review & Validate', 'Processing', 'Summary']
-const IMPORTABLE_ROLES = ['admin', 'teacher', 'student']
+const IMPORTABLE_ROLES = ['admin', 'teacher', 'accountant', 'student']
 
 function parseCSV(text) {
   const lines = text.trim().split('\n')
@@ -185,7 +185,7 @@ const BulkImportPage = () => {
             <ul className="space-y-1" style={{ color: 'var(--color-text-secondary)' }}>
               <li><code>first_name</code>, <code>last_name</code>, <code>email</code>, <code>role</code> are required</li>
               <li><code>phone</code>, <code>employee_id</code>, <code>department</code>, <code>designation</code> are optional</li>
-              <li>Valid roles: <code>admin</code>, <code>teacher</code>, <code>student</code></li>
+              <li>Valid roles: <code>admin</code>, <code>teacher</code>, <code>accountant</code>, <code>student</code></li>
               <li>Passwords will be auto-generated for each user</li>
             </ul>
           </div>

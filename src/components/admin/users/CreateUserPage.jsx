@@ -24,7 +24,7 @@ const schema = z.object({
   name: z.string().min(1, 'Name is required'),
   email: z.string().email('Valid email required'),
   phone: z.string().optional(),
-  role: z.enum(['admin', 'teacher', 'student']),
+  role: z.enum(['admin', 'teacher', 'accountant', 'student']),
   employee_id: z.string().optional(),
   department: z.string().optional(),
   designation: z.string().optional(),
@@ -38,7 +38,7 @@ const schema = z.object({
   internal_notes: z.string().optional(),
 })
 
-const ROLES = ['admin', 'teacher', 'student']
+const ROLES = ['admin', 'teacher', 'accountant', 'student']
 
 const Field = ({ label, error, children, required, hint }) => (
   <div className="flex flex-col gap-1.5">

@@ -118,6 +118,10 @@ export function getDefaultPermissionsForRole(role) {
       PERMISSION.RESULTS_VIEW, PERMISSION.RESULTS_ENTER,
       PERMISSION.NOTICES_VIEW, PERMISSION.CLASSES_VIEW,
     ],
+    accountant : [
+      PERMISSION.FEES_VIEW,
+      PERMISSION.FEES_COLLECT,
+    ],
     student    : [PERMISSION.RESULTS_VIEW, PERMISSION.NOTICES_VIEW],
     parent     : [PERMISSION.RESULTS_VIEW, PERMISSION.NOTICES_VIEW, PERMISSION.FEES_VIEW],
     admin      : [], // admin gets everything implicitly
@@ -256,6 +260,39 @@ export const PERMISSION_TEMPLATES = {
       PERMISSION.ATTENDANCE_VIEW,
       PERMISSION.NOTICES_VIEW, PERMISSION.NOTICES_POST,
       PERMISSION.USERS_VIEW,
+    ],
+  },
+  junior_accountant: {
+    label: 'Junior Accountant',
+    permissions: [
+      PERMISSION.FEES_VIEW,
+      PERMISSION.FEES_COLLECT,
+    ],
+  },
+  senior_accountant: {
+    label: 'Senior Accountant',
+    permissions: [
+      PERMISSION.FEES_VIEW,
+      PERMISSION.FEES_COLLECT,
+      PERMISSION.FEES_EDIT,
+      PERMISSION.FEES_WAIVE,
+      PERMISSION.FEES_REPORT,
+      PERMISSION.REPORTS_EXPORT,
+    ],
+  },
+  accounts_head: {
+    label: 'Accounts Head',
+    permissions: [
+      PERMISSION.FEES_VIEW,
+      PERMISSION.FEES_COLLECT,
+      PERMISSION.FEES_EDIT,
+      PERMISSION.FEES_WAIVE,
+      PERMISSION.FEES_REPORT,
+      PERMISSION.FEES_REFUND,
+      PERMISSION.REPORTS_EXPORT,
+      PERMISSION.AUDIT_VIEW,
+      PERMISSION.STUDENTS_VIEW,
+      PERMISSION.REPORTS_ATTENDANCE,
     ],
   },
 }

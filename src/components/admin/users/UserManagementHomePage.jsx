@@ -1,4 +1,4 @@
-import { ArrowRight, ShieldCheck, GraduationCap } from 'lucide-react'
+import { ArrowRight, ShieldCheck, GraduationCap, IndianRupee } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { ROUTES } from '@/constants/app'
 import usePageTitle from '@/hooks/usePageTitle'
@@ -19,6 +19,14 @@ const USER_CARDS = [
     accent: '#15803d',
     surface: '#f0fdf4',
     icon: GraduationCap,
+  },
+  {
+    role: 'accountant',
+    title: 'Accountant Users',
+    description: 'Manage accountant access for fee collection, reports, concessions, refunds, and finance workflows.',
+    accent: '#c2410c',
+    surface: '#fff7ed',
+    icon: IndianRupee,
   },
 ]
 

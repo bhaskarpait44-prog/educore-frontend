@@ -15,13 +15,14 @@ import PermissionSelector from '@/components/admin/PermissionSelector'
 const ROLE_STYLES = {
   admin       : { label: 'Admin', bg: '#dbeafe', color: '#1d4ed8' },
   teacher     : { label: 'Teacher', bg: '#dcfce7', color: '#15803d' },
+  accountant  : { label: 'Accountant', bg: '#fff7ed', color: '#c2410c' },
   student     : { label: 'Student', bg: '#ffedd5', color: '#c2410c' },
   parent      : { label: 'Parent', bg: '#dcfce7', color: '#15803d' },
   librarian   : { label: 'Librarian', bg: '#fee2e2', color: '#b91c1c' },
   receptionist: { label: 'Receptionist', bg: '#fce7f3', color: '#be185d' },
 }
 
-const MANAGED_ROLE_OPTIONS = ['admin', 'teacher', 'student']
+const MANAGED_ROLE_OPTIONS = ['admin', 'teacher', 'accountant', 'student']
 const DEFAULT_PAGINATION = { page: 1, totalPages: 1, total: 0, perPage: 20 }
 
 const EMPTY_EDIT_FORM = {

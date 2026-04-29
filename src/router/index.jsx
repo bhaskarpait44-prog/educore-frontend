@@ -5,6 +5,7 @@ import useAuthStore from '@/store/authStore'
 import AppLayout from '@/components/layout/AppLayout'
 import ProtectedRoute from '@/components/ui/ProtectedRoute'
 import StudentLayout from '@/layouts/StudentLayout'
+import AccountantLayout from '@/layouts/AccountantLayout'
 import LoginPage from '@/pages/LoginPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
@@ -53,6 +54,34 @@ const ClassDetailPage = lazy(() => import('@/pages/classes/ClassDetailPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const AdminTeacherControlPage = lazy(() => import('@/pages/admin/AdminTeacherControlPage'))
 const AdminPromotionPage = lazy(() => import('@/pages/admin/AdminPromotionPage'))
+const AccountantDashboard = lazy(() => import('@/pages/accountant/AccountantDashboard'))
+const FeeCollection = lazy(() => import('@/pages/accountant/collection/FeeCollection'))
+const StudentFeeList = lazy(() => import('@/pages/accountant/students/StudentFeeList'))
+const StudentFeeDetail = lazy(() => import('@/pages/accountant/students/StudentFeeDetail'))
+const FeeStructureView = lazy(() => import('@/pages/accountant/structure/FeeStructureView'))
+const FeeStructureManage = lazy(() => import('@/pages/accountant/structure/FeeStructureManage'))
+const AllInvoices = lazy(() => import('@/pages/accountant/invoices/AllInvoices'))
+const OverdueInvoices = lazy(() => import('@/pages/accountant/invoices/OverdueInvoices'))
+const DueTodayInvoices = lazy(() => import('@/pages/accountant/invoices/DueTodayInvoices'))
+const ReceiptList = lazy(() => import('@/pages/accountant/receipts/ReceiptList'))
+const ReceiptDetail = lazy(() => import('@/pages/accountant/receipts/ReceiptDetail'))
+const DefaulterList = lazy(() => import('@/pages/accountant/defaulters/DefaulterList'))
+const ReminderManager = lazy(() => import('@/pages/accountant/defaulters/ReminderManager'))
+const ConcessionList = lazy(() => import('@/pages/accountant/concessions/ConcessionList'))
+const ApplyConcession = lazy(() => import('@/pages/accountant/concessions/ApplyConcession'))
+const ReportsHome = lazy(() => import('@/pages/accountant/reports/ReportsHome'))
+const DailyReport = lazy(() => import('@/pages/accountant/reports/DailyReport'))
+const MonthlyReport = lazy(() => import('@/pages/accountant/reports/MonthlyReport'))
+const ClassWiseReport = lazy(() => import('@/pages/accountant/reports/ClassWiseReport'))
+const SessionSummary = lazy(() => import('@/pages/accountant/reports/SessionSummary'))
+const DefaulterReport = lazy(() => import('@/pages/accountant/reports/DefaulterReport'))
+const ConcessionReport = lazy(() => import('@/pages/accountant/reports/ConcessionReport'))
+const CustomReport = lazy(() => import('@/pages/accountant/reports/CustomReport'))
+const CarryForward = lazy(() => import('@/pages/accountant/CarryForward'))
+const RefundList = lazy(() => import('@/pages/accountant/refunds/RefundList'))
+const ProcessRefund = lazy(() => import('@/pages/accountant/refunds/ProcessRefund'))
+const ChequeManagement = lazy(() => import('@/pages/accountant/cheques/ChequeManagement'))
+const AccountantProfile = lazy(() => import('@/pages/accountant/AccountantProfile'))
 
 const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'))
 const MyAttendance = lazy(() => import('@/pages/student/attendance/MyAttendance'))
@@ -97,6 +126,10 @@ const DashboardGate = () => {
     return <Lazy component={TeacherDashboard} />
   }
 
+  if (role === ROLES.ACCOUNTANT) {
+    return <Navigate to={ROUTES.ACCOUNTANT_DASHBOARD} replace />
+  }
+
   return <Lazy component={DashboardPage} />
 }
 
@@ -139,6 +172,46 @@ const router = createBrowserRouter([
       { path: ROUTES.STUDENT_HISTORY, element: <Lazy component={AcademicHistory} /> },
       { path: ROUTES.STUDENT_MATERIALS, element: <Lazy component={StudyMaterials} /> },
       { path: ROUTES.STUDENT_ACHIEVEMENTS, element: <Navigate to={ROUTES.STUDENT_PROFILE} replace /> },
+    ],
+  },
+
+  {
+    path: ROUTES.ACCOUNTANT_ROOT,
+    element: (
+      <ProtectedRoute roles={[ROLES.ADMIN, ROLES.ACCOUNTANT]}>
+        <AccountantLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <Navigate to={ROUTES.ACCOUNTANT_DASHBOARD} replace /> },
+      { path: ROUTES.ACCOUNTANT_DASHBOARD, element: <Lazy component={AccountantDashboard} /> },
+      { path: ROUTES.ACCOUNTANT_COLLECTION, element: <Lazy component={FeeCollection} /> },
+      { path: ROUTES.ACCOUNTANT_STUDENTS, element: <Lazy component={StudentFeeList} /> },
+      { path: ROUTES.ACCOUNTANT_STUDENT_FEES, element: <Lazy component={StudentFeeDetail} /> },
+      { path: ROUTES.ACCOUNTANT_FEE_STRUCTURE, element: <Lazy component={FeeStructureView} /> },
+      { path: ROUTES.ACCOUNTANT_FEE_STRUCTURE_MANAGE, element: <Lazy component={FeeStructureManage} /> },
+      { path: ROUTES.ACCOUNTANT_INVOICES, element: <Lazy component={AllInvoices} /> },
+      { path: ROUTES.ACCOUNTANT_INVOICES_OVERDUE, element: <Lazy component={OverdueInvoices} /> },
+      { path: ROUTES.ACCOUNTANT_INVOICES_DUE_TODAY, element: <Lazy component={DueTodayInvoices} /> },
+      { path: ROUTES.ACCOUNTANT_RECEIPTS, element: <Lazy component={ReceiptList} /> },
+      { path: ROUTES.ACCOUNTANT_RECEIPT_DETAIL, element: <Lazy component={ReceiptDetail} /> },
+      { path: ROUTES.ACCOUNTANT_DEFAULTERS, element: <Lazy component={DefaulterList} /> },
+      { path: ROUTES.ACCOUNTANT_REMINDERS, element: <Lazy component={ReminderManager} /> },
+      { path: ROUTES.ACCOUNTANT_CONCESSIONS, element: <Lazy component={ConcessionList} /> },
+      { path: ROUTES.ACCOUNTANT_CONCESSIONS_APPLY, element: <Lazy component={ApplyConcession} /> },
+      { path: ROUTES.ACCOUNTANT_REPORTS, element: <Lazy component={ReportsHome} /> },
+      { path: ROUTES.ACCOUNTANT_REPORT_DAILY, element: <Lazy component={DailyReport} /> },
+      { path: ROUTES.ACCOUNTANT_REPORT_MONTHLY, element: <Lazy component={MonthlyReport} /> },
+      { path: ROUTES.ACCOUNTANT_REPORT_CLASSWISE, element: <Lazy component={ClassWiseReport} /> },
+      { path: ROUTES.ACCOUNTANT_REPORT_SESSION, element: <Lazy component={SessionSummary} /> },
+      { path: ROUTES.ACCOUNTANT_REPORT_DEFAULTERS, element: <Lazy component={DefaulterReport} /> },
+      { path: ROUTES.ACCOUNTANT_REPORT_CONCESSIONS, element: <Lazy component={ConcessionReport} /> },
+      { path: ROUTES.ACCOUNTANT_REPORT_CUSTOM, element: <Lazy component={CustomReport} /> },
+      { path: ROUTES.ACCOUNTANT_CARRY_FORWARD, element: <Lazy component={CarryForward} /> },
+      { path: ROUTES.ACCOUNTANT_REFUNDS, element: <Lazy component={RefundList} /> },
+      { path: ROUTES.ACCOUNTANT_REFUNDS_PROCESS, element: <Lazy component={ProcessRefund} /> },
+      { path: ROUTES.ACCOUNTANT_CHEQUES, element: <Lazy component={ChequeManagement} /> },
+      { path: ROUTES.ACCOUNTANT_PROFILE, element: <Lazy component={AccountantProfile} /> },
     ],
   },
 

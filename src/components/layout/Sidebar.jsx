@@ -10,7 +10,9 @@ import { cn } from '@/utils/helpers'
 /* ─────────────────────────── nav config ─────────────────────────── */
 const getNavGroups = (user) => {
   const isTeacher    = user?.role === ROLES.TEACHER
+  const isAccountant = user?.role === ROLES.ACCOUNTANT
   const canPostNotices = Array.isArray(user?.permissions) && user.permissions.includes('notices.post')
+  const can = (permission) => user?.role === ROLES.ADMIN || (Array.isArray(user?.permissions) && user.permissions.includes(permission))
 
   if (isTeacher) {
     return [
@@ -53,6 +55,52 @@ const getNavGroups = (user) => {
         items: [
           { label: 'Leave Application', icon: 'PlaneTakeoff', path: ROUTES.TEACHER_LEAVE },
           { label: 'My Profile',        icon: 'UserRound',    path: ROUTES.TEACHER_PROFILE },
+        ],
+      },
+    ]
+  }
+
+  if (isAccountant) {
+    return [
+      {
+        label: 'Main',
+        items: [
+          { label: 'Dashboard', icon: 'LayoutDashboard', path: ROUTES.ACCOUNTANT_DASHBOARD },
+          { label: 'Fee Collection', icon: 'IndianRupee', path: ROUTES.ACCOUNTANT_COLLECTION },
+        ],
+      },
+      {
+        label: 'Student Fees',
+        items: [
+          { label: 'Search Student', icon: 'Search', path: ROUTES.ACCOUNTANT_STUDENTS },
+          { label: 'Invoices', icon: 'FileStack', path: ROUTES.ACCOUNTANT_INVOICES },
+          { label: 'Receipts', icon: 'Receipt', path: ROUTES.ACCOUNTANT_RECEIPTS },
+        ],
+      },
+      {
+        label: 'Finance',
+        items: [
+          { label: 'Fee Structure', icon: 'NotebookTabs', path: ROUTES.ACCOUNTANT_FEE_STRUCTURE },
+          ...(can('fees.edit') ? [{ label: 'Manage Structure', icon: 'PencilRuler', path: ROUTES.ACCOUNTANT_FEE_STRUCTURE_MANAGE }] : []),
+          { label: 'Defaulters', icon: 'TriangleAlert', path: ROUTES.ACCOUNTANT_DEFAULTERS },
+          ...(can('fees.waive') ? [{ label: 'Concessions', icon: 'BadgePercent', path: ROUTES.ACCOUNTANT_CONCESSIONS }] : []),
+          { label: 'Carry Forward', icon: 'ArrowRightLeft', path: ROUTES.ACCOUNTANT_CARRY_FORWARD },
+          ...(can('fees.refund') ? [{ label: 'Refunds', icon: 'Undo2', path: ROUTES.ACCOUNTANT_REFUNDS }] : []),
+          { label: 'Cheques', icon: 'Landmark', path: ROUTES.ACCOUNTANT_CHEQUES },
+        ],
+      },
+      {
+        label: 'Reports',
+        items: [
+          ...(can('fees.report') ? [{ label: 'Reports', icon: 'BarChart3', path: ROUTES.ACCOUNTANT_REPORTS }] : []),
+          ...(can('fees.report') ? [{ label: 'Daily Report', icon: 'CalendarClock', path: ROUTES.ACCOUNTANT_REPORT_DAILY }] : []),
+          ...(can('fees.report') ? [{ label: 'Monthly Report', icon: 'CalendarDays', path: ROUTES.ACCOUNTANT_REPORT_MONTHLY }] : []),
+        ],
+      },
+      {
+        label: 'Account',
+        items: [
+          { label: 'My Profile', icon: 'UserRound', path: ROUTES.ACCOUNTANT_PROFILE },
         ],
       },
     ]
