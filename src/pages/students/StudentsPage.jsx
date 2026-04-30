@@ -25,7 +25,8 @@ const GENDER_BADGE = {
 
 const formatStream = (stream) => {
   if (!stream) return null
-  return stream.charAt(0).toUpperCase() + stream.slice(1)
+  const label = stream.charAt(0).toUpperCase() + stream.slice(1)
+  return stream === 'regular' ? label : `${label} Stream`
 }
 
 const StudentsPage = () => {
@@ -270,7 +271,7 @@ const StudentRow = ({ student, isLast, onClick }) => {
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 {[
                   `Class ${student.current_enrollment.class}`,
-                  student.current_enrollment.stream ? `${formatStream(student.current_enrollment.stream)} Stream` : null,
+                  formatStream(student.current_enrollment.stream),
                   `Section ${student.current_enrollment.section}`,
                 ].filter(Boolean).join(' · ')}
               </p>
@@ -318,7 +319,7 @@ const StudentCard = ({ student, onClick }) => (
         <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
           {[
             `Class ${student.current_enrollment.class}`,
-            student.current_enrollment.stream ? `${formatStream(student.current_enrollment.stream)} Stream` : null,
+            formatStream(student.current_enrollment.stream),
             `Section ${student.current_enrollment.section}`,
           ].filter(Boolean).join(' · ')}
         </p>

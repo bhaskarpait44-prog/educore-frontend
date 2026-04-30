@@ -12,7 +12,7 @@ const schema = z.object({
   session_id: z.string().min(1, 'Session is required'),
   class_id: z.string().min(1, 'Class is required'),
   section_id: z.string().min(1, 'Section is required'),
-  stream: z.enum(['arts', 'commerce', 'science']).optional().or(z.literal('')),
+  stream: z.enum(['regular', 'arts', 'commerce', 'science']).optional().or(z.literal('')),
   joining_type: z.enum(['fresh', 'promoted', 'transfer_in', 'rejoined'], { required_error: 'Joining type required' }),
   joined_date: z.string().min(1, 'Joining date is required'),
   roll_number: z.string().optional(),
@@ -27,6 +27,7 @@ const JOINING_TYPES = [
 ]
 
 const STREAM_OPTIONS = [
+  { value: 'regular', label: 'Regular' },
   { value: 'arts', label: 'Arts' },
   { value: 'commerce', label: 'Commerce' },
   { value: 'science', label: 'Science' },
@@ -47,6 +48,7 @@ const StepEnrollment = ({ defaultValues, currentSession, onSubmit, onBack }) => 
       session_id: defaultValues.session_id || String(currentSession?.id || ''),
       joined_date: defaultValues.joined_date || new Date().toISOString().split('T')[0],
       joining_type: defaultValues.joining_type || 'fresh',
+      stream: defaultValues.stream || 'regular',
       subject_ids: defaultValues.subject_ids || [],
     },
   })
@@ -67,12 +69,14 @@ const StepEnrollment = ({ defaultValues, currentSession, onSubmit, onBack }) => 
     if (!classId) {
       setSections([])
       setSubjects([])
-      setValue('stream', '')
+      setValue('stream', 'regular')
       return
     }
 
     if (selectedClass?.stream) {
       setValue('stream', selectedClass.stream)
+    } else {
+      setValue('stream', 'regular')
     }
 
     setLoadingS(true)

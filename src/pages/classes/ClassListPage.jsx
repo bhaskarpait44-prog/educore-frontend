@@ -113,7 +113,8 @@ const classDetailPath = (id) => ROUTES.CLASS_DETAIL.replace(':id', String(id))
 
 const formatStream = (stream) => {
   if (!stream) return null
-  return `${stream.charAt(0).toUpperCase()}${stream.slice(1)} Stream`
+  const label = `${stream.charAt(0).toUpperCase()}${stream.slice(1)}`
+  return stream === 'regular' ? label : `${label} Stream`
 }
 
 // ── Class table row ─────────────────────────────────────────────────────────

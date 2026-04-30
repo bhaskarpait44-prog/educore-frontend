@@ -34,7 +34,8 @@ const TABS = [
 
 const formatStream = (stream) => {
   if (!stream) return null
-  return stream.charAt(0).toUpperCase() + stream.slice(1)
+  const label = stream.charAt(0).toUpperCase() + stream.slice(1)
+  return stream === 'regular' ? label : `${label} Stream`
 }
 
 const CredentialRow = ({ icon: Icon, label, value, onCopy }) => (
@@ -177,7 +178,7 @@ const StudentDetailPage = () => {
               <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
                 {[
                   student.current_enrollment.class,
-                  student.current_enrollment.stream ? `${formatStream(student.current_enrollment.stream)} Stream` : null,
+                  formatStream(student.current_enrollment.stream),
                   `Section ${student.current_enrollment.section}`,
                   `Roll ${student.current_enrollment.roll_number || '—'}`,
                 ].filter(Boolean).join(' · ')}

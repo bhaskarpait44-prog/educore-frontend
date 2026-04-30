@@ -1,6 +1,12 @@
 // src/api/classApi.js
 import api from './axios'
 
+const formatStreamLabel = (stream) => {
+  if (!stream) return null
+  const label = `${stream.charAt(0).toUpperCase()}${stream.slice(1)}`
+  return stream === 'regular' ? label : `${label} Stream`
+}
+
 // ── Classes ───────────────────────────────────────────────────────────────
 export const getClasses = (params = {}) =>
   api.get('/classes', { params })
@@ -14,7 +20,7 @@ export const getClassList = (response) => {
 export const getClassOptions = (response) =>
   getClassList(response).map(c => ({
     value: String(c.id),
-    label: [c.name, c.stream ? `${c.stream.charAt(0).toUpperCase()}${c.stream.slice(1)} Stream` : null].filter(Boolean).join(' - '),
+    label: [c.name, formatStreamLabel(c.stream)].filter(Boolean).join(' - '),
     stream: c.stream || null,
   }))
 
