@@ -111,6 +111,11 @@ const TableSkeleton = () => (
 
 const classDetailPath = (id) => ROUTES.CLASS_DETAIL.replace(':id', String(id))
 
+const formatStream = (stream) => {
+  if (!stream) return null
+  return `${stream.charAt(0).toUpperCase()}${stream.slice(1)} Stream`
+}
+
 // ── Class table row ─────────────────────────────────────────────────────────
 const ClassTableRow = ({ cls, onEdit, onDelete, onToggle, onView }) => (
   <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors border-b border-gray-100 dark:border-gray-700/50 last:border-0">
@@ -125,6 +130,9 @@ const ClassTableRow = ({ cls, onEdit, onDelete, onToggle, onView }) => (
         </button>
         {cls.display_name && (
           <div className="text-xs text-gray-500 dark:text-gray-400">{cls.display_name}</div>
+        )}
+        {cls.stream && (
+          <div className="mt-1 text-xs font-medium text-indigo-600 dark:text-indigo-400">{formatStream(cls.stream)}</div>
         )}
       </div>
     </td>
@@ -215,6 +223,9 @@ const ClassCard = ({ cls, onEdit, onDelete, onToggle, onView }) => {
             {cls.display_name && (
               <p className="text-xs text-gray-500 dark:text-gray-400">{cls.display_name}</p>
             )}
+            {cls.stream && (
+              <p className="mt-1 text-xs font-medium text-indigo-600 dark:text-indigo-400">{formatStream(cls.stream)}</p>
+            )}
           </div>
           <StatusBadge active={cls.is_active} />
         </div>
@@ -237,6 +248,11 @@ const ClassCard = ({ cls, onEdit, onDelete, onToggle, onView }) => {
         <span className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-600">
           Order #{cls.order_number}
         </span>
+        {cls.stream && (
+          <span className="px-2 py-0.5 rounded-full text-xs bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900">
+            {formatStream(cls.stream)}
+          </span>
+        )}
       </div>
 
       {/* Actions */}

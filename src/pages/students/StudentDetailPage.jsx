@@ -32,6 +32,11 @@ const TABS = [
   { key: 'audit', label: 'Audit Log', icon: ScrollText },
 ]
 
+const formatStream = (stream) => {
+  if (!stream) return null
+  return stream.charAt(0).toUpperCase() + stream.slice(1)
+}
+
 const CredentialRow = ({ icon: Icon, label, value, onCopy }) => (
   <div
     className="flex items-center justify-between gap-3 rounded-xl p-3"
@@ -170,7 +175,12 @@ const StudentDetailPage = () => {
             </p>
             {student.current_enrollment && (
               <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-                {student.current_enrollment.class} · Section {student.current_enrollment.section} · Roll {student.current_enrollment.roll_number || '—'}
+                {[
+                  student.current_enrollment.class,
+                  student.current_enrollment.stream ? `${formatStream(student.current_enrollment.stream)} Stream` : null,
+                  `Section ${student.current_enrollment.section}`,
+                  `Roll ${student.current_enrollment.roll_number || '—'}`,
+                ].filter(Boolean).join(' · ')}
               </p>
             )}
           </div>

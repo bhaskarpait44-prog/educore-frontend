@@ -12,6 +12,7 @@ const schema = z.object({
   session_id: z.string().min(1, 'Session is required'),
   class_id: z.string().min(1, 'Class is required'),
   section_id: z.string().min(1, 'Section is required'),
+  stream: z.enum(['arts', 'commerce', 'science']).optional().or(z.literal('')),
   joining_type: z.enum(['fresh', 'promoted', 'transfer_in', 'rejoined'], { required_error: 'Joining type required' }),
   joined_date: z.string().min(1, 'Joining date is required'),
   roll_number: z.string().optional(),
@@ -23,6 +24,12 @@ const JOINING_TYPES = [
   { value: 'promoted', label: 'Promoted from another school' },
   { value: 'transfer_in', label: 'Transfer In' },
   { value: 'rejoined', label: 'Re-Admitted' },
+]
+
+const STREAM_OPTIONS = [
+  { value: 'arts', label: 'Arts' },
+  { value: 'commerce', label: 'Commerce' },
+  { value: 'science', label: 'Science' },
 ]
 
 const StepEnrollment = ({ defaultValues, currentSession, onSubmit, onBack }) => {
@@ -46,6 +53,7 @@ const StepEnrollment = ({ defaultValues, currentSession, onSubmit, onBack }) => 
 
   const classId = watch('class_id')
   const subjectIds = watch('subject_ids')
+  const selectedClass = classes.find((cls) => String(cls.value) === String(classId))
 
   useEffect(() => {
     setLoadingC(true)
@@ -59,7 +67,12 @@ const StepEnrollment = ({ defaultValues, currentSession, onSubmit, onBack }) => 
     if (!classId) {
       setSections([])
       setSubjects([])
+      setValue('stream', '')
       return
+    }
+
+    if (selectedClass?.stream) {
+      setValue('stream', selectedClass.stream)
     }
 
     setLoadingS(true)
@@ -80,7 +93,7 @@ const StepEnrollment = ({ defaultValues, currentSession, onSubmit, onBack }) => 
       })
       .catch(() => {})
       .finally(() => setLoadingSubj(false))
-  }, [classId, setValue])
+  }, [classId, selectedClass?.stream, setValue])
 
   const toggleSubject = (subjectId) => {
     const current = subjectIds || []
@@ -128,6 +141,14 @@ const StepEnrollment = ({ defaultValues, currentSession, onSubmit, onBack }) => 
             placeholder={!classId ? 'Select class first' : loadingS ? 'Loading…' : 'Select section'}
             disabled={!classId || loadingS}
             {...register('section_id')}
+          />
+          <Select
+            label="Stream"
+            error={errors.stream?.message}
+            options={STREAM_OPTIONS}
+            placeholder={selectedClass?.stream ? 'Stream from selected class' : 'Select stream'}
+            disabled={Boolean(selectedClass?.stream)}
+            {...register('stream')}
           />
           <Select
             label="Joining Type"

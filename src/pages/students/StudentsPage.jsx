@@ -23,6 +23,11 @@ const GENDER_BADGE = {
   other  : { label: 'Other',  variant: 'grey'  },
 }
 
+const formatStream = (stream) => {
+  if (!stream) return null
+  return stream.charAt(0).toUpperCase() + stream.slice(1)
+}
+
 const StudentsPage = () => {
   usePageTitle('Students')
   const navigate = useNavigate()
@@ -263,7 +268,11 @@ const StudentRow = ({ student, isLast, onClick }) => {
             </p>
             {student.current_enrollment && (
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                Class {student.current_enrollment.class} · Section {student.current_enrollment.section}
+                {[
+                  `Class ${student.current_enrollment.class}`,
+                  student.current_enrollment.stream ? `${formatStream(student.current_enrollment.stream)} Stream` : null,
+                  `Section ${student.current_enrollment.section}`,
+                ].filter(Boolean).join(' · ')}
               </p>
             )}
           </div>
@@ -307,7 +316,11 @@ const StudentCard = ({ student, onClick }) => (
       </p>
       {student.current_enrollment && (
         <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-          Class {student.current_enrollment.class} · Section {student.current_enrollment.section}
+          {[
+            `Class ${student.current_enrollment.class}`,
+            student.current_enrollment.stream ? `${formatStream(student.current_enrollment.stream)} Stream` : null,
+            `Section ${student.current_enrollment.section}`,
+          ].filter(Boolean).join(' · ')}
         </p>
       )}
     </div>

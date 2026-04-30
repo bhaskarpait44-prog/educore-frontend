@@ -12,7 +12,11 @@ export const getClassList = (response) => {
 }
 
 export const getClassOptions = (response) =>
-  getClassList(response).map(c => ({ value: String(c.id), label: c.name }))
+  getClassList(response).map(c => ({
+    value: String(c.id),
+    label: [c.name, c.stream ? `${c.stream.charAt(0).toUpperCase()}${c.stream.slice(1)} Stream` : null].filter(Boolean).join(' - '),
+    stream: c.stream || null,
+  }))
 
 export const getClassById = (id) =>
   api.get(`/classes/${id}`)

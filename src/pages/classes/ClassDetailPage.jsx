@@ -54,6 +54,11 @@ const CoreBadge=({isCore})=>(
   <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${isCore?'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300':'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>{isCore?'Core':'Optional'}</span>
 )
 
+const formatStream=(stream)=>{
+  if(!stream)return null
+  return `${stream.charAt(0).toUpperCase()}${stream.slice(1)} Stream`
+}
+
 const CapBar=({enrolled,capacity})=>{
   const pct=capacity>0?Math.min((enrolled/capacity)*100,100):0
   const col=pct>=90?'bg-red-500':pct>=70?'bg-amber-500':'bg-emerald-500'
@@ -332,6 +337,7 @@ const ClassDetailPage=()=>{
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{cls.name}</h1>
             {cls.display_name&&<span className="text-gray-400 dark:text-gray-500 text-base">{cls.display_name}</span>}
+            {cls.stream&&<span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400">{formatStream(cls.stream)}</span>}
             <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${cls.is_active?'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400':'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${cls.is_active?'bg-green-500':'bg-gray-400'}`}/>{cls.is_active?'Active':'Inactive'}
             </span>

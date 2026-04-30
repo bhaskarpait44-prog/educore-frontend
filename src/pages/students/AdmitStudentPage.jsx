@@ -76,6 +76,7 @@ const AdmitStudentPage = () => {
       session_id: parseInt(allData.session_id, 10),
       class_id: parseInt(allData.class_id, 10),
       section_id: parseInt(allData.section_id, 10),
+      stream: allData.stream || null,
       joining_type: allData.joining_type,
       joined_date: allData.joined_date,
       roll_number: allData.roll_number?.trim() || '',

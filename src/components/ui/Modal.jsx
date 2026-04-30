@@ -1,5 +1,6 @@
 // src/components/ui/Modal.jsx
 import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { cn } from '@/utils/helpers'
 
@@ -28,11 +29,11 @@ const Modal = ({ open, onClose, title, children, size = 'md', footer }) => {
     xl : 'max-w-4xl',
   }
 
-  return (
+  return createPortal(
     <div
       ref={overlayRef}
       onClick={(e) => { if (e.target === overlayRef.current) onClose() }}
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)' }}
     >
       <div
@@ -80,7 +81,8 @@ const Modal = ({ open, onClose, title, children, size = 'md', footer }) => {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

@@ -1,4 +1,5 @@
 // src/pages/classes/components/ClassForm.jsx
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -8,6 +9,7 @@ const schema = z
   .object({
     name         : z.string().min(1, 'Class name is required').max(100),
     order_number : z.coerce.number().int().min(1, 'Order number required'),
+    stream       : z.enum(['arts', 'commerce', 'science']).optional().or(z.literal('')),
     min_age      : z.coerce.number().int().min(1).max(25).optional().nullable().or(z.literal('')),
     max_age      : z.coerce.number().int().min(1).max(30).optional().nullable().or(z.literal('')),
     description  : z.string().max(1000).optional().nullable(),
@@ -17,6 +19,16 @@ const schema = z
     if (d.min_age && d.max_age) return parseInt(d.max_age) > parseInt(d.min_age)
     return true
   }, { message: 'Max age must be greater than min age', path: ['max_age'] })
+  .refine(d => {
+    if ([11, 12].includes(Number(d.order_number))) return Boolean(d.stream)
+    return true
+  }, { message: 'Stream is required for Class 11 and Class 12', path: ['stream'] })
+
+const STREAM_OPTIONS = [
+  { value: 'arts', label: 'Arts' },
+  { value: 'commerce', label: 'Commerce' },
+  { value: 'science', label: 'Science' },
+]
 
 const Field = ({ label, error, children, required, hint }) => (
   <div className="flex flex-col gap-1.5">
@@ -56,12 +68,15 @@ const ClassForm = ({
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm({
     resolver     : zodResolver(schema),
     defaultValues: {
       name        : '',
       order_number: '',
+      stream      : '',
       min_age     : '',
       max_age     : '',
       description : '',
@@ -70,10 +85,18 @@ const ClassForm = ({
     },
   })
 
+  const orderNumber = watch('order_number')
+  const needsStream = [11, 12].includes(Number(orderNumber))
+
+  useEffect(() => {
+    if (!needsStream) setValue('stream', '')
+  }, [needsStream, setValue])
+
   const handleFormSubmit = (data) => {
     // Normalize empty strings to null
     const clean = {
       ...data,
+      stream      : needsStream ? data.stream : null,
       min_age     : data.min_age || null,
       max_age     : data.max_age || null,
       description : data.description || null,
@@ -112,6 +135,25 @@ const ClassForm = ({
           className={inputCls(!!errors.order_number)}
         />
       </Field>
+
+      {needsStream && (
+        <Field
+          label="Stream"
+          error={errors.stream?.message}
+          hint="Required only for Class 11 and Class 12"
+          required
+        >
+          <select
+            {...register('stream')}
+            className={inputCls(!!errors.stream)}
+          >
+            <option value="">Select stream</option>
+            {STREAM_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+        </Field>
+      )}
 
       {/* Age Range */}
       <div className="grid grid-cols-2 gap-4">

@@ -22,6 +22,11 @@ const LEAVE_VARIANT = {
   expelled   : 'dark',
 }
 
+const formatStream = (stream) => {
+  if (!stream) return '—'
+  return stream.charAt(0).toUpperCase() + stream.slice(1)
+}
+
 const TabEnrollment = ({ studentId }) => {
   const { history, isLoading, fetchHistory } = useStudentStore()
 
@@ -48,7 +53,7 @@ const TabEnrollment = ({ studentId }) => {
       <table className="w-full">
         <thead>
           <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-            {['Session', 'Class', 'Section', 'Roll', 'Joined As', 'Left As', 'Status'].map(h => (
+            {['Session', 'Class', 'Section', 'Stream', 'Roll', 'Joined As', 'Left As', 'Status'].map(h => (
               <th key={h} className="pb-3 text-left text-xs font-semibold uppercase tracking-wider pr-4" style={{ color: 'var(--color-text-muted)' }}>
                 {h}
               </th>
@@ -66,6 +71,9 @@ const TabEnrollment = ({ studentId }) => {
               </td>
               <td className="py-3.5 pr-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{e.class}</td>
               <td className="py-3.5 pr-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{e.section}</td>
+              <td className="py-3.5 pr-4 text-sm" style={{ color: e.stream ? 'var(--color-text-secondary)' : 'var(--color-text-muted)' }}>
+                {formatStream(e.stream)}
+              </td>
               <td className="py-3.5 pr-4 text-sm font-mono" style={{ color: 'var(--color-text-muted)' }}>
                 {e.roll_number || '—'}
               </td>
