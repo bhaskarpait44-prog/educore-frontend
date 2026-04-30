@@ -26,23 +26,39 @@ const AttendancePage = () => {
   return (
     <div className="space-y-6">
       <div
-        className="flex w-fit gap-1 rounded-2xl p-1"
-        style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+        className="sticky top-0 z-20 rounded-3xl border p-3 backdrop-blur"
+        style={{
+          backgroundColor: 'color-mix(in srgb, var(--color-surface) 92%, white)',
+          borderColor: 'var(--color-border)',
+        }}
       >
-        {tabs.map((item) => (
-          <button
-            key={item.key}
-            onClick={() => setTab(item.key)}
-            className={cn('flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-150')}
-            style={{
-              backgroundColor: tab === item.key ? 'var(--color-brand)' : 'transparent',
-              color: tab === item.key ? '#fff' : 'var(--color-text-secondary)',
-            }}
-          >
-            <item.icon size={15} />
-            <span className="hidden sm:block">{item.label}</span>
-          </button>
-        ))}
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+              Attendance
+            </h1>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {tabs.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => setTab(item.key)}
+                className={cn(
+                  'inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-medium transition-all duration-150',
+                  tab === item.key ? 'shadow-sm' : '',
+                )}
+                style={{
+                  backgroundColor: tab === item.key ? 'var(--color-brand)' : 'var(--color-surface)',
+                  color: tab === item.key ? '#fff' : 'var(--color-text-secondary)',
+                  border: tab === item.key ? '1px solid var(--color-brand)' : '1px solid var(--color-border)',
+                }}
+              >
+                <item.icon size={16} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {tab === 'mark' && <MarkAttendancePage />}

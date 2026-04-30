@@ -3,6 +3,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { STORAGE_KEYS } from '@/constants/app'
 import * as authApi from '@/api/auth'
+import { getDefaultPermissionsForRole } from '@/utils/permissions'
 
 const normalizeUser = (user) => {
   if (!user) return null
@@ -10,7 +11,9 @@ const normalizeUser = (user) => {
   return {
     ...user,
     role: user.role === 'super_admin' ? 'admin' : user.role,
-    permissions: Array.isArray(user.permissions) ? user.permissions : [],
+    permissions: Array.isArray(user.permissions) && user.permissions.length > 0
+      ? user.permissions
+      : getDefaultPermissionsForRole(user.role === 'super_admin' ? 'admin' : user.role),
   }
 }
 

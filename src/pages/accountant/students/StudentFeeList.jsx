@@ -9,7 +9,7 @@ const StudentFeeList = () => {
   usePageTitle('Student Fees')
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
-  const { students, isLoading } = useStudentFees({ search, sort: 'due' })
+  const { students, isLoading, error } = useStudentFees({ search, sort: 'due' })
 
   return (
     <div className="space-y-5">
@@ -64,6 +64,12 @@ const StudentFeeList = () => {
           </tbody>
         </table>
         {isLoading && <div className="px-4 py-4 text-sm" style={{ color: 'var(--color-text-muted)' }}>Loading...</div>}
+        {!isLoading && error && <div className="px-4 py-4 text-sm" style={{ color: '#dc2626' }}>{error}</div>}
+        {!isLoading && !error && students.length === 0 && (
+          <div className="px-4 py-8 text-sm" style={{ color: 'var(--color-text-muted)' }}>
+            No students found.
+          </div>
+        )}
       </div>
     </div>
   )

@@ -21,6 +21,7 @@ export const getStudentStatementPdf = (id, params) => api.get(`/accountant/stude
 export const getFeeStructure = (params) => api.get('/accountant/fee-structure', { params })
 export const createFeeStructure = (data) => api.post('/accountant/fee-structure', data)
 export const updateFeeStructure = (id, data) => api.patch(`/accountant/fee-structure/${id}`, data)
+export const deleteFeeStructure = (id) => api.delete(`/accountant/fee-structure/${id}`)
 export const generateFeeInvoices = (data) => api.post('/accountant/fee-structure/generate-invoices', data)
 export const copyFeeStructure = (data) => api.post('/accountant/fee-structure/copy-from-session', data)
 

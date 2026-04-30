@@ -6,9 +6,10 @@ import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
-import useFeeStore from '@/store/feeStore'
 import useToast from '@/hooks/useToast'
 import { getClasses, getClassOptions } from '@/api/classApi'
+import * as feesApi from '@/api/fees'
+import * as accountantApi from '@/api/accountantApi'
 
 const schema = z.object({
   name: z.string().min(1, 'Fee name is required'),
@@ -33,10 +34,10 @@ const FREQUENCY_OPTIONS = [
   { value: 'one_time', label: 'One Time - admission or exam fee' },
 ]
 
-const AddFeeComponentModal = ({ open, onClose, sessionId, classId: preSelectedClass }) => {
+const AddFeeComponentModal = ({ open, onClose, sessionId, classId: preSelectedClass, apiMode = 'default', onCreated }) => {
   const { toastSuccess, toastError } = useToast()
-  const { createStructure, isSaving } = useFeeStore()
   const [classes, setClasses] = useState([])
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     getClasses()
@@ -73,22 +74,28 @@ const AddFeeComponentModal = ({ open, onClose, sessionId, classId: preSelectedCl
   }, [open, preSelectedClass, reset])
 
   const onSubmit = async (data) => {
-    const result = await createStructure({
-      session_id: parseInt(sessionId, 10),
-      class_id: parseInt(data.class_id, 10),
-      name: data.name,
-      amount: data.amount,
-      frequency: data.frequency,
-      due_day: parseInt(data.due_day, 10),
-    })
+    setIsSaving(true)
+    try {
+      const payload = {
+        session_id: parseInt(sessionId, 10),
+        class_id: parseInt(data.class_id, 10),
+        name: data.name,
+        amount: data.amount,
+        frequency: data.frequency,
+        due_day: parseInt(data.due_day, 10),
+      }
+      const response = await (apiMode === 'accountant'
+        ? accountantApi.createFeeStructure(payload)
+        : feesApi.createFeeStructure(payload))
 
-    if (result.success) {
+      onCreated?.(response.data)
       toastSuccess(`"${data.name}" fee component added`)
       onClose()
-      return
+    } catch (error) {
+      toastError(error?.message || 'Failed to add component')
+    } finally {
+      setIsSaving(false)
     }
-
-    toastError(result.message || 'Failed to add component')
   }
 
   return (

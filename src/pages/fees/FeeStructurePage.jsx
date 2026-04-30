@@ -1,7 +1,6 @@
 // src/pages/fees/FeeStructurePage.jsx
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, Settings2 } from 'lucide-react'
-import useFeeStore from '@/store/feeStore'
 import useSessionStore from '@/store/sessionStore'
 import useToast from '@/hooks/useToast'
 import Button from '@/components/ui/Button'
@@ -13,6 +12,8 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog'
 import AddFeeComponentModal from './AddFeeComponentModal'
 import { formatCurrency } from '@/utils/helpers'
 import { getClasses, getClassOptions } from '@/api/classApi'
+import * as feesApi from '@/api/fees'
+import * as accountantApi from '@/api/accountantApi'
 
 const FREQUENCY_BADGE = {
   monthly    : { label: 'Monthly',    variant: 'blue'  },
@@ -21,16 +22,20 @@ const FREQUENCY_BADGE = {
   one_time   : { label: 'One Time',   variant: 'grey'  },
 }
 
-const FeeStructurePage = () => {
+const FeeStructurePage = ({ apiMode = 'default' }) => {
   const { toastSuccess, toastError } = useToast()
-  const { structures, isLoading, isSaving, fetchStructures, deleteStructure } = useFeeStore()
   const { sessions, currentSession, fetchSessions } = useSessionStore()
+  const [structures, setStructures] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
 
   const [classes,      setClasses]      = useState([])
   const [sessionId,    setSessionId]    = useState('')
   const [classId,      setClassId]      = useState('')
   const [addModal,     setAddModal]     = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
+
+  const apiClient = apiMode === 'accountant' ? accountantApi : feesApi
 
   useEffect(() => {
     fetchSessions().catch(() => {})
@@ -45,15 +50,32 @@ const FeeStructurePage = () => {
 
   useEffect(() => {
     if (!sessionId) return
-    fetchStructures({ session_id: sessionId, class_id: classId || undefined })
+    setIsLoading(true)
+    const fetcher = apiMode === 'accountant' ? accountantApi.getFeeStructure : feesApi.getFeeStructures
+    fetcher({ session_id: sessionId, class_id: classId || undefined })
+      .then((response) => setStructures(response.data?.structures || []))
       .catch(() => toastError('Failed to load fee structures'))
-  }, [sessionId, classId])
+      .finally(() => setIsLoading(false))
+  }, [sessionId, classId, apiMode, toastError])
 
   const handleDelete = async () => {
-    const result = await deleteStructure(deleteTarget.id)
-    setDeleteTarget(null)
-    if (result.success) toastSuccess('Fee component removed')
-    else toastError(result.message || 'Failed to delete')
+    if (!deleteTarget) return
+
+    setIsSaving(true)
+    try {
+      if (apiClient.deleteFeeStructure) {
+        await apiClient.deleteFeeStructure(deleteTarget.id)
+      } else {
+        await feesApi.deleteFeeStructure(deleteTarget.id)
+      }
+      setStructures((current) => current.filter((row) => row.id !== deleteTarget.id))
+      setDeleteTarget(null)
+      toastSuccess('Fee component removed')
+    } catch (error) {
+      toastError(error?.message || 'Failed to delete')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -174,6 +196,8 @@ const FeeStructurePage = () => {
         onClose={() => setAddModal(false)}
         sessionId={sessionId}
         classId={classId}
+        apiMode={apiMode}
+        onCreated={(structure) => setStructures((current) => [...current, structure])}
       />
 
       {/* Delete confirm */}

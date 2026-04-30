@@ -620,73 +620,159 @@ const RowCard = ({ title, meta, badge, badgeVariant, actionLabel, onAction }) =>
   </article>
 )
 
-const ClassAssignmentGroup = ({ group, onToggle }) => (
-  <article className="rounded-[24px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="blue">{group.class_name} {group.section_name}</Badge>
-          <Badge variant={group.inactiveCount ? 'yellow' : 'green'}>
-            {group.inactiveCount ? `${group.inactiveCount} inactive` : 'Fully active'}
-          </Badge>
+const ClassAssignmentGroup = ({ group, onToggle }) => {
+  const totalAssignments = (group.classTeacher ? 1 : 0) + group.subjectTeachers.length
+  const activeSubjects = group.subjectTeachers.filter((item) => item.is_active).length
+
+  return (
+    <article
+      className="overflow-hidden rounded-[26px] border"
+      style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+    >
+      <div
+        className="border-b px-5 py-4 sm:px-6"
+        style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}
+      >
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="blue">{group.class_name} {group.section_name}</Badge>
+              <Badge variant={group.inactiveCount ? 'yellow' : 'green'}>
+                {group.inactiveCount ? `${group.inactiveCount} inactive` : 'Fully active'}
+              </Badge>
+            </div>
+            <div>
+              <p className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                {group.class_name} {group.section_name} teaching roster
+              </p>
+              <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                {group.session_name || 'Current session'} assignment map for class teacher ownership and subject coverage.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:min-w-[260px]">
+            <AssignmentStat label="Assignments" value={totalAssignments} />
+            <AssignmentStat label="Subjects Active" value={activeSubjects} />
+          </div>
         </div>
-        <p className="mt-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{group.session_name}</p>
       </div>
-      <p className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--color-text-muted)' }}>
-        {1 + group.subjectTeachers.length} assignment{1 + group.subjectTeachers.length === 1 ? '' : 's'}
-      </p>
-    </div>
 
-    <div className="mt-4 space-y-3">
-      {group.classTeacher ? (
-        <AssignmentLineItem
-          item={group.classTeacher}
-          label="Class Teacher"
-          detail={group.classTeacher.teacher_name}
-          onToggle={onToggle}
-        />
-      ) : (
-        <div className="rounded-2xl border border-dashed p-3" style={{ borderColor: 'var(--color-border)' }}>
-          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Class Teacher</p>
-          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>No class teacher assigned yet.</p>
-        </div>
-      )}
-
-      {group.subjectTeachers.length ? (
-        group.subjectTeachers.map((item) => (
-          <AssignmentLineItem
-            key={item.id}
-            item={item}
-            label={item.subject_name || 'Subject Teacher'}
-            detail={item.teacher_name}
-            onToggle={onToggle}
+      <div className="space-y-5 p-5 sm:p-6">
+        <section className="space-y-3">
+          <SectionHeading
+            title="Class Teacher"
+            description="Single ownership for overall classroom coordination."
           />
-        ))
-      ) : (
-        <div className="rounded-2xl border border-dashed p-3" style={{ borderColor: 'var(--color-border)' }}>
-          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Subject Teachers</p>
-          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>No subject teacher assignments for this class yet.</p>
-        </div>
-      )}
-    </div>
-  </article>
+          {group.classTeacher ? (
+            <AssignmentLineItem
+              item={group.classTeacher}
+              label="Class Teacher"
+              detail={group.classTeacher.teacher_name}
+              description="Full class responsibility"
+              onToggle={onToggle}
+            />
+          ) : (
+            <AssignmentEmptyState
+              title="No class teacher assigned"
+              description="Assign one teacher to own attendance, coordination, and parent-facing follow-up for this section."
+            />
+          )}
+        </section>
+
+        <section className="space-y-3">
+          <SectionHeading
+            title="Subject Teachers"
+            description="Each subject assignment appears as an individual roster card."
+          />
+          {group.subjectTeachers.length ? (
+            <div className="grid gap-3 xl:grid-cols-2">
+              {group.subjectTeachers.map((item) => (
+                <AssignmentLineItem
+                  key={item.id}
+                  item={item}
+                  label={item.subject_name || 'Subject Teacher'}
+                  detail={item.teacher_name}
+                  description={item.subject_code ? `${item.subject_code} subject assignment` : 'Subject assignment'}
+                  onToggle={onToggle}
+                />
+              ))}
+            </div>
+          ) : (
+            <AssignmentEmptyState
+              title="No subject teachers assigned"
+              description="This class section does not have any subject mapping yet."
+            />
+          )}
+        </section>
+      </div>
+    </article>
+  )
+}
+
+const AssignmentStat = ({ label, value }) => (
+  <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+    <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>
+      {label}
+    </p>
+    <p className="mt-2 text-xl font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+      {value}
+    </p>
+  </div>
 )
 
-const AssignmentLineItem = ({ item, label, detail, onToggle }) => (
-  <div className="rounded-2xl border p-3" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      <div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={item.is_active ? 'green' : 'grey'}>{item.is_active ? 'Active' : 'Inactive'}</Badge>
-          <Badge variant={item.is_class_teacher ? 'teal' : 'blue'}>{label}</Badge>
-        </div>
-        <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{detail}</p>
-        <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          {item.is_class_teacher ? 'Full class responsibility' : `${item.subject_code ? `${item.subject_code} | ` : ''}Subject assignment`}
-        </p>
-      </div>
-      <Button variant="secondary" onClick={() => onToggle(item)}>{item.is_active ? 'Deactivate' : 'Activate'}</Button>
+const SectionHeading = ({ title, description }) => (
+  <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</h3>
+      <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{description}</p>
     </div>
+  </div>
+)
+
+const AssignmentEmptyState = ({ title, description }) => (
+  <div className="rounded-2xl border border-dashed p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
+    <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</p>
+    <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{description}</p>
+  </div>
+)
+
+const AssignmentLineItem = ({ item, label, detail, description, onToggle }) => (
+  <div className="rounded-2xl border p-4 shadow-sm" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant={item.is_active ? 'green' : 'grey'}>{item.is_active ? 'Active' : 'Inactive'}</Badge>
+            <Badge variant={item.is_class_teacher ? 'dark' : 'blue'}>{label}</Badge>
+          </div>
+          <div>
+            <p className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>{detail}</p>
+            <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{description}</p>
+          </div>
+        </div>
+
+        <Button variant="secondary" size="sm" onClick={() => onToggle(item)}>
+          {item.is_active ? 'Deactivate' : 'Activate'}
+        </Button>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <AssignmentMeta label="Role" value={item.is_class_teacher ? 'Class ownership' : 'Subject coverage'} />
+        <AssignmentMeta label="Subject Code" value={item.subject_code || (item.is_class_teacher ? 'Not required' : '--')} />
+      </div>
+    </div>
+  </div>
+)
+
+const AssignmentMeta = ({ label, value }) => (
+  <div className="rounded-xl border px-3 py-2.5" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+    <p className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--color-text-muted)' }}>
+      {label}
+    </p>
+    <p className="mt-1 text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
+      {value}
+    </p>
   </div>
 )
 

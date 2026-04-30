@@ -3,7 +3,7 @@ import FeeStructurePage from '@/pages/fees/FeeStructurePage'
 
 const FeeStructureView = () => {
   usePageTitle('Fee Structure')
-  return <FeeStructurePage />
+  return <FeeStructurePage apiMode="accountant" />
 }
 
 export default FeeStructureView

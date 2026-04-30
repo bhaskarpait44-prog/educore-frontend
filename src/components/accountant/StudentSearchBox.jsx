@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
 import * as accountantApi from '@/api/accountantApi'
+import { getStudents } from '@/api/students'
 import { formatCurrency } from '@/utils/helpers'
+
+const normalizeStudent = (student = {}) => ({
+  ...student,
+  first_name: student.first_name || student.student_name?.split(' ')?.[0] || '',
+  last_name: student.last_name || student.student_name?.split(' ')?.slice(1).join(' ') || '',
+  class_name: student.class_name || student.current_enrollment?.class || '',
+  section_name: student.section_name || student.current_enrollment?.section || '',
+  pending_amount: student.pending_amount || 0,
+})
 
 const StudentSearchBox = ({ onSelect, autoFocus = false }) => {
   const [query, setQuery] = useState('')
@@ -22,10 +32,25 @@ const StudentSearchBox = ({ onSelect, autoFocus = false }) => {
     const timer = window.setTimeout(async () => {
       try {
         const response = await accountantApi.searchStudents({ q: query })
-        setResults(response.data?.students || [])
+        const primaryResults = (response.data?.students || []).map(normalizeStudent)
+
+        if (primaryResults.length > 0) {
+          setResults(primaryResults)
+          setActiveIndex(0)
+          return
+        }
+
+        const fallback = await getStudents({ search: query, perPage: 12 })
+        setResults((fallback.data?.students || []).map(normalizeStudent))
         setActiveIndex(0)
       } catch {
-        setResults([])
+        try {
+          const fallback = await getStudents({ search: query, perPage: 12 })
+          setResults((fallback.data?.students || []).map(normalizeStudent))
+          setActiveIndex(0)
+        } catch {
+          setResults([])
+        }
       }
     }, 180)
 
