@@ -1,11 +1,34 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, CalendarRange, Clock3, Printer } from 'lucide-react'
+import { AlertTriangle, BookOpen, CalendarRange, Clock3, Printer, Sparkles } from 'lucide-react'
 import usePageTitle from '@/hooks/usePageTitle'
 import useToast from '@/hooks/useToast'
 import * as teacherApi from '@/api/teacherApi'
 import TimetableGrid from '@/components/teacher/TimetableGrid'
 import TimetableToday from '@/components/teacher/TimetableToday'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const to12Hour = (value) => {
+  if (!value) return '--'
+  const [hour = '0', minute = '0'] = String(value).slice(0, 5).split(':')
+  const date = new Date()
+  date.setHours(Number(hour), Number(minute), 0, 0)
+  return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+}
+
+const renderTimeRange = (slot) => {
+  if (!slot) return '--'
+  return `${to12Hour(slot.start_time)} – ${to12Hour(slot.end_time)}`
+}
+
+const getDayName = () =>
+  new Date().toLocaleDateString('en-IN', { weekday: 'long' })
+
+const getDateStr = () =>
+  new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const TeacherTimetable = () => {
   usePageTitle('Timetable')
@@ -19,7 +42,6 @@ const TeacherTimetable = () => {
 
   useEffect(() => {
     let active = true
-
     const load = async () => {
       setLoading(true)
       try {
@@ -28,9 +50,7 @@ const TeacherTimetable = () => {
           teacherApi.getTeacherTimetableToday(),
           teacherApi.getTeacherCurrentPeriod(),
         ])
-
         if (!active) return
-
         setTimetable(weeklyRes?.data?.timetable || [])
         setTodaySchedule(todayRes?.data?.schedule || [])
         setCurrentPeriod(currentRes?.data?.current_period || null)
@@ -40,167 +60,294 @@ const TeacherTimetable = () => {
         if (active) setLoading(false)
       }
     }
-
     load()
     return () => { active = false }
   }, [toastError])
 
-  const nextPeriod = useMemo(() => (
-    todaySchedule.find((slot) => slot.status === 'upcoming') || null
-  ), [todaySchedule])
+  const nextPeriod = useMemo(() =>
+    todaySchedule.find((slot) => slot.status === 'upcoming') || null,
+  [todaySchedule])
+
+  const completedCount = useMemo(() =>
+    todaySchedule.filter((s) => s.status === 'completed').length,
+  [todaySchedule])
+
+  const totalToday = todaySchedule.length
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+
+      {/* ── Hero Header ──────────────────────────────────────────────────── */}
       <section
-        className="rounded-[28px] border p-5 sm:p-6"
-        style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+        className="relative overflow-hidden rounded-2xl border p-6 sm:p-8"
+        style={{
+          borderColor: 'var(--color-border)',
+          background: 'linear-gradient(135deg, rgba(15,118,110,0.12) 0%, rgba(2,132,199,0.07) 50%, var(--color-surface) 100%)',
+        }}
       >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        {/* Decorative circle */}
+        <div
+          className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-10"
+          style={{ background: 'radial-gradient(circle, #0f766e 0%, transparent 70%)' }}
+          aria-hidden="true"
+        />
+
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          {/* Title block */}
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-              Timetable
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-widest"
+                style={{ backgroundColor: 'rgba(15,118,110,0.12)', color: '#0f766e' }}
+              >
+                <Sparkles size={10} />
+                Teacher Portal
+              </span>
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl" style={{ color: 'var(--color-text-primary)' }}>
+              My Timetable
             </h1>
-            <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-              Weekly desktop grid and today-first mobile timeline for faster classroom flow.
+            <p className="mt-1.5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              {getDayName()}, {getDateStr()}
             </p>
           </div>
+
+          {/* Print button */}
           <button
             type="button"
             onClick={() => window.print()}
-            className="inline-flex min-h-11 items-center gap-2 rounded-2xl px-4 text-sm font-semibold"
-            style={{ backgroundColor: 'var(--color-surface-raised)', color: 'var(--color-text-primary)' }}
+            className="inline-flex items-center gap-2 self-start rounded-xl border px-4 py-2.5 text-sm font-semibold transition hover:-translate-y-0.5 hover:shadow-sm"
+            style={{
+              borderColor: 'var(--color-border)',
+              backgroundColor: 'var(--color-surface)',
+              color: 'var(--color-text-primary)',
+            }}
           >
-            <Printer size={16} />
+            <Printer size={14} />
             Print Timetable
           </button>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <StatCard
-            title="Current Period"
+        {/* ── Stat cards row ── */}
+        <div className="relative mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <PeriodCard
+            label="Current Period"
             icon={Clock3}
-            tone="#10b981"
-            value={currentPeriod ? `${currentPeriod.subject_name}` : 'No active period'}
-            sub={currentPeriod ? `${currentPeriod.class_name} ${currentPeriod.section_name} | ${renderTimeRange(currentPeriod)}` : 'You are free right now.'}
+            accent="#10b981"
+            accentBg="rgba(16,185,129,0.1)"
+            primary={currentPeriod ? currentPeriod.subject_name : 'No active period'}
+            secondary={
+              currentPeriod
+                ? `${currentPeriod.class_name} ${currentPeriod.section_name}  ·  ${renderTimeRange(currentPeriod)}`
+                : 'You are free right now'
+            }
+            live={Boolean(currentPeriod)}
           />
-          <StatCard
-            title="Next Period"
+          <PeriodCard
+            label="Next Up"
             icon={CalendarRange}
-            tone="#f59e0b"
-            value={nextPeriod ? nextPeriod.subject_name : 'No upcoming period'}
-            sub={nextPeriod ? `${nextPeriod.class_name} ${nextPeriod.section_name} | ${renderTimeRange(nextPeriod)}` : 'No more classes later today.'}
+            accent="#f59e0b"
+            accentBg="rgba(245,158,11,0.1)"
+            primary={nextPeriod ? nextPeriod.subject_name : 'No upcoming period'}
+            secondary={
+              nextPeriod
+                ? `${nextPeriod.class_name} ${nextPeriod.section_name}  ·  ${renderTimeRange(nextPeriod)}`
+                : 'No more classes today'
+            }
           />
-          <StatCard
-            title="Weekly Slots"
-            icon={CalendarRange}
-            tone="#0f766e"
-            value={String(timetable.length)}
-            sub="Active timetable periods in this session."
+          <ProgressCard
+            done={completedCount}
+            total={totalToday}
+            slots={timetable.length}
           />
         </div>
       </section>
 
+      {/* ── Content ──────────────────────────────────────────────────────── */}
       {loading ? (
-        <section
-          className="rounded-[28px] border p-12 text-center"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
-        >
-          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            Loading timetable...
-          </p>
-        </section>
+        <LoadingState />
+      ) : !timetable.length && !todaySchedule.length ? (
+        <EmptyTimetable />
       ) : (
         <>
-          {!timetable.length && !todaySchedule.length ? (
-            <section
-              className="rounded-[28px] border p-12 text-center"
-              style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
-            >
-              <AlertTriangle size={20} className="mx-auto" style={{ color: 'var(--color-text-muted)' }} />
-              <p className="mt-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                No timetable slots are configured yet.
-              </p>
-            </section>
-          ) : (
-            <>
-              <section className="space-y-4 lg:hidden">
-                <div>
-                  <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                    Today View
-                  </h2>
-                  <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                    Mobile-first list of today&apos;s classes with quick actions.
-                  </p>
-                </div>
-                <TimetableToday
-                  schedule={todaySchedule}
-                  currentPeriodId={currentPeriod?.id || null}
-                  onNavigate={navigate}
-                />
-              </section>
+          {/* Mobile — today only */}
+          <section className="space-y-3 lg:hidden">
+            <SectionHeader
+              title="Today's Classes"
+              description="Your schedule for the rest of the day."
+            />
+            <TimetableToday
+              schedule={todaySchedule}
+              currentPeriodId={currentPeriod?.id || null}
+              onNavigate={navigate}
+            />
+          </section>
 
-              <section className="hidden lg:block">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                    Weekly View
-                  </h2>
-                  <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                    Desktop grid of your full teaching week with current-period highlight.
-                  </p>
-                </div>
-                <TimetableGrid slots={timetable} currentPeriodId={currentPeriod?.id || null} />
-              </section>
+          {/* Desktop — full week grid */}
+          <section className="hidden space-y-3 lg:block">
+            <SectionHeader
+              title="Weekly Schedule"
+              description="Full teaching week — current period is highlighted."
+            />
+            <TimetableGrid slots={timetable} currentPeriodId={currentPeriod?.id || null} />
+          </section>
 
-              <section className="hidden lg:block">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                    Today Snapshot
-                  </h2>
-                  <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                    Today&apos;s timeline stays visible on desktop too for quick review.
-                  </p>
-                </div>
-                <TimetableToday
-                  schedule={todaySchedule}
-                  currentPeriodId={currentPeriod?.id || null}
-                  onNavigate={navigate}
-                />
-              </section>
-            </>
-          )}
+          {/* Desktop — today snapshot */}
+          <section className="hidden space-y-3 lg:block">
+            <SectionHeader
+              title="Today's Snapshot"
+              description="Quick overview of today's classes alongside your weekly grid."
+            />
+            <TimetableToday
+              schedule={todaySchedule}
+              currentPeriodId={currentPeriod?.id || null}
+              onNavigate={navigate}
+            />
+          </section>
         </>
       )}
     </div>
   )
 }
 
-const StatCard = ({ title, icon: Icon, tone, value, sub }) => (
+// ─── Period stat card ─────────────────────────────────────────────────────────
+
+const PeriodCard = ({ label, icon: Icon, accent, accentBg, primary, secondary, live = false }) => (
   <div
-    className="rounded-[24px] border p-4"
-    style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}
+    className="relative overflow-hidden rounded-xl border p-4"
+    style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
   >
-    <div className="flex items-center gap-2">
-      <Icon size={16} style={{ color: tone }} />
-      <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>{title}</p>
+    {/* Left accent strip */}
+    <div
+      className="absolute left-0 top-0 h-full w-1 rounded-l-xl"
+      style={{ backgroundColor: accent }}
+      aria-hidden="true"
+    />
+
+    <div className="ml-3">
+      <div className="flex items-center gap-2 mb-2">
+        <div
+          className="flex h-7 w-7 items-center justify-center rounded-lg"
+          style={{ backgroundColor: accentBg }}
+        >
+          <Icon size={14} style={{ color: accent }} />
+        </div>
+        <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
+          {label}
+        </p>
+        {live && (
+          <span className="ml-auto flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold"
+            style={{ backgroundColor: 'rgba(16,185,129,0.12)', color: '#10b981' }}>
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+            LIVE
+          </span>
+        )}
+      </div>
+      <p className="text-base font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
+        {primary}
+      </p>
+      <p className="mt-0.5 text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
+        {secondary}
+      </p>
     </div>
-    <p className="mt-3 text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>{value}</p>
-    <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{sub}</p>
   </div>
 )
 
-const renderTimeRange = (slot) => {
-  if (!slot) return '--'
-  const start = to12Hour(slot.start_time)
-  const end = to12Hour(slot.end_time)
-  return `${start} - ${end}`
+// ─── Progress card ────────────────────────────────────────────────────────────
+
+const ProgressCard = ({ done, total, slots }) => {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0
+
+  return (
+    <div
+      className="relative overflow-hidden rounded-xl border p-4"
+      style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+    >
+      <div
+        className="absolute left-0 top-0 h-full w-1 rounded-l-xl"
+        style={{ backgroundColor: '#0f766e' }}
+        aria-hidden="true"
+      />
+
+      <div className="ml-3">
+        <div className="flex items-center gap-2 mb-2">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-lg"
+            style={{ backgroundColor: 'rgba(15,118,110,0.1)' }}
+          >
+            <BookOpen size={14} style={{ color: '#0f766e' }} />
+          </div>
+          <p className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
+            Today's Progress
+          </p>
+        </div>
+
+        <div className="flex items-baseline gap-1.5">
+          <p className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+            {done} / {total} classes
+          </p>
+          <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>done</p>
+        </div>
+
+        {/* Progress bar */}
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'var(--color-surface-raised)' }}>
+          <div
+            className="h-full rounded-full transition-all duration-700"
+            style={{ width: `${pct}%`, backgroundColor: '#0f766e' }}
+          />
+        </div>
+
+        <p className="mt-1.5 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+          {slots} weekly slots in session
+        </p>
+      </div>
+    </div>
+  )
 }
 
-const to12Hour = (value) => {
-  if (!value) return '--'
-  const [hour = '0', minute = '0'] = String(value).slice(0, 5).split(':')
-  const date = new Date()
-  date.setHours(Number(hour), Number(minute), 0, 0)
-  return date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
-}
+// ─── Section header ───────────────────────────────────────────────────────────
+
+const SectionHeader = ({ title, description }) => (
+  <div>
+    <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+      {title}
+    </h2>
+    <p className="mt-0.5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+      {description}
+    </p>
+  </div>
+)
+
+// ─── States ───────────────────────────────────────────────────────────────────
+
+const LoadingState = () => (
+  <div
+    className="animate-pulse rounded-2xl border p-10 text-center"
+    style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+  >
+    <div className="mx-auto h-4 w-32 rounded-lg" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
+    <div className="mx-auto mt-3 h-3 w-48 rounded-lg" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
+  </div>
+)
+
+const EmptyTimetable = () => (
+  <div
+    className="rounded-2xl border p-12 text-center"
+    style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+  >
+    <div
+      className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl"
+      style={{ backgroundColor: 'var(--color-surface-raised)' }}
+    >
+      <AlertTriangle size={20} style={{ color: 'var(--color-text-muted)' }} />
+    </div>
+    <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+      No timetable configured
+    </p>
+    <p className="mt-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+      No timetable slots are set up for this session yet.
+    </p>
+  </div>
+)
 
 export default TeacherTimetable

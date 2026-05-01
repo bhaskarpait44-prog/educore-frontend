@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, CheckCircle2, LayoutList, BarChart3 } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import usePageTitle from '@/hooks/usePageTitle'
 import useToast from '@/hooks/useToast'
@@ -33,11 +33,11 @@ const MarkAttendance = () => {
     const incoming = location.state
     if (!incoming?.class_id || !incoming?.section_id || loadingAssignments) return
 
-    const match = classTeacherAssignments.find((assignment) =>
-      String(assignment.class_id) === String(incoming.class_id) &&
-      String(assignment.section_id) === String(incoming.section_id)
+    const match = classTeacherAssignments.find(
+      (a) =>
+        String(a.class_id) === String(incoming.class_id) &&
+        String(a.section_id) === String(incoming.section_id)
     )
-
     if (!match) return
 
     setMarkingContext((prev) => ({
@@ -54,11 +54,11 @@ const MarkAttendance = () => {
     if (markingContext.assignment_role !== 'class_teacher') return
     if (!markingContext.class_id || !markingContext.section_id || !markingContext.date) return
 
-    const match = classTeacherAssignments.find((assignment) =>
-      String(assignment.class_id) === String(markingContext.class_id) &&
-      String(assignment.section_id) === String(markingContext.section_id)
+    const match = classTeacherAssignments.find(
+      (a) =>
+        String(a.class_id) === String(markingContext.class_id) &&
+        String(a.section_id) === String(markingContext.section_id)
     )
-
     if (!match) return
 
     const nextKey = `${markingContext.class_id}:${markingContext.section_id}:${markingContext.date}`
@@ -85,42 +85,38 @@ const MarkAttendance = () => {
   ])
 
   const nextPending = useMemo(() => {
-    const pendingSchedule = todaySchedule.find((item) =>
-      item.status !== 'done' &&
-      !(
-        String(item.class_id) === String(markingContext.class_id) &&
-        String(item.section_id) === String(markingContext.section_id)
-      )
+    const pendingSchedule = todaySchedule.find(
+      (item) =>
+        item.status !== 'done' &&
+        !(
+          String(item.class_id) === String(markingContext.class_id) &&
+          String(item.section_id) === String(markingContext.section_id)
+        )
     )
-
     if (!pendingSchedule) return null
 
-    return classTeacherAssignments.find((assignment) =>
-      String(assignment.class_id) === String(pendingSchedule.class_id) &&
-      String(assignment.section_id) === String(pendingSchedule.section_id)
-    ) || null
+    return (
+      classTeacherAssignments.find(
+        (a) =>
+          String(a.class_id) === String(pendingSchedule.class_id) &&
+          String(a.section_id) === String(pendingSchedule.section_id)
+      ) || null
+    )
   }, [todaySchedule, classTeacherAssignments, markingContext.class_id, markingContext.section_id])
 
   return (
-    <div className="space-y-5 pb-24">
-      <section
-        className="rounded-[28px] border p-5 sm:p-6"
-        style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
-      >
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-          Mark Attendance
-        </h1>
-        <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          Only assigned class teachers can mark daily attendance for a section. Subject teachers cannot submit attendance from this page.
-        </p>
-      </section>
+    <div className="space-y-4 pb-24">
 
-      {(!loadingAssignments && classTeacherAssignments.length === 0) ? (
+      {/* Empty state */}
+      {!loadingAssignments && classTeacherAssignments.length === 0 && (
         <EmptyState
           title="No class teacher assignment"
           description="You can view attendance reports and registers for your sections, but only class teachers can mark daily attendance."
         />
-      ) : (
+      )}
+
+      {/* Attendance Marker */}
+      {(loadingAssignments || classTeacherAssignments.length > 0) && (
         <AttendanceMarker
           assignments={classTeacherAssignments}
           context={markingContext}
@@ -152,27 +148,43 @@ const MarkAttendance = () => {
         />
       )}
 
+      {/* Next pending class prompt */}
       {showNextPrompt && nextPending && (
-        <section
-          className="rounded-[28px] border p-5"
-          style={{ borderColor: '#10b98155', backgroundColor: 'rgba(16, 185, 129, 0.10)' }}
+        <div
+          className="rounded-2xl p-4 sm:p-5"
+          style={{
+            border: '1px solid rgba(16,185,129,0.25)',
+            background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(5,150,105,0.05) 100%)',
+          }}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                You have another class pending
-              </p>
-              <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                Mark attendance next for {nextPending.class_name} {nextPending.section_name}
-                {nextPending.subject_name ? ` | ${nextPending.subject_name}` : ''}.
-              </p>
+            <div className="flex items-start gap-3">
+              <div
+                className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl"
+                style={{ backgroundColor: 'rgba(16,185,129,0.15)' }}
+              >
+                <CheckCircle2 size={16} style={{ color: '#10b981' }} />
+              </div>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                  Another class is pending
+                </p>
+                <p className="mt-0.5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                  {nextPending.class_name} {nextPending.section_name}
+                  {nextPending.subject_name ? ` · ${nextPending.subject_name}` : ''}
+                </p>
+              </div>
             </div>
-            <div className="flex gap-2">
+
+            <div className="flex shrink-0 gap-2 sm:ml-4">
               <button
                 type="button"
                 onClick={() => setShowNextPrompt(false)}
-                className="min-h-11 rounded-2xl px-4 text-sm font-semibold"
-                style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text-primary)' }}
+                className="min-h-10 rounded-xl px-4 text-sm font-medium transition-opacity hover:opacity-70"
+                style={{
+                  backgroundColor: 'var(--color-surface-raised)',
+                  color: 'var(--color-text-secondary)',
+                }}
               >
                 Later
               </button>
@@ -184,51 +196,62 @@ const MarkAttendance = () => {
                     class_id: String(nextPending.class_id),
                     section_id: String(nextPending.section_id),
                     subject_id: nextPending.subject_id ? String(nextPending.subject_id) : '',
-                    assignment_role: nextPending.is_class_teacher ? 'class_teacher' : 'subject_teacher',
+                    assignment_role: nextPending.is_class_teacher
+                      ? 'class_teacher'
+                      : 'subject_teacher',
                   }))
                   setShowNextPrompt(false)
                 }}
-                className="inline-flex min-h-11 items-center gap-2 rounded-2xl px-4 text-sm font-semibold"
+                className="inline-flex min-h-10 items-center gap-1.5 rounded-xl px-4 text-sm font-semibold transition-opacity hover:opacity-85"
                 style={{ backgroundColor: '#10b981', color: '#fff' }}
               >
-                Yes
-                <ArrowRight size={16} />
+                Mark now
+                <ArrowRight size={14} />
               </button>
             </div>
           </div>
-        </section>
+        </div>
       )}
 
+      {/* Quick navigation strip */}
       {!showNextPrompt && studentPayload?.students?.length > 0 && (
-        <section
-          className="rounded-[28px] border p-4"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+        <div
+          className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
+          style={{
+            border: '1px solid var(--color-border)',
+            backgroundColor: 'var(--color-surface)',
+          }}
         >
-          <div className="flex items-center gap-3">
-            <CheckCircle2 size={18} style={{ color: '#10b981' }} />
-            <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-              Need a monthly grid or reports after this? Open the register or reports pages directly from the attendance menu.
-            </p>
-            <div className="ml-auto hidden gap-2 sm:flex">
-              <button
-                type="button"
-                onClick={() => navigate(ROUTES.TEACHER_ATTENDANCE_REGISTER)}
-                className="min-h-10 rounded-2xl px-4 text-sm font-semibold"
-                style={{ backgroundColor: 'var(--color-surface-raised)', color: 'var(--color-text-primary)' }}
-              >
-                Register
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate(ROUTES.TEACHER_ATTENDANCE_REPORTS)}
-                className="min-h-10 rounded-2xl px-4 text-sm font-semibold"
-                style={{ backgroundColor: 'var(--color-surface-raised)', color: 'var(--color-text-primary)' }}
-              >
-                Reports
-              </button>
-            </div>
+          <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+            View monthly data
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => navigate(ROUTES.TEACHER_ATTENDANCE_REGISTER)}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3.5 text-sm font-medium transition-opacity hover:opacity-75"
+              style={{
+                backgroundColor: 'var(--color-surface-raised)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              <LayoutList size={14} />
+              Register
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(ROUTES.TEACHER_ATTENDANCE_REPORTS)}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl px-3.5 text-sm font-medium transition-opacity hover:opacity-75"
+              style={{
+                backgroundColor: 'var(--color-surface-raised)',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              <BarChart3 size={14} />
+              Reports
+            </button>
           </div>
-        </section>
+        </div>
       )}
     </div>
   )

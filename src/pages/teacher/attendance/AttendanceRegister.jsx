@@ -19,7 +19,8 @@ const AttendanceRegister = () => {
   } = useAttendance()
   const [assignmentKey, setAssignmentKey] = useState('')
   const [month, setMonth] = useState(String(new Date().getMonth() + 1))
-  const [year, setYear] = useState(String(new Date().getFullYear()))
+  const [year, setYear]   = useState(String(new Date().getFullYear()))
+
   const registerAssignments = useMemo(
     () => dedupeAssignmentsForRegister(assignmentOptions),
     [assignmentOptions]
@@ -30,23 +31,26 @@ const AttendanceRegister = () => {
       if (assignmentKey) setAssignmentKey('')
       return
     }
-
-    const exists = registerAssignments.some((option) => option.value === assignmentKey)
-    if (!assignmentKey || !exists) {
-      setAssignmentKey(registerAssignments[0].value)
-    }
+    const exists = registerAssignments.some((o) => o.value === assignmentKey)
+    if (!assignmentKey || !exists) setAssignmentKey(registerAssignments[0].value)
   }, [registerAssignments, assignmentKey])
 
   const currentAssignment = useMemo(() => {
     const [classId, sectionId] = assignmentKey.split(':')
-    return assignmentOptions.find((assignment) =>
-      assignment.is_class_teacher &&
-      String(assignment.class_id) === String(classId) &&
-      String(assignment.section_id) === String(sectionId)
-    ) || assignmentOptions.find((assignment) =>
-      String(assignment.class_id) === String(classId) &&
-      String(assignment.section_id) === String(sectionId)
-    ) || null
+    return (
+      assignmentOptions.find(
+        (a) =>
+          a.is_class_teacher &&
+          String(a.class_id) === String(classId) &&
+          String(a.section_id) === String(sectionId)
+      ) ||
+      assignmentOptions.find(
+        (a) =>
+          String(a.class_id) === String(classId) &&
+          String(a.section_id) === String(sectionId)
+      ) ||
+      null
+    )
   }, [assignmentOptions, assignmentKey])
 
   useEffect(() => {
@@ -62,9 +66,10 @@ const AttendanceRegister = () => {
   }, [currentAssignment, month, year, loadRegister, toastError])
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pb-6">
+      {/* Header */}
       <section
-        className="rounded-[28px] border p-5 sm:p-6"
+        className="rounded-[14px] border p-5 sm:p-6"
         style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
       >
         <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
@@ -100,6 +105,7 @@ const AttendanceRegister = () => {
         </div>
       </section>
 
+      {/* Grid — no height/overflow constraints, page scrolls naturally */}
       <AttendanceGrid
         registerData={registerData}
         loading={loadingAssignments || loadingRegister}

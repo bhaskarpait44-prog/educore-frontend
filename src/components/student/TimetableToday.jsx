@@ -1,87 +1,179 @@
-import { CalendarClock } from 'lucide-react'
+import { CalendarClock, Clock } from 'lucide-react'
 
 const TimetableToday = ({ schedule = [], currentPeriodId = null, nextPeriodId = null }) => {
   if (!schedule.length) {
     return (
       <div
-        className="rounded-[28px] border p-10 text-center"
+        className="rounded-2xl border p-10 text-center"
         style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
       >
-        <CalendarClock size={20} className="mx-auto" style={{ color: 'var(--color-text-muted)' }} />
+        <CalendarClock size={18} className="mx-auto" style={{ color: 'var(--color-text-muted)' }} />
         <p className="mt-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          No classes are scheduled for today.
+          No classes scheduled for today.
         </p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      {schedule.map((slot, index) => {
-        const current = slot.id === currentPeriodId || slot.status === 'current'
-        const next = slot.id === nextPeriodId || (!current && slot.status === 'upcoming' && slot.id === nextPeriodId)
-        const done = slot.status === 'done'
-        return (
-          <div key={slot.id || `${slot.period_number}-${index}`} className="flex gap-3">
-            <div className="flex w-12 flex-col items-center">
+    <div
+      className="rounded-2xl border p-3"
+      style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+    >
+      {/* Wrap flex — cards shrink to fit, no scroll */}
+      <div className="flex flex-wrap gap-2">
+        {schedule.map((slot, index) => {
+          const current = slot.id === currentPeriodId || slot.status === 'current'
+          const isNext = !current && (slot.id === nextPeriodId || slot.status === 'upcoming')
+          const done = slot.status === 'done'
+          const isLast = index === schedule.length - 1
+
+          const accentColor = current
+            ? '#16a34a'
+            : isNext
+            ? '#f59e0b'
+            : done
+            ? 'rgba(0,0,0,0.1)'
+            : 'rgba(0,0,0,0.07)'
+
+          const cardBorder = current
+            ? '1px solid rgba(22,163,74,0.3)'
+            : isNext
+            ? '1px solid rgba(245,158,11,0.3)'
+            : '1px solid var(--color-border)'
+
+          return (
+            <div
+              key={slot.id || `${slot.period_number}-${index}`}
+              className="flex items-center gap-2"
+              style={{ flex: '1 1 140px', minWidth: 0, maxWidth: '200px' }}
+            >
+              {/* ── Card ── */}
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-bold"
+                className="flex flex-col overflow-hidden rounded-xl w-full"
                 style={{
-                  backgroundColor: current ? 'rgba(22,163,74,0.14)' : next ? 'rgba(245,158,11,0.14)' : done ? 'rgba(148,163,184,0.14)' : 'var(--color-surface-raised)',
-                  color: current ? '#16a34a' : next ? '#d97706' : done ? '#64748b' : 'var(--color-text-secondary)',
+                  border: cardBorder,
+                  backgroundColor: 'var(--color-surface)',
+                  opacity: done ? 0.55 : 1,
                 }}
               >
-                P{slot.period_number}
-              </div>
-              <div className="mt-2 h-full w-px" style={{ backgroundColor: 'var(--color-border)' }} />
-            </div>
+                {/* Accent bar */}
+                <div className="h-[3px] w-full flex-shrink-0" style={{ backgroundColor: accentColor }} />
 
-            <div
-              className="flex-1 rounded-[24px] border p-4"
-              style={{
-                borderColor: current ? '#16a34a66' : next ? '#f59e0b66' : 'var(--color-border)',
-                backgroundColor: current ? 'rgba(22,163,74,0.08)' : next ? 'rgba(245,158,11,0.08)' : 'var(--color-surface)',
-                opacity: done ? 0.7 : 1,
-              }}
-            >
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-semibold text-[var(--color-text-primary)]">Period {slot.period_number}</p>
-                    <span className="rounded-full px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em]" style={badgeStyle(slot.status, current, next)}>
-                      {current ? 'Current' : next ? 'Next' : done ? 'Done' : 'Upcoming'}
+                <div className="flex flex-col gap-1.5 p-2.5">
+                  {/* Period + badge */}
+                  <div className="flex items-center justify-between gap-1">
+                    <span
+                      className="text-[10px] font-bold uppercase tracking-wider"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
+                      P{slot.period_number}
                     </span>
+                    <StatusBadge current={current} isNext={isNext} done={done} />
                   </div>
-                  <p className="mt-2 text-lg font-semibold text-[var(--color-text-primary)]">{slot.subject_name}</p>
-                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{slot.teacher_name}</p>
-                  <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                    {to12Hour(slot.start_time)} - {to12Hour(slot.end_time)} {slot.room_number ? `| Room ${slot.room_number}` : ''}
-                  </p>
-                </div>
 
-                {(current || next) && typeof slot.countdown_minutes === 'number' && (
-                  <div className="rounded-[18px] px-3 py-2" style={{ backgroundColor: current ? 'rgba(22,163,74,0.10)' : 'rgba(245,158,11,0.10)' }}>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: current ? '#15803d' : '#b45309' }}>
-                      {current ? 'Ends In' : 'Starts In'}
+                  {/* Subject */}
+                  <p
+                    className="text-xs font-semibold leading-tight truncate"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {slot.subject_name}
+                  </p>
+
+                  {/* Teacher */}
+                  <p
+                    className="text-[11px] truncate"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    {slot.teacher_name || '—'}
+                  </p>
+
+                  {/* Divider */}
+                  <div style={{ borderTop: '1px solid var(--color-border)', margin: '1px -10px' }} />
+
+                  {/* Time */}
+                  <div className="flex items-center gap-1 pt-0.5">
+                    <Clock size={9} style={{ color: 'var(--color-text-muted)', flexShrink: 0 }} />
+                    <p className="text-[10px] truncate" style={{ color: 'var(--color-text-muted)' }}>
+                      {to12Hour(slot.start_time)} – {to12Hour(slot.end_time)}
                     </p>
-                    <p className="mt-1 text-sm font-semibold text-[var(--color-text-primary)]">{formatMinutes(slot.countdown_minutes)}</p>
                   </div>
-                )}
+
+                  {/* Room */}
+                  {slot.room_number && (
+                    <p
+                      className="text-[10px] font-medium"
+                      style={{ color: current ? '#15803d' : '#0f766e' }}
+                    >
+                      Room {slot.room_number}
+                    </p>
+                  )}
+
+                  {/* Countdown */}
+                  {(current || isNext) && typeof slot.countdown_minutes === 'number' && (
+                    <div
+                      className="mt-1 rounded-lg px-2 py-1.5 text-center"
+                      style={{
+                        backgroundColor: current ? 'rgba(22,163,74,0.09)' : 'rgba(245,158,11,0.09)',
+                      }}
+                    >
+                      <p
+                        className="text-[9px] font-semibold uppercase tracking-wider"
+                        style={{ color: current ? '#15803d' : '#b45309' }}
+                      >
+                        {current ? 'Ends in' : 'Starts in'}
+                      </p>
+                      <p
+                        className="mt-0.5 text-[11px] font-bold"
+                        style={{ color: current ? '#15803d' : '#b45309' }}
+                      >
+                        {formatMinutes(slot.countdown_minutes)}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
+
+              {/* Chevron connector — hidden on last */}
+              {!isLast && (
+                <svg
+                  width="6" height="10" viewBox="0 0 6 10" fill="none"
+                  style={{ flexShrink: 0, opacity: 0.25 }}
+                >
+                  <path d="M1 1l4 4-4 4" stroke="var(--color-text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
             </div>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
     </div>
   )
 }
 
-function badgeStyle(status, current, next) {
-  if (current) return { backgroundColor: 'rgba(22,163,74,0.14)', color: '#15803d' }
-  if (next) return { backgroundColor: 'rgba(245,158,11,0.14)', color: '#b45309' }
-  if (status === 'done') return { backgroundColor: 'rgba(148,163,184,0.16)', color: '#64748b' }
-  return { backgroundColor: 'rgba(124,58,237,0.14)', color: '#6d28d9' }
+// ─── Status badge ─────────────────────────────────────────────────────────────
+
+const StatusBadge = ({ current, isNext, done }) => {
+  let bg, color, label
+  if (current)     { bg = 'rgba(22,163,74,0.12)';  color = '#15803d';                  label = 'Live'  }
+  else if (isNext) { bg = 'rgba(245,158,11,0.12)'; color = '#b45309';                  label = 'Next'  }
+  else if (done)   { bg = 'rgba(0,0,0,0.06)';      color = 'var(--color-text-muted)';  label = 'Done'  }
+  else             { bg = 'rgba(0,0,0,0.05)';      color = 'var(--color-text-muted)';  label = 'Later' }
+
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider"
+      style={{ backgroundColor: bg, color }}
+    >
+      {current && (
+        <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-green-600" />
+      )}
+      {label}
+    </span>
+  )
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function to12Hour(value) {
   if (!value) return '--'
@@ -92,11 +184,11 @@ function to12Hour(value) {
 }
 
 function formatMinutes(value) {
-  const minutes = Number(value || 0)
-  if (minutes < 60) return `${minutes} min`
-  const hours = Math.floor(minutes / 60)
-  const remainder = minutes % 60
-  return remainder ? `${hours}h ${remainder}m` : `${hours}h`
+  const m = Number(value || 0)
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  const r = m % 60
+  return r ? `${h}h ${r}m` : `${h}h`
 }
 
 export default TimetableToday

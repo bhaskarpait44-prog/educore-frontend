@@ -337,7 +337,7 @@ const SidebarContent = ({ collapsed, toggleCollapsed, user, initials, navGroups,
         'flex items-center h-[60px] shrink-0 px-4',
         collapsed && !isMobile ? 'justify-center px-0' : 'gap-3'
       )}
-      style={{ borderBottom: '1px solid var(--color-sidebar-border)' }}
+      // style={{ borderBottom: '1px solid var(--color-sidebar-border)' }}
     >
       {/* Logo mark */}
       <div

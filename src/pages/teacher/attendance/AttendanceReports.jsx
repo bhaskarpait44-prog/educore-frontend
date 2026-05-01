@@ -1,350 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BellRing, Download, PhoneCall, TriangleAlert } from 'lucide-react'
+import { BellRing, Download, PhoneCall, TriangleAlert, TrendingUp, Users, AlertCircle, Activity, Sun, Moon } from 'lucide-react'
 import usePageTitle from '@/hooks/usePageTitle'
 import useToast from '@/hooks/useToast'
 import useAttendance from '@/hooks/useAttendance'
 import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 
-const AttendanceReports = () => {
-  usePageTitle('Attendance Reports')
-
-  const { toastError, toastInfo } = useToast()
-  const { assignmentOptions, loadingAssignments, reportData, loadingReports, loadReports, loadRegister, registerData } = useAttendance()
-  const [assignmentKey, setAssignmentKey] = useState('')
-  const [fromDate, setFromDate] = useState(firstOfMonth())
-  const [toDate, setToDate] = useState(today())
-  const [threshold, setThreshold] = useState('75')
-
-  useEffect(() => {
-    if (!assignmentOptions.length || assignmentKey) return
-    const first = assignmentOptions[0]
-    setAssignmentKey(`${first.class_id}:${first.section_id}`)
-  }, [assignmentOptions, assignmentKey])
-
-  const selectedSection = useMemo(() => {
-    const [classId, sectionId] = assignmentKey.split(':')
-    return assignmentOptions.find((assignment) =>
-      String(assignment.class_id) === String(classId) &&
-      String(assignment.section_id) === String(sectionId)
-    ) || null
-  }, [assignmentKey, assignmentOptions])
-
-  useEffect(() => {
-    if (!selectedSection) return
-    loadReports({
-      summaryParams: {
-        class_id: selectedSection.class_id,
-        section_id: selectedSection.section_id,
-        from: fromDate,
-        to: toDate,
-      },
-      thresholdParams: {
-        class_id: selectedSection.class_id,
-        section_id: selectedSection.section_id,
-        from: fromDate,
-        to: toDate,
-        threshold,
-      },
-      chronicParams: {
-        class_id: selectedSection.class_id,
-        section_id: selectedSection.section_id,
-        from: fromDate,
-        to: toDate,
-      },
-    }).catch((error) => {
-      toastError(error?.message || 'Failed to load attendance reports.')
-    })
-
-    loadRegister({
-      class_id: selectedSection.class_id,
-      section_id: selectedSection.section_id,
-      month: String(new Date(fromDate).getMonth() + 1),
-      year: String(new Date(fromDate).getFullYear()),
-    }).catch(() => {})
-  }, [selectedSection, fromDate, toDate, threshold, loadReports, loadRegister, toastError])
-
-  const dailySummary = useMemo(() => buildDailySummary(registerData?.students || []), [registerData])
-
-  return (
-    <div className="space-y-5">
-      <section
-        className="rounded-[28px] border p-5 sm:p-6"
-        style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
-      >
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-          Attendance Reports
-        </h1>
-        <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-          Summary, daily class trends, below-threshold tracking, and chronic absentee alerts for your assigned sections only.
-        </p>
-
-        <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-4">
-          <Select
-            label="Assigned Section"
-            value={assignmentKey}
-            onChange={(e) => setAssignmentKey(e.target.value)}
-            options={dedupeAssignments(assignmentOptions)}
-            placeholder="Select section"
-          />
-          <DateField label="From Date" value={fromDate} onChange={setFromDate} />
-          <DateField label="To Date" value={toDate} onChange={setToDate} />
-          <Select
-            label="Threshold"
-            value={threshold}
-            onChange={(e) => setThreshold(e.target.value)}
-            options={[
-              { value: '75', label: '75%' },
-              { value: '80', label: '80%' },
-              { value: '85', label: '85%' },
-            ]}
-          />
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <ReportCard
-          title="Student Attendance Summary"
-          subtitle="Per-student attendance percentage, counts, and status."
-          onExport={() => exportSummaryCsv(reportData.summary)}
-          loading={loadingAssignments || loadingReports}
-        >
-          <SummaryTable rows={reportData.summary} threshold={Number(threshold)} />
-        </ReportCard>
-
-        <ReportCard
-          title="Daily Class Summary"
-          subtitle="Day-wise class attendance percentage to help spot weak attendance patterns."
-          onExport={() => exportDailyCsv(dailySummary)}
-          loading={loadingAssignments || loadingReports}
-        >
-          <DailySummaryPanel rows={dailySummary} />
-        </ReportCard>
-
-        <ReportCard
-          title="Below Threshold Report"
-          subtitle="Students under the target attendance percentage, sorted from lowest first."
-          onExport={() => exportBelowThresholdCsv(reportData.belowThreshold, Number(threshold))}
-          loading={loadingAssignments || loadingReports}
-        >
-          <BelowThresholdTable rows={reportData.belowThreshold} threshold={Number(threshold)} />
-        </ReportCard>
-
-        <ReportCard
-          title="Chronic Absentees"
-          subtitle="Students absent for 3 or more consecutive days with parent contact details."
-          onExport={() => exportChronicCsv(reportData.chronicAbsentees)}
-          loading={loadingAssignments || loadingReports}
-        >
-          <ChronicAbsentees rows={reportData.chronicAbsentees} onAlert={() => toastInfo('Parent alert integration comes in the student communication steps.')} />
-        </ReportCard>
-      </section>
-    </div>
-  )
+// ─── HELPERS (unchanged from original) ───────────────────────────────────────
+const firstOfMonth = () => {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
 }
-
-const ReportCard = ({ title, subtitle, onExport, loading, children }) => (
-  <section
-    className="rounded-[28px] border p-5 sm:p-6"
-    style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
-  >
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</h2>
-        <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{subtitle}</p>
-      </div>
-      <Button variant="secondary" icon={Download} onClick={onExport}>Export</Button>
-    </div>
-    <div className="mt-5">
-      {loading ? <PanelSkeleton /> : children}
-    </div>
-  </section>
-)
-
-const SummaryTable = ({ rows, threshold }) => {
-  if (!rows.length) return <EmptyPanel text="No attendance records found for this range." />
-
-  return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full">
-        <thead>
-          <tr>
-            {['Roll', 'Name', 'Days', 'Present', 'Absent', 'Late', '%', 'Status'].map((head) => (
-              <th key={head} className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>
-                {head}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => {
-            const pct = Number(row.percentage || 0)
-            return (
-              <tr key={row.enrollment_id} style={{ borderTop: '1px solid var(--color-border)' }}>
-                <td className="px-3 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{row.roll_number || '--'}</td>
-                <td className="px-3 py-3 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{row.first_name} {row.last_name}</td>
-                <td className="px-3 py-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{row.total_days || 0}</td>
-                <td className="px-3 py-3 text-sm" style={{ color: '#10b981' }}>{row.present || 0}</td>
-                <td className="px-3 py-3 text-sm" style={{ color: '#ef4444' }}>{row.absent || 0}</td>
-                <td className="px-3 py-3 text-sm" style={{ color: '#f59e0b' }}>{row.late || 0}</td>
-                <td className="px-3 py-3 text-sm font-semibold" style={{ color: pct < threshold ? '#ef4444' : '#10b981' }}>{pct.toFixed(0)}%</td>
-                <td className="px-3 py-3 text-sm" style={{ color: pct < threshold ? '#ef4444' : 'var(--color-text-secondary)' }}>
-                  {pct >= threshold ? 'Good' : pct >= threshold - 10 ? 'Warning' : 'Critical'}
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-const DailySummaryPanel = ({ rows }) => {
-  if (!rows.length) return <EmptyPanel text="No daily summary available for the selected month." />
-
-  const max = Math.max(...rows.map((row) => row.percentage), 1)
-
-  return (
-    <div className="space-y-3">
-      {rows.map((row) => (
-        <div key={row.date}>
-          <div className="mb-1 flex items-center justify-between text-sm">
-            <span style={{ color: 'var(--color-text-primary)' }}>{row.date}</span>
-            <span style={{ color: row.percentage < 80 ? '#f59e0b' : '#10b981' }}>{row.present}/{row.total} | {row.percentage.toFixed(0)}%</span>
-          </div>
-          <div className="h-3 rounded-full" style={{ backgroundColor: 'var(--color-surface-raised)' }}>
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${(row.percentage / max) * 100}%`,
-                backgroundColor: row.percentage < 80 ? '#f59e0b' : '#10b981',
-              }}
-            />
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-const BelowThresholdTable = ({ rows, threshold }) => {
-  if (!rows.length) return <EmptyPanel text={`No students are below ${threshold}% in this date range.`} />
-
-  return (
-    <div className="space-y-3">
-      {rows.map((row) => {
-        const percentage = Number(row.percentage || 0)
-        const totalDays = Number(row.total_days || 0)
-        const effectivePresentDays = percentage * totalDays / 100
-        const daysShort = percentage >= threshold ? 0 : Math.ceil((threshold * totalDays / 100) - effectivePresentDays)
-
-        return (
-          <div
-            key={row.enrollment_id}
-            className="rounded-3xl border p-4"
-            style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}
-          >
-            <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-              {row.first_name} {row.last_name}
-            </p>
-            <p className="mt-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-              Roll {row.roll_number || '--'} | {percentage.toFixed(0)}% attendance
-            </p>
-            <p className="mt-2 text-xs" style={{ color: '#ef4444' }}>
-              Days short to reach {threshold}%: {Math.max(0, daysShort)}
-            </p>
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-const ChronicAbsentees = ({ rows, onAlert }) => {
-  if (!rows.length) return <EmptyPanel text="No chronic absentees found in this date range." />
-
-  return (
-    <div className="space-y-3">
-      {rows.map((row) => (
-        <div
-          key={row.enrollment_id}
-          className="rounded-3xl border p-4"
-          style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                {row.first_name} {row.last_name}
-              </p>
-              <p className="mt-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                {row.consecutive_absent_days} consecutive days absent
-              </p>
-              <p className="mt-2 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                Dates: {Array.isArray(row.dates) ? row.dates.join(', ') : '--'}
-              </p>
-              <p className="mt-2 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                Parent contact: {row.father_phone || row.mother_phone || 'Not available'}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => row.father_phone && window.open(`tel:${row.father_phone}`, '_self')}
-                className="flex h-10 w-10 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: 'rgba(16, 185, 129, 0.14)', color: '#10b981' }}
-                title="Call parent"
-              >
-                <PhoneCall size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={onAlert}
-                className="flex h-10 w-10 items-center justify-center rounded-2xl"
-                style={{ backgroundColor: 'rgba(245, 158, 11, 0.14)', color: '#f59e0b' }}
-                title="Send alert"
-              >
-                <BellRing size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-const DateField = ({ label, value, onChange }) => (
-  <div className="flex flex-col gap-1.5">
-    <label className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{label}</label>
-    <input
-      type="date"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="min-h-11 rounded-xl px-4 text-sm outline-none"
-      style={{
-        backgroundColor: 'var(--color-surface)',
-        border: '1.5px solid var(--color-border)',
-        color: 'var(--color-text-primary)',
-      }}
-    />
-  </div>
-)
-
-const EmptyPanel = ({ text }) => (
-  <div className="rounded-3xl border border-dashed p-8 text-center" style={{ borderColor: 'var(--color-border)' }}>
-    <TriangleAlert size={18} className="mx-auto" style={{ color: 'var(--color-text-muted)' }} />
-    <p className="mt-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{text}</p>
-  </div>
-)
-
-const PanelSkeleton = () => (
-  <div className="space-y-3 animate-pulse">
-    {[...Array(5)].map((_, index) => (
-      <div key={index} className="h-14 rounded-2xl" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-    ))}
-  </div>
-)
+const today = () => new Date().toISOString().slice(0, 10)
 
 const dedupeAssignments = (assignments) => {
   const map = new Map()
@@ -371,18 +38,10 @@ const buildDailySummary = (students) => {
       if (record.status === 'half_day') current.present += 0.5
     })
   })
-
   return [...map.values()]
     .map((row) => ({ ...row, percentage: row.total ? (row.present / row.total) * 100 : 0 }))
     .sort((a, b) => a.date.localeCompare(b.date))
 }
-
-const firstOfMonth = () => {
-  const now = new Date()
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-}
-
-const today = () => new Date().toISOString().slice(0, 10)
 
 const downloadCsv = (filename, rows) => {
   const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
@@ -444,6 +103,677 @@ const exportDailyCsv = (rows) => {
     ['Date', 'Present Equivalent', 'Total', 'Percentage'],
     ...rows.map((row) => [row.date, row.present, row.total, row.percentage.toFixed(2)]),
   ])
+}
+
+// ─── THEME CSS — injected once, toggled via [data-theme] on root div ──────────
+const THEME_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Sora:wght@300;400;500;600;700&display=swap');
+
+  .ar-root {
+    --color-bg:           var(--color-background, #f4f5f7);
+    --color-surface:      var(--color-surface, #ffffff);
+    --color-surface-alt:  var(--color-surface, #ffffff);
+    --color-raised:       var(--color-surface-raised, #f0f1f5);
+    --color-border:       var(--color-border, #e2e4ec);
+    --color-border-sub:   var(--color-border, #eaecf4);
+    --color-text:         var(--color-text-primary, #1a1d2e);
+    --color-text-sub:     var(--color-text-secondary, #5c6078);
+    --color-text-muted:   var(--color-text-muted, #9298b0);
+    --color-input-bg:     var(--color-surface, #ffffff);
+    --color-shim-a:       #ebebf4;
+    --color-shim-b:       #f4f4fa;
+    --color-card-shadow:  0 2px 12px rgba(0,0,0,0.06);
+    --color-date-scheme:  light;
+    --color-scroll-thumb: #d0d4e4;
+  }
+
+  .ar-root[data-theme="dark"] {
+    --color-bg:           var(--color-background, #08080e);
+    --color-surface:      var(--color-surface, #0f0f16);
+    --color-surface-alt:  var(--color-surface, #0c0c13);
+    --color-raised:       var(--color-surface-raised, #13131c);
+    --color-border:       var(--color-border, #1a1a26);
+    --color-border-sub:   var(--color-border, #141420);
+    --color-text:         var(--color-text-primary, #e4e4f0);
+    --color-text-sub:     var(--color-text-secondary, #9090aa);
+    --color-text-muted:   var(--color-text-muted, #55556e);
+    --color-input-bg:     #0b0b12;
+    --color-shim-a:       #0f0f1a;
+    --color-shim-b:       #14141f;
+    --color-card-shadow:  none;
+    --color-date-scheme:  dark;
+    --color-scroll-thumb: #1e1e2c;
+  }
+
+  .ar-root * { box-sizing: border-box; }
+
+  .ar-root ::-webkit-scrollbar { width: 4px; height: 4px; }
+  .ar-root ::-webkit-scrollbar-track { background: transparent; }
+  .ar-root ::-webkit-scrollbar-thumb { background: var(--color-scroll-thumb); border-radius: 4px; }
+
+  .ar-root input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer; opacity: 0.45;
+  }
+
+  @keyframes ar-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  @keyframes ar-fadein {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── stat card ── */
+  .ar-stat-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--color-card-shadow);
+    transition: border-color 0.18s;
+  }
+  .ar-stat-card:hover { border-color: var(--color-text-muted, #9298b0); }
+
+  /* ── filter bar ── */
+  .ar-filter-bar {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 20px;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+    gap: 16px;
+    align-items: end;
+    box-shadow: var(--color-card-shadow);
+  }
+
+  /* ── report card ── */
+  .ar-report-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--color-card-shadow);
+  }
+  .ar-report-card-header {
+    padding: 22px 24px 18px;
+    border-bottom: 1px solid var(--color-border-sub);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .ar-report-card-body { padding: 20px 24px; flex: 1; }
+
+  /* ── select / date input ── */
+  .ar-field-label {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .ar-native-select, .ar-date-input {
+    background: var(--color-input-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 10px 32px 10px 14px;
+    font-size: 13px;
+    color: var(--color-text);
+    outline: none;
+    cursor: pointer;
+    font-family: inherit;
+    width: 100%;
+    transition: border-color 0.15s;
+    color-scheme: var(--color-date-scheme);
+  }
+  .ar-native-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888899' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  .ar-native-select:focus, .ar-date-input:focus {
+    border-color: #7b6ef6;
+  }
+
+  /* ── export button ── */
+  .ar-export-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--color-border);
+    background: var(--color-raised);
+    color: var(--color-text-sub);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .ar-export-btn:hover {
+    border-color: currentColor;
+    background: rgba(123,110,246,0.08);
+    color: #7b6ef6;
+  }
+
+  /* ── theme toggle ── */
+  .ar-theme-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+    background: var(--color-raised);
+    color: var(--color-text-sub);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.18s;
+  }
+  .ar-theme-btn:hover {
+    border-color: #7b6ef6;
+    color: #7b6ef6;
+    background: rgba(123,110,246,0.08);
+  }
+
+  /* ── icon action button ── */
+  .ar-icon-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  /* ── skeleton ── */
+  .ar-skeleton-row {
+    height: 44px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, var(--color-shim-a) 25%, var(--color-shim-b) 50%, var(--color-shim-a) 75%);
+    background-size: 200% 100%;
+    animation: ar-shimmer 1.4s infinite;
+  }
+
+  /* ── summary table ── */
+  .ar-table { width: 100%; border-collapse: collapse; }
+  .ar-table th {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .ar-table td { padding: 11px 12px; }
+  .ar-table tbody tr { border-top: 1px solid var(--color-border-sub); }
+  .ar-table tbody tr:first-child { border-top: none; }
+
+  /* ── below threshold card ── */
+  .ar-threshold-card {
+    background: var(--color-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 14px 16px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ── chronic card ── */
+  .ar-chronic-card {
+    background: var(--color-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 16px;
+    padding: 14px 16px;
+  }
+
+  /* ── empty state ── */
+  .ar-empty {
+    border: 1px dashed var(--color-border);
+    border-radius: 14px;
+    padding: 32px 24px;
+    text-align: center;
+  }
+
+  /* ── mini progress bar track ── */
+  .ar-bar-track {
+    height: 3px; border-radius: 2px;
+    background: var(--color-raised);
+    width: 56px; margin-top: 5px;
+  }
+  .ar-daily-track {
+    height: 6px; border-radius: 3px;
+    background: var(--color-raised);
+    overflow: hidden;
+  }
+
+  /* ── badge ── */
+  .ar-status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 3px 9px;
+    border-radius: 6px;
+  }
+  .ar-absent-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 5px;
+    background: rgba(239,68,68,0.1);
+    color: #ef4444;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+  }
+`
+
+// ─── STRUCTURAL COMPONENTS ────────────────────────────────────────────────────
+
+const StatCard = ({ label, value, sub, color, icon: Icon }) => (
+  <div className="ar-stat-card">
+    <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: color, opacity: 0.08, filter: 'blur(20px)', pointerEvents: 'none' }} />
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <span style={{ fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--color-text-muted)' }}>{label}</span>
+      <div style={{ width: 32, height: 32, borderRadius: 10, background: `${color}1c`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Icon size={14} style={{ color }} />
+      </div>
+    </div>
+    <span style={{ fontSize: 30, fontWeight: 700, color: 'var(--color-text)', lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif" }}>{value}</span>
+    {sub && <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{sub}</span>}
+  </div>
+)
+
+const ReportCard = ({ title, subtitle, onExport, accent = '#7b6ef6', children }) => (
+  <div className="ar-report-card">
+    <div className="ar-report-card-header">
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+          <div style={{ width: 3, height: 18, borderRadius: 2, background: accent, flexShrink: 0 }} />
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--color-text)', margin: 0, fontFamily: "'DM Serif Display', Georgia, serif" }}>{title}</h2>
+        </div>
+        <p style={{ fontSize: 12, color: 'var(--color-text-muted)', margin: 0, paddingLeft: 13 }}>{subtitle}</p>
+      </div>
+      <button className="ar-export-btn" onClick={onExport} style={{ '--export-accent': accent }}>
+        <Download size={12} /> Export
+      </button>
+    </div>
+    <div className="ar-report-card-body">{children}</div>
+  </div>
+)
+
+const NativeSelect = ({ label, value, onChange, options, placeholder }) => (
+  <div>
+    <label className="ar-field-label">{label}</label>
+    <select className="ar-native-select" value={value} onChange={onChange}>
+      {placeholder && <option value="">{placeholder}</option>}
+      {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  </div>
+)
+
+const DateField = ({ label, value, onChange }) => (
+  <div>
+    <label className="ar-field-label">{label}</label>
+    <input type="date" className="ar-date-input" value={value} onChange={(e) => onChange(e.target.value)} />
+  </div>
+)
+
+const PanelSkeleton = () => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    {[...Array(5)].map((_, i) => <div key={i} className="ar-skeleton-row" />)}
+  </div>
+)
+
+const EmptyPanel = ({ text }) => (
+  <div className="ar-empty">
+    <TriangleAlert size={18} className="mx-auto" style={{ color: 'var(--color-text-muted)', display: 'block', margin: '0 auto 10px' }} />
+    <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-muted)' }}>{text}</p>
+  </div>
+)
+
+// ─── REPORT PANELS (logic identical to original) ──────────────────────────────
+
+const SummaryTable = ({ rows, threshold }) => {
+  if (!rows.length) return <EmptyPanel text="No attendance records found for this range." />
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <table className="ar-table">
+        <thead>
+          <tr>
+            {['Roll', 'Name', 'Days', 'Present', 'Absent', 'Late', '%', 'Status'].map((head) => (
+              <th key={head}>{head}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const pct = Number(row.percentage || 0)
+            const sColor = pct >= threshold ? '#10b981' : pct >= threshold - 10 ? '#f59e0b' : '#ef4444'
+            const sBg    = pct >= threshold ? 'rgba(16,185,129,0.12)' : pct >= threshold - 10 ? 'rgba(245,158,11,0.12)' : 'rgba(239,68,68,0.12)'
+            const sLabel = pct >= threshold ? 'Good' : pct >= threshold - 10 ? 'Warning' : 'Critical'
+            return (
+              <tr key={row.enrollment_id}>
+                <td style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{row.roll_number || '--'}</td>
+                <td style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text)', whiteSpace: 'nowrap' }}>{row.first_name} {row.last_name}</td>
+                <td style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{row.total_days || 0}</td>
+                <td style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>{row.present || 0}</td>
+                <td style={{ fontSize: 12, color: '#ef4444', fontWeight: 600 }}>{row.absent || 0}</td>
+                <td style={{ fontSize: 12, color: '#f59e0b' }}>{row.late || 0}</td>
+                <td>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: sColor }}>{pct.toFixed(0)}%</span>
+                  <div className="ar-bar-track">
+                    <div style={{ height: '100%', borderRadius: 2, width: `${Math.min(pct, 100)}%`, background: sColor, transition: 'width 0.6s ease' }} />
+                  </div>
+                </td>
+                <td>
+                  <span className="ar-status-badge" style={{ background: sBg, color: sColor }}>{sLabel}</span>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+const DailySummaryPanel = ({ rows }) => {
+  if (!rows.length) return <EmptyPanel text="No daily summary available for the selected month." />
+  const max = Math.max(...rows.map((row) => row.percentage), 1)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {rows.map((row) => {
+        const color = row.percentage >= 90 ? '#10b981' : row.percentage >= 75 ? '#7b6ef6' : row.percentage >= 60 ? '#f59e0b' : '#ef4444'
+        return (
+          <div key={row.date}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+              <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', fontFamily: 'monospace' }}>{row.date}</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color }}>
+                {row.present}/{row.total}
+                <span style={{ color: 'var(--color-text-muted)', fontWeight: 400 }}> · </span>
+                {row.percentage.toFixed(0)}%
+              </span>
+            </div>
+            <div className="ar-daily-track">
+              <div style={{ height: '100%', borderRadius: 3, width: `${(row.percentage / max) * 100}%`, background: `linear-gradient(90deg, ${color}88, ${color})`, transition: 'width 0.7s cubic-bezier(.4,0,.2,1)' }} />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+const BelowThresholdTable = ({ rows, threshold }) => {
+  if (!rows.length) return <EmptyPanel text={`No students are below ${threshold}% in this date range.`} />
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {rows.map((row) => {
+        const percentage = Number(row.percentage || 0)
+        const totalDays = Number(row.total_days || 0)
+        const effectivePresentDays = percentage * totalDays / 100
+        const daysShort = percentage >= threshold ? 0 : Math.ceil((threshold * totalDays / 100) - effectivePresentDays)
+        return (
+          <div key={row.enrollment_id} className="ar-threshold-card">
+            <div style={{ position: 'absolute', top: 0, left: 0, bottom: 0, width: `${percentage}%`, background: 'linear-gradient(90deg, rgba(239,68,68,0.06), transparent)', borderRadius: 16, pointerEvents: 'none' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>{row.first_name} {row.last_name}</p>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: 'var(--color-text-secondary)' }}>Roll {row.roll_number || '--'} · {totalDays} school days</p>
+                <p style={{ margin: '6px 0 0', fontSize: 12, color: '#ef4444' }}>
+                  Days short to reach {threshold}%: {Math.max(0, daysShort)}
+                </p>
+              </div>
+              <p style={{ margin: 0, fontSize: 24, fontWeight: 700, color: '#ef4444', lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+                {percentage.toFixed(0)}%
+              </p>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+const ChronicAbsentees = ({ rows, onAlert }) => {
+  if (!rows.length) return <EmptyPanel text="No chronic absentees found in this date range." />
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {rows.map((row) => (
+        <div key={row.enrollment_id} className="ar-chronic-card">
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5, flexWrap: 'wrap' }}>
+                <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: 'var(--color-text)' }}>{row.first_name} {row.last_name}</p>
+                <span className="ar-absent-badge">{row.consecutive_absent_days}D ABSENT</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 11, color: 'var(--color-text-secondary)', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {Array.isArray(row.dates) ? row.dates.join('  ·  ') : '--'}
+              </p>
+              <p style={{ margin: '6px 0 0', fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                Parent contact: {row.father_phone || row.mother_phone || 'Not available'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginLeft: 12, flexShrink: 0 }}>
+              <button
+                type="button"
+                className="ar-icon-btn"
+                onClick={() => row.father_phone && window.open(`tel:${row.father_phone}`, '_self')}
+                style={{ background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}
+                title="Call parent"
+              >
+                <PhoneCall size={15} />
+              </button>
+              <button
+                type="button"
+                className="ar-icon-btn"
+                onClick={onAlert}
+                style={{ background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.2)' }}
+                title="Send alert"
+              >
+                <BellRing size={15} />
+              </button>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── MAIN PAGE ────────────────────────────────────────────────────────────────
+const AttendanceReports = () => {
+  usePageTitle('Attendance Reports')
+
+  const { toastError, toastInfo } = useToast()
+  const { assignmentOptions, loadingAssignments, reportData, loadingReports, loadReports, loadRegister, registerData } = useAttendance()
+
+  const [isDark,        setIsDark]        = useState(true)
+  const [assignmentKey, setAssignmentKey] = useState('')
+  const [fromDate,      setFromDate]      = useState(firstOfMonth())
+  const [toDate,        setToDate]        = useState(today())
+  const [threshold,     setThreshold]     = useState('75')
+
+  // ── identical to original: seed first option
+  useEffect(() => {
+    if (!assignmentOptions.length || assignmentKey) return
+    const first = assignmentOptions[0]
+    setAssignmentKey(`${first.class_id}:${first.section_id}`)
+  }, [assignmentOptions, assignmentKey])
+
+  // ── identical to original: resolve section object
+  const selectedSection = useMemo(() => {
+    const [classId, sectionId] = assignmentKey.split(':')
+    return assignmentOptions.find((assignment) =>
+      String(assignment.class_id) === String(classId) &&
+      String(assignment.section_id) === String(sectionId)
+    ) || null
+  }, [assignmentKey, assignmentOptions])
+
+  // ── identical to original: load reports & register on filter change
+  useEffect(() => {
+    if (!selectedSection) return
+    loadReports({
+      summaryParams: {
+        class_id:   selectedSection.class_id,
+        section_id: selectedSection.section_id,
+        from: fromDate,
+        to:   toDate,
+      },
+      thresholdParams: {
+        class_id:   selectedSection.class_id,
+        section_id: selectedSection.section_id,
+        from: fromDate,
+        to:   toDate,
+        threshold,
+      },
+      chronicParams: {
+        class_id:   selectedSection.class_id,
+        section_id: selectedSection.section_id,
+        from: fromDate,
+        to:   toDate,
+      },
+    }).catch((error) => {
+      toastError(error?.message || 'Failed to load attendance reports.')
+    })
+
+    loadRegister({
+      class_id:   selectedSection.class_id,
+      section_id: selectedSection.section_id,
+      month: String(new Date(fromDate).getMonth() + 1),
+      year:  String(new Date(fromDate).getFullYear()),
+    }).catch(() => {})
+  }, [selectedSection, fromDate, toDate, threshold, loadReports, loadRegister, toastError])
+
+  // ── identical to original
+  const dailySummary = useMemo(() => buildDailySummary(registerData?.students || []), [registerData])
+
+  const loading = loadingAssignments || loadingReports
+
+  // ── derived stats (new — structural only, no logic changes)
+  const avgAtt = reportData.summary.length
+    ? (reportData.summary.reduce((a, r) => a + Number(r.percentage), 0) / reportData.summary.length).toFixed(1)
+    : '—'
+
+  return (
+    <div
+      className="ar-root"
+      data-theme={isDark ? 'dark' : 'light'}
+      style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: "'Sora', 'Segoe UI', sans-serif", color: 'var(--color-text)', padding: '24px 20px 56px', maxWidth: 1300, margin: '0 auto', transition: 'background 0.25s' }}
+    >
+      <style>{THEME_STYLES}</style>
+
+      {/* ── HEADER ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28, gap: 12 }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
+            <div style={{ width: 4, height: 28, borderRadius: 2, background: 'linear-gradient(180deg, #7b6ef6, #a78bfa)', flexShrink: 0 }} />
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 700, color: 'var(--color-text)', fontFamily: "'DM Serif Display', Georgia, serif", letterSpacing: '-0.01em' }}>
+              Attendance Reports
+            </h1>
+          </div>
+          <p style={{ margin: '0 0 0 14px', fontSize: 13, color: 'var(--color-text-muted)' }}>
+            Summary, daily class trends, below-threshold tracking, and chronic absentee alerts for your assigned sections only.
+          </p>
+        </div>
+        <button className="ar-theme-btn" onClick={() => setIsDark((d) => !d)} title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
+          {isDark ? <Sun size={15} /> : <Moon size={15} />}
+        </button>
+      </div>
+
+      {/* ── STAT STRIP ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(175px, 1fr))', gap: 12, marginBottom: 20 }}>
+        <StatCard label="Total Students"    value={reportData.summary.length}          sub="in selected section"           color="#7b6ef6" icon={Users}       />
+        <StatCard label="Avg Attendance"    value={`${avgAtt}%`}                       sub="across date range"             color="#10b981" icon={TrendingUp}   />
+        <StatCard label="Below Threshold"   value={reportData.belowThreshold.length}   sub={`under ${threshold}% target`}  color="#ef4444" icon={AlertCircle}  />
+        <StatCard label="Chronic Absentees" value={reportData.chronicAbsentees.length} sub="3+ consecutive days"           color="#f59e0b" icon={Activity}      />
+      </div>
+
+      {/* ── FILTERS ── */}
+      <div className="ar-filter-bar">
+        <NativeSelect
+          label="Assigned Section"
+          value={assignmentKey}
+          onChange={(e) => setAssignmentKey(e.target.value)}
+          options={dedupeAssignments(assignmentOptions)}
+          placeholder={loadingAssignments ? 'Loading…' : 'Select section'}
+        />
+        <DateField label="From Date" value={fromDate} onChange={setFromDate} />
+        <DateField label="To Date"   value={toDate}   onChange={setToDate}   />
+        <NativeSelect
+          label="Threshold"
+          value={threshold}
+          onChange={(e) => setThreshold(e.target.value)}
+          options={[
+            { value: '75', label: '75%' },
+            { value: '80', label: '80%' },
+            { value: '85', label: '85%' },
+          ]}
+        />
+      </div>
+
+      {/* ── REPORT GRID ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: 16 }}>
+
+        <ReportCard
+          title="Student Attendance Summary"
+          subtitle="Per-student attendance percentage, counts, and status."
+          accent="#7b6ef6"
+          onExport={() => exportSummaryCsv(reportData.summary)}
+        >
+          {loading ? <PanelSkeleton /> : <SummaryTable rows={reportData.summary} threshold={Number(threshold)} />}
+        </ReportCard>
+
+        <ReportCard
+          title="Daily Class Summary"
+          subtitle="Day-wise class attendance percentage to help spot weak attendance patterns."
+          accent="#10b981"
+          onExport={() => exportDailyCsv(dailySummary)}
+        >
+          {loading ? <PanelSkeleton /> : <DailySummaryPanel rows={dailySummary} />}
+        </ReportCard>
+
+        <ReportCard
+          title="Below Threshold Report"
+          subtitle="Students under the target attendance percentage, sorted from lowest first."
+          accent="#ef4444"
+          onExport={() => exportBelowThresholdCsv(reportData.belowThreshold, Number(threshold))}
+        >
+          {loading ? <PanelSkeleton /> : <BelowThresholdTable rows={reportData.belowThreshold} threshold={Number(threshold)} />}
+        </ReportCard>
+
+        <ReportCard
+          title="Chronic Absentees"
+          subtitle="Students absent for 3 or more consecutive days with parent contact details."
+          accent="#f59e0b"
+          onExport={() => exportChronicCsv(reportData.chronicAbsentees)}
+        >
+          {loading ? <PanelSkeleton /> : (
+            <ChronicAbsentees
+              rows={reportData.chronicAbsentees}
+              onAlert={() => toastInfo('Parent alert integration comes in the student communication steps.')}
+            />
+          )}
+        </ReportCard>
+
+      </div>
+    </div>
+  )
 }
 
 export default AttendanceReports

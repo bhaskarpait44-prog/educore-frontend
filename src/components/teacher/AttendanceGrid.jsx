@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Download, FileSpreadsheet, FileText } from 'lucide-react'
+import { AlertTriangle,CheckCircle2, Download, FileSpreadsheet, FileText,TrendingDown } from 'lucide-react'
+
 import Modal from '@/components/ui/Modal'
 import Button from '@/components/ui/Button'
 
@@ -86,7 +87,7 @@ const AttendanceGrid = ({
       </div>
 
       <section
-        className="rounded-[28px] border p-5"
+        className="rounded-[16px] border p-5"
         style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
       >
         {loading ? (
@@ -307,23 +308,39 @@ const SummaryCard = ({ title, items, danger = false, success = false }) => (
     style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
   >
     <div className="flex items-center gap-2">
-      {danger ? <AlertTriangle size={16} style={{ color: '#ef4444' }} /> : null}
-      <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</h3>
+      {title === 'Top 5 Most Absent' && <TrendingDown size={16} style={{ color: '#f59e0b' }} />}
+      {danger && <AlertTriangle size={16} style={{ color: '#ef4444' }} />}
+      {success && <CheckCircle2 size={16} style={{ color: '#10b981' }} />}
+
+      <h3
+        className="text-sm font-semibold"
+        style={{ color: 'var(--color-text-primary)' }}
+      >
+        {title}
+      </h3>
     </div>
+
     <div className="mt-4 space-y-2">
       {items.length ? items.map((item) => (
         <p
           key={item}
           className="rounded-2xl px-3 py-2 text-sm"
           style={{
-            backgroundColor: success ? 'rgba(16, 185, 129, 0.10)' : 'var(--color-surface-raised)',
+            backgroundColor: success
+              ? 'rgba(16, 185, 129, 0.10)'
+              : 'var(--color-surface-raised)',
             color: 'var(--color-text-primary)',
           }}
         >
           {item}
         </p>
       )) : (
-        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>No students in this list.</p>
+        <p
+          className="text-sm"
+          style={{ color: 'var(--color-text-secondary)' }}
+        >
+          No students in this list.
+        </p>
       )}
     </div>
   </div>
