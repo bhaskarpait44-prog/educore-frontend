@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  BookOpenText, CalendarRange, ClipboardList, LayoutGrid, School2, ShieldCheck, UserRoundCheck,
+  BookOpenText, CalendarRange, ChevronDown, ChevronRight, Clock,
+  Grid3x3, School2, ShieldCheck, UserRoundCheck, Users, Zap,
 } from 'lucide-react'
 import * as teacherControlApi from '@/api/adminTeacherControlApi'
 import { getClasses, getClassList, getSections } from '@/api/classApi'
@@ -12,85 +13,104 @@ import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import EmptyState from '@/components/ui/EmptyState'
-import Textarea from '@/components/ui/Textarea'
 
+const DAY_OPTIONS = [
+  { value: 'monday',    label: 'Mon' },
+  { value: 'tuesday',   label: 'Tue' },
+  { value: 'wednesday', label: 'Wed' },
+  { value: 'thursday',  label: 'Thu' },
+  { value: 'friday',    label: 'Fri' },
+  { value: 'saturday',  label: 'Sat' },
+]
+
+const DAY_FULL = {
+  monday: 'Monday', tuesday: 'Tuesday', wednesday: 'Wednesday',
+  thursday: 'Thursday', friday: 'Friday', saturday: 'Saturday',
+}
+
+const PERIOD_TIMES = {
+  1: '08:00–08:45', 2: '08:45–09:30', 3: '09:30–10:15',
+  4: '10:30–11:15', 5: '11:15–12:00', 6: '12:30–13:15', 7: '13:15–14:00',
+}
+
+const SUBJECT_COLORS = [
+  '#6366f1','#0ea5e9','#10b981','#f59e0b','#ef4444',
+  '#8b5cf6','#ec4899','#14b8a6','#f97316','#84cc16',
+]
+
+/* ─── helpers ─── */
+const subjectColor = (id) => SUBJECT_COLORS[(id || 0) % SUBJECT_COLORS.length]
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Main page
+════════════════════════════════════════════════════════════════════════════ */
 const AdminTeacherControlPage = () => {
   usePageTitle('Teacher Control')
-
   const { toastSuccess, toastError } = useToast()
+
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving]   = useState(false)
   const [session, setSession] = useState(null)
-  const [overview, setOverview] = useState({})
-  const [teachers, setTeachers] = useState([])
-  const [classes, setClasses] = useState([])
+  const [overview, setOverview]     = useState({})
+  const [teachers, setTeachers]     = useState([])
+  const [classes,  setClasses]      = useState([])
   const [sectionsByClass, setSectionsByClass] = useState({})
   const [subjectsByClass, setSubjectsByClass] = useState({})
   const [assignments, setAssignments] = useState([])
-  const [timetable, setTimetable] = useState([])
-  const [homework, setHomework] = useState([])
-  const [notices, setNotices] = useState([])
-  const [marks, setMarks] = useState([])
-  const [remarks, setRemarks] = useState([])
-  const [leaves, setLeaves] = useState([])
+  const [timetable,   setTimetable]   = useState([])
+  const [leaves,      setLeaves]      = useState([])
   const [corrections, setCorrections] = useState([])
+  const [homework,    setHomework]    = useState([])
+  const [notices,     setNotices]     = useState([])
+
+  const [tab, setTab] = useState('assignments')
+
+  /* timetable view mode */
+  const [ttView, setTtView]       = useState('grid') // 'grid' | 'list'
+  const [ttFilterClass, setTtFilterClass]     = useState('')
+  const [ttFilterSection, setTtFilterSection] = useState('')
+  const [ttFilterTeacher, setTtFilterTeacher] = useState('')
+
+  /* assignment filter */
+  const [aFilterClass, setAFilterClass]     = useState('')
+  const [aFilterSection, setAFilterSection] = useState('')
+
+  /* forms */
   const [assignmentForm, setAssignmentForm] = useState({
-    teacher_id: '',
-    class_id: '',
-    section_id: '',
-    subject_id: '',
-    is_class_teacher: false,
+    teacher_id: '', class_id: '', section_id: '', subject_id: '', is_class_teacher: false,
   })
   const [slotForm, setSlotForm] = useState({
-    teacher_id: '',
-    class_id: '',
-    section_id: '',
-    subject_id: '',
-    day_of_week: 'monday',
-    period_number: '1',
-    start_time: '09:00',
-    end_time: '09:40',
-    room_number: '',
+    teacher_id: '', class_id: '', section_id: '', subject_id: '',
+    day_of_week: 'monday', period_number: '1',
+    start_time: '08:00', end_time: '08:45', room_number: '',
   })
-  const [tab, setTab] = useState('workflows')
+  const [showAssignForm, setShowAssignForm] = useState(false)
+  const [showSlotForm,   setShowSlotForm]   = useState(false)
 
+  /* ── load ── */
   const load = async () => {
     setLoading(true)
     try {
       const [
-        overviewRes,
-        assignmentsRes,
-        timetableRes,
-        homeworkRes,
-        noticesRes,
-        marksRes,
-        remarksRes,
-        leaveRes,
-        correctionsRes,
-        teachersRes,
-        classesRes,
+        overviewRes, assignmentsRes, timetableRes, homeworkRes,
+        noticesRes, leaveRes, correctionsRes, teachersRes, classesRes,
       ] = await Promise.all([
         teacherControlApi.getTeacherControlOverview(),
         teacherControlApi.getTeacherControlAssignments(),
         teacherControlApi.getTeacherControlTimetable(),
         teacherControlApi.getTeacherControlHomework(),
         teacherControlApi.getTeacherControlNotices(),
-        teacherControlApi.getTeacherControlMarks(),
-        teacherControlApi.getTeacherControlRemarks(),
         teacherControlApi.getTeacherControlLeave(),
         teacherControlApi.getTeacherControlCorrections(),
         teacherControlApi.getTeacherControlTeachers(),
         getClasses(),
       ])
-
       setSession(overviewRes?.data?.session || null)
-      setOverview(overviewRes?.data?.counts || {})
+      setOverview(overviewRes?.data?.counts  || {})
       setAssignments(assignmentsRes?.data?.assignments || [])
       setTimetable(timetableRes?.data?.timetable || [])
       setHomework(homeworkRes?.data?.homework || [])
       setNotices(noticesRes?.data?.notices || [])
-      setMarks(marksRes?.data?.marks || [])
-      setRemarks(remarksRes?.data?.remarks || [])
       setLeaves(leaveRes?.data?.applications || [])
       setCorrections(correctionsRes?.data?.requests || [])
       setTeachers(teachersRes?.data?.teachers || [])
@@ -100,840 +120,676 @@ const AdminTeacherControlPage = () => {
     }
   }
 
-  useEffect(() => {
-    load().catch((error) => {
-      setLoading(false)
-      toastError(error?.message || 'Failed to load teacher control center.')
-    })
-  }, [])
+  useEffect(() => { load().catch(() => toastError('Failed to load.')) }, [])
 
+  /* ── lazy load sections/subjects ── */
   const ensureClassMeta = async (classId) => {
     if (!classId) return
     if (!sectionsByClass[classId]) {
-      const sectionRes = await getSections(classId)
-      const sectionRows = Array.isArray(sectionRes?.data) ? sectionRes.data : (sectionRes?.data?.sections || [])
-      setSectionsByClass((prev) => ({ ...prev, [classId]: sectionRows }))
+      const r = await getSections(classId)
+      setSectionsByClass((p) => ({ ...p, [classId]: Array.isArray(r?.data) ? r.data : (r?.data?.sections || []) }))
     }
     if (!subjectsByClass[classId]) {
-      const subjectRes = await getSubjects(classId)
-      const subjectRows = Array.isArray(subjectRes?.data) ? subjectRes.data : (subjectRes?.data?.subjects || [])
-      setSubjectsByClass((prev) => ({ ...prev, [classId]: subjectRows }))
+      const r = await getSubjects(classId)
+      setSubjectsByClass((p) => ({ ...p, [classId]: Array.isArray(r?.data) ? r.data : (r?.data?.subjects || []) }))
     }
   }
+  useEffect(() => { ensureClassMeta(assignmentForm.class_id).catch(() => {}) }, [assignmentForm.class_id])
+  useEffect(() => { ensureClassMeta(slotForm.class_id).catch(() => {}) },       [slotForm.class_id])
 
-  useEffect(() => {
-    ensureClassMeta(assignmentForm.class_id).catch(() => {})
-  }, [assignmentForm.class_id])
+  /* ── derived options ── */
+  const classOptions   = useMemo(() => classes.map((r) => ({ value: String(r.id), label: r.name })), [classes])
+  const teacherOptions = useMemo(() => teachers.map((r) => ({ value: String(r.id), label: r.name })), [teachers])
 
-  useEffect(() => {
-    ensureClassMeta(slotForm.class_id).catch(() => {})
-  }, [slotForm.class_id])
+  const aSection = useMemo(() => (sectionsByClass[assignmentForm.class_id] || []).map((r) => ({ value: String(r.id), label: r.name })), [sectionsByClass, assignmentForm.class_id])
+  const aSubject = useMemo(() => (subjectsByClass[assignmentForm.class_id] || []).map((r) => ({ value: String(r.id), label: r.name })), [subjectsByClass, assignmentForm.class_id])
 
-  const slotRelevantAssignments = useMemo(() => (
-    assignments.filter((item) =>
-      !item.is_class_teacher &&
-      item.is_active &&
-      (!slotForm.teacher_id || String(item.teacher_id) === String(slotForm.teacher_id)) &&
-      (!slotForm.class_id || String(item.class_id) === String(slotForm.class_id)) &&
-      (!slotForm.section_id || String(item.section_id) === String(slotForm.section_id))
-    )
-  ), [assignments, slotForm.teacher_id, slotForm.class_id, slotForm.section_id])
+  const slotSectionOpts  = useMemo(() => (sectionsByClass[slotForm.class_id] || []).map((r) => ({ value: String(r.id), label: r.name })), [sectionsByClass, slotForm.class_id])
+  const slotSubjectOpts  = useMemo(() => assignments.filter((a) =>
+    !a.is_class_teacher && a.is_active &&
+    (!slotForm.teacher_id || String(a.teacher_id) === String(slotForm.teacher_id)) &&
+    (!slotForm.class_id   || String(a.class_id)   === String(slotForm.class_id))   &&
+    (!slotForm.section_id || String(a.section_id) === String(slotForm.section_id))
+  ).map((a) => ({ value: String(a.subject_id), label: a.subject_name })), [assignments, slotForm])
 
+  /* ── assignment groups ── */
   const assignmentsByClass = useMemo(() => {
     const groups = new Map()
-
     assignments.forEach((item) => {
       const key = `${item.class_id}:${item.section_id}`
-      if (!groups.has(key)) {
-        groups.set(key, {
-          key,
-          class_name: item.class_name,
-          section_name: item.section_name,
-          session_name: item.session_name,
-          classTeacher: null,
-          subjectTeachers: [],
-          inactiveCount: 0,
-        })
-      }
-
-      const group = groups.get(key)
-      if (!item.is_active) group.inactiveCount += 1
-
-      if (item.is_class_teacher) group.classTeacher = item
-      else group.subjectTeachers.push(item)
+      if (!groups.has(key)) groups.set(key, { key, class_name: item.class_name, section_name: item.section_name, session_name: item.session_name, classTeacher: null, subjectTeachers: [], inactiveCount: 0 })
+      const g = groups.get(key)
+      if (!item.is_active) g.inactiveCount++
+      if (item.is_class_teacher) g.classTeacher = item
+      else g.subjectTeachers.push(item)
     })
-
     return Array.from(groups.values())
-      .map((group) => ({
-        ...group,
-        subjectTeachers: group.subjectTeachers.sort((a, b) => {
-          if (Number(b.is_active) !== Number(a.is_active)) return Number(b.is_active) - Number(a.is_active)
-          if ((a.subject_name || '') !== (b.subject_name || '')) return (a.subject_name || '').localeCompare(b.subject_name || '')
-          return (a.teacher_name || '').localeCompare(b.teacher_name || '')
-        }),
-      }))
-      .sort((a, b) => {
-        if ((a.class_name || '') !== (b.class_name || '')) return (a.class_name || '').localeCompare(b.class_name || '')
-        return (a.section_name || '').localeCompare(b.section_name || '')
-      })
+      .map((g) => ({ ...g, subjectTeachers: g.subjectTeachers.sort((a, b) => (a.subject_name || '').localeCompare(b.subject_name || '')) }))
+      .sort((a, b) => (a.class_name || '').localeCompare(b.class_name || '') || (a.section_name || '').localeCompare(b.section_name || ''))
   }, [assignments])
 
-  const classOptions = useMemo(() => classes.map((row) => ({ value: String(row.id), label: row.name })), [classes])
-  const teacherOptions = useMemo(() => teachers.map((row) => ({ value: String(row.id), label: row.name })), [teachers])
-  const assignmentSectionOptions = useMemo(() => (sectionsByClass[assignmentForm.class_id] || []).map((row) => ({ value: String(row.id), label: row.name })), [sectionsByClass, assignmentForm.class_id])
-  const assignmentSubjectOptions = useMemo(() => (subjectsByClass[assignmentForm.class_id] || []).map((row) => ({ value: String(row.id), label: row.name })), [subjectsByClass, assignmentForm.class_id])
-  const slotSectionOptions = useMemo(() => (sectionsByClass[slotForm.class_id] || []).map((row) => ({ value: String(row.id), label: row.name })), [sectionsByClass, slotForm.class_id])
-  const slotSubjectOptions = useMemo(() => (
-    slotRelevantAssignments.map((row) => ({ value: String(row.subject_id), label: row.subject_name }))
-  ), [slotRelevantAssignments])
+  const filteredGroups = useMemo(() => assignmentsByClass.filter((g) =>
+    (!aFilterClass   || String(g.class_id)   === aFilterClass) &&
+    (!aFilterSection || String(g.section_id) === aFilterSection)
+  ), [assignmentsByClass, aFilterClass, aFilterSection])
 
-  useEffect(() => {
-    if (!slotForm.subject_id) return
-    const isValidSubject = slotSubjectOptions.some((option) => option.value === String(slotForm.subject_id))
-    if (!isValidSubject) {
-      setSlotForm((prev) => ({ ...prev, subject_id: '' }))
-    }
-  }, [slotForm.subject_id, slotSubjectOptions])
+  /* ── timetable grid ── */
+  const filteredSlots = useMemo(() => timetable.filter((s) =>
+    (!ttFilterClass   || String(s.class_id)   === ttFilterClass)   &&
+    (!ttFilterSection || String(s.section_id) === ttFilterSection) &&
+    (!ttFilterTeacher || String(s.teacher_id) === ttFilterTeacher)
+  ), [timetable, ttFilterClass, ttFilterSection, ttFilterTeacher])
 
-  const handleAssignmentCreate = async (event) => {
-    event.preventDefault()
-    setSaving(true)
+  /* grid: day × period matrix */
+  const ttMatrix = useMemo(() => {
+    const matrix = {}
+    filteredSlots.forEach((s) => {
+      const day = s.day_of_week
+      const p   = s.period_number
+      if (!matrix[day]) matrix[day] = {}
+      if (!matrix[day][p]) matrix[day][p] = []
+      matrix[day][p].push(s)
+    })
+    return matrix
+  }, [filteredSlots])
+
+  /* ── actions ── */
+  const handleAssignmentCreate = async (e) => {
+    e.preventDefault(); setSaving(true)
     try {
       await teacherControlApi.createTeacherControlAssignment({
         teacher_id: Number(assignmentForm.teacher_id),
-        class_id: Number(assignmentForm.class_id),
+        class_id:   Number(assignmentForm.class_id),
         section_id: Number(assignmentForm.section_id),
         subject_id: assignmentForm.is_class_teacher ? null : Number(assignmentForm.subject_id),
         is_class_teacher: assignmentForm.is_class_teacher,
       })
-      toastSuccess('Teacher assignment created.')
+      toastSuccess('Assignment created.')
       setAssignmentForm({ teacher_id: '', class_id: '', section_id: '', subject_id: '', is_class_teacher: false })
+      setShowAssignForm(false)
       await load()
-    } catch (error) {
-      toastError(error?.message || 'Unable to create teacher assignment.')
-    } finally {
-      setSaving(false)
-    }
+    } catch (err) { toastError(err?.message || 'Unable to create.') }
+    finally { setSaving(false) }
   }
 
   const toggleAssignment = async (item) => {
     setSaving(true)
     try {
       await teacherControlApi.updateTeacherControlAssignment(item.id, { is_active: !item.is_active })
-      toastSuccess('Teacher assignment updated.')
+      toastSuccess('Updated.')
       await load()
-    } catch (error) {
-      toastError(error?.message || 'Unable to update teacher assignment.')
-    } finally {
-      setSaving(false)
-    }
+    } catch (err) { toastError(err?.message || 'Failed.') }
+    finally { setSaving(false) }
   }
 
-  const handleSlotCreate = async (event) => {
-    event.preventDefault()
-    setSaving(true)
+  const handleSlotCreate = async (e) => {
+    e.preventDefault(); setSaving(true)
     try {
       await teacherControlApi.createTeacherControlTimetableSlot({
-        teacher_id: Number(slotForm.teacher_id),
-        class_id: Number(slotForm.class_id),
-        section_id: Number(slotForm.section_id),
-        subject_id: Number(slotForm.subject_id),
-        day_of_week: slotForm.day_of_week,
+        teacher_id:    Number(slotForm.teacher_id),
+        class_id:      Number(slotForm.class_id),
+        section_id:    Number(slotForm.section_id),
+        subject_id:    Number(slotForm.subject_id),
+        day_of_week:   slotForm.day_of_week,
         period_number: Number(slotForm.period_number),
-        start_time: slotForm.start_time,
-        end_time: slotForm.end_time,
-        room_number: slotForm.room_number || null,
+        start_time:    slotForm.start_time,
+        end_time:      slotForm.end_time,
+        room_number:   slotForm.room_number || null,
       })
-      toastSuccess('Timetable slot created.')
-      setSlotForm((prev) => ({ ...prev, section_id: '', subject_id: '', room_number: '' }))
+      toastSuccess('Slot created.')
+      setSlotForm((p) => ({ ...p, section_id: '', subject_id: '', room_number: '' }))
+      setShowSlotForm(false)
       await load()
-    } catch (error) {
-      toastError(error?.message || 'Unable to create timetable slot.')
-    } finally {
-      setSaving(false)
-    }
+    } catch (err) { toastError(err?.message || 'Unable to create.') }
+    finally { setSaving(false) }
   }
 
   const toggleSlot = async (item) => {
     setSaving(true)
     try {
       await teacherControlApi.updateTeacherControlTimetableSlot(item.id, { is_active: !item.is_active })
-      toastSuccess('Timetable slot updated.')
+      toastSuccess('Updated.')
       await load()
-    } catch (error) {
-      toastError(error?.message || 'Unable to update timetable slot.')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const updateHomeworkStatus = async (item, status) => {
-    setSaving(true)
-    try {
-      await teacherControlApi.updateTeacherControlHomework(item.id, { status })
-      toastSuccess('Homework status updated.')
-      await load()
-    } catch (error) {
-      toastError(error?.message || 'Unable to update homework status.')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const toggleNotice = async (item) => {
-    setSaving(true)
-    try {
-      await teacherControlApi.updateTeacherControlNotice(item.id, { is_active: !item.is_active })
-      toastSuccess('Notice status updated.')
-      await load()
-    } catch (error) {
-      toastError(error?.message || 'Unable to update notice.')
-    } finally {
-      setSaving(false)
-    }
+    } catch (err) { toastError(err?.message || 'Failed.') }
+    finally { setSaving(false) }
   }
 
   const reviewLeave = async (item, status) => {
     setSaving(true)
-    try {
-      await teacherControlApi.reviewTeacherControlLeave(item.id, { status })
-      toastSuccess(`Leave ${status}.`)
-      await load()
-    } catch (error) {
-      toastError(error?.message || 'Unable to review leave request.')
-    } finally {
-      setSaving(false)
-    }
+    try { await teacherControlApi.reviewTeacherControlLeave(item.id, { status }); toastSuccess(`Leave ${status}.`); await load() }
+    catch (err) { toastError(err?.message || 'Failed.') }
+    finally { setSaving(false) }
   }
 
   const reviewCorrection = async (item, status) => {
     setSaving(true)
-    try {
-      await teacherControlApi.reviewTeacherControlCorrection(item.id, { status })
-      toastSuccess(`Correction request ${status}.`)
-      await load()
-    } catch (error) {
-      toastError(error?.message || 'Unable to review correction request.')
-    } finally {
-      setSaving(false)
-    }
+    try { await teacherControlApi.reviewTeacherControlCorrection(item.id, { status }); toastSuccess(`Correction ${status}.`); await load() }
+    catch (err) { toastError(err?.message || 'Failed.') }
+    finally { setSaving(false) }
   }
 
+  /* ── render ── */
   return (
     <div className="space-y-5 pb-20">
-      <section
-        className="rounded-[28px] border p-5 sm:p-6"
-        style={{
-          borderColor: 'var(--color-border)',
-          background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.16), rgba(13, 148, 136, 0.10) 58%, var(--color-surface) 100%)',
-        }}
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+
+      {/* ── Hero ── */}
+      <header className="rounded-[28px] border p-5 sm:p-6" style={{ borderColor: 'var(--color-border)', background: 'linear-gradient(135deg,rgba(2,132,199,.14),rgba(13,148,136,.09) 60%,var(--color-surface))' }}>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-              Teacher Control Center
-            </h1>
-            <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-              Manage teacher assignments, timetable slots, notices, homework oversight, leave approvals, and profile correction requests from one admin console.
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: '#0369a1' }}>
+              {session?.name || '—'}
             </p>
-            <p className="mt-2 text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: '#0369a1' }}>
-              Current Session: {session?.name || 'Not available'}
+            <h1 className="mt-1 text-2xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Teacher Control Center</h1>
+            <p className="mt-1 max-w-xl text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              Manage assignments, timetable, leave approvals and correction requests from one place.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatCard title="Teachers" value={overview.teachers || 0} tone="#0369a1" />
-            <StatCard title="Assignments" value={overview.active_assignments || 0} tone="#0f766e" />
-            <StatCard title="Pending Leaves" value={overview.pending_leaves || 0} tone="#f59e0b" />
-            <StatCard title="Corrections" value={overview.pending_corrections || 0} tone="#ef4444" />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[320px]">
+            <HeroStat label="Teachers"    value={overview.teachers            || 0} color="#0369a1" />
+            <HeroStat label="Assignments" value={overview.active_assignments  || 0} color="#0f766e" />
+            <HeroStat label="Leaves"      value={overview.pending_leaves      || 0} color="#d97706" />
+            <HeroStat label="Corrections" value={overview.pending_corrections || 0} color="#dc2626" />
           </div>
         </div>
-      </section>
+      </header>
 
-      <div className="flex flex-wrap gap-2">
-        <TabButton active={tab === 'workflows'} onClick={() => setTab('workflows')} icon={ShieldCheck} label="Workflow Controls" />
-        <TabButton active={tab === 'assignments'} onClick={() => setTab('assignments')} icon={School2} label="Assignments" />
-        <TabButton active={tab === 'timetable'} onClick={() => setTab('timetable')} icon={CalendarRange} label="Timetable" />
-        <TabButton active={tab === 'overrides'} onClick={() => setTab('overrides')} icon={ClipboardList} label="Overrides" />
-      </div>
+      {/* ── Tabs ── */}
+      <nav className="flex flex-wrap gap-2">
+        {[
+          { id: 'assignments', label: 'Assignments', icon: School2 },
+          { id: 'timetable',   label: 'Timetable',   icon: CalendarRange },
+          { id: 'workflows',   label: 'Workflows',    icon: ShieldCheck },
+        ].map(({ id, label, icon: Icon }) => (
+          <button
+            key={id} type="button" onClick={() => setTab(id)}
+            className="inline-flex min-h-10 items-center gap-2 rounded-2xl px-4 text-sm font-semibold transition-all"
+            style={{
+              backgroundColor: tab === id ? '#0f766e' : 'var(--color-surface)',
+              color: tab === id ? '#fff' : 'var(--color-text-primary)',
+              border: `1px solid ${tab === id ? '#0f766e' : 'var(--color-border)'}`,
+            }}
+          >
+            <Icon size={15} />{label}
+          </button>
+        ))}
+      </nav>
 
+      {/* ════════════════════════════════════════
+          TAB: ASSIGNMENTS
+      ════════════════════════════════════════ */}
       {tab === 'assignments' && (
-        <>
-          <Panel title="Create Teacher Assignment" icon={School2}>
-            <form className="grid grid-cols-1 gap-4 xl:grid-cols-5" onSubmit={handleAssignmentCreate}>
-              <Select label="Teacher" value={assignmentForm.teacher_id} onChange={(e) => setAssignmentForm((p) => ({ ...p, teacher_id: e.target.value }))} options={teacherOptions} required />
-              <Select label="Class" value={assignmentForm.class_id} onChange={(e) => setAssignmentForm((p) => ({ ...p, class_id: e.target.value, section_id: '', subject_id: '' }))} options={classOptions} required />
-              <Select label="Section" value={assignmentForm.section_id} onChange={(e) => setAssignmentForm((p) => ({ ...p, section_id: e.target.value }))} options={assignmentSectionOptions} required />
-              <Select label="Subject" value={assignmentForm.subject_id} onChange={(e) => setAssignmentForm((p) => ({ ...p, subject_id: e.target.value }))} options={assignmentSubjectOptions} placeholder={assignmentForm.is_class_teacher ? 'Not needed for class teacher' : 'Select subject'} disabled={assignmentForm.is_class_teacher} />
-              <div className="flex items-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setAssignmentForm((p) => ({ ...p, is_class_teacher: !p.is_class_teacher, subject_id: '' }))}
-                  className="min-h-11 rounded-2xl px-4 text-sm font-semibold"
-                  style={{ backgroundColor: assignmentForm.is_class_teacher ? '#0f766e' : 'var(--color-surface-raised)', color: assignmentForm.is_class_teacher ? '#fff' : 'var(--color-text-primary)' }}
-                >
-                  {assignmentForm.is_class_teacher ? 'Class Teacher' : 'Subject Teacher'}
-                </button>
-                <Button type="submit" variant="primary" loading={saving}>Add</Button>
-              </div>
-            </form>
-          </Panel>
+        <div className="space-y-4">
 
-          <Panel title="Current Assignments" icon={ClipboardList}>
-            {loading ? <Skeleton rows={5} /> : !assignments.length ? <EmptyState icon={School2} title="No assignments yet" description="Create teacher assignments for the current session." /> : (
-              <div className="space-y-3">
-                {assignmentsByClass.map((group) => (
-                  <ClassAssignmentGroup key={group.key} group={group} onToggle={toggleAssignment} />
-                ))}
-              </div>
-            )}
-          </Panel>
-        </>
+          {/* toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-2">
+              <SmallSelect
+                value={aFilterClass}
+                onChange={(e) => { setAFilterClass(e.target.value); setAFilterSection('') }}
+                options={[{ value: '', label: 'All Classes' }, ...classOptions]}
+              />
+              {aFilterClass && (
+                <SmallSelect
+                  value={aFilterSection}
+                  onChange={(e) => setAFilterSection(e.target.value)}
+                  options={[{ value: '', label: 'All Sections' }, ...(sectionsByClass[aFilterClass] || []).map((s) => ({ value: String(s.id), label: s.name }))]}
+                />
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAssignForm((p) => !p)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-2xl px-4 text-sm font-semibold transition-all"
+              style={{ backgroundColor: '#0f766e', color: '#fff', border: 'none' }}
+            >
+              <Zap size={14} />{showAssignForm ? 'Cancel' : 'New Assignment'}
+            </button>
+          </div>
+
+          {/* create form */}
+          {showAssignForm && (
+            <div className="rounded-[24px] border p-5" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+              <p className="mb-4 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Create Assignment</p>
+              <form className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5" onSubmit={handleAssignmentCreate}>
+                <Select label="Teacher" value={assignmentForm.teacher_id} onChange={(e) => setAssignmentForm((p) => ({ ...p, teacher_id: e.target.value }))} options={teacherOptions} required />
+                <Select label="Class"   value={assignmentForm.class_id}   onChange={(e) => setAssignmentForm((p) => ({ ...p, class_id: e.target.value, section_id: '', subject_id: '' }))} options={classOptions} required />
+                <Select label="Section" value={assignmentForm.section_id} onChange={(e) => setAssignmentForm((p) => ({ ...p, section_id: e.target.value }))} options={aSection} required />
+                <Select label="Subject" value={assignmentForm.subject_id} onChange={(e) => setAssignmentForm((p) => ({ ...p, subject_id: e.target.value }))} options={aSubject} disabled={assignmentForm.is_class_teacher} placeholder={assignmentForm.is_class_teacher ? 'N/A for class teacher' : 'Select subject'} />
+                <div className="flex items-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentForm((p) => ({ ...p, is_class_teacher: !p.is_class_teacher, subject_id: '' }))}
+                    className="flex-1 min-h-11 rounded-2xl px-3 text-xs font-semibold transition-all"
+                    style={{ backgroundColor: assignmentForm.is_class_teacher ? '#0f766e' : 'var(--color-surface-raised)', color: assignmentForm.is_class_teacher ? '#fff' : 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+                  >
+                    {assignmentForm.is_class_teacher ? 'Class Teacher' : 'Subject Teacher'}
+                  </button>
+                  <Button type="submit" variant="primary" loading={saving}>Add</Button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* assignment list */}
+          {loading ? <GridSkeleton /> : !filteredGroups.length ? (
+            <EmptyState icon={School2} title="No assignments" description="Create a teacher assignment to get started." />
+          ) : (
+            <div className="space-y-3">
+              {filteredGroups.map((group) => (
+                <AssignmentCard key={group.key} group={group} onToggle={toggleAssignment} />
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
+      {/* ════════════════════════════════════════
+          TAB: TIMETABLE
+      ════════════════════════════════════════ */}
       {tab === 'timetable' && (
-        <>
-          <Panel title="Create Timetable Slot" icon={CalendarRange}>
-            <form className="grid grid-cols-1 gap-4 xl:grid-cols-4" onSubmit={handleSlotCreate}>
-              <Select label="Teacher" value={slotForm.teacher_id} onChange={(e) => setSlotForm((p) => ({ ...p, teacher_id: e.target.value, subject_id: '' }))} options={teacherOptions} required />
-              <Select label="Class" value={slotForm.class_id} onChange={(e) => setSlotForm((p) => ({ ...p, class_id: e.target.value, section_id: '', subject_id: '' }))} options={classOptions} required />
-              <Select label="Section" value={slotForm.section_id} onChange={(e) => setSlotForm((p) => ({ ...p, section_id: e.target.value, subject_id: '' }))} options={slotSectionOptions} required />
-              <Select label="Subject" value={slotForm.subject_id} onChange={(e) => setSlotForm((p) => ({ ...p, subject_id: e.target.value }))} options={slotSubjectOptions} placeholder="Select assigned subject" required />
-              <Select label="Day" value={slotForm.day_of_week} onChange={(e) => setSlotForm((p) => ({ ...p, day_of_week: e.target.value }))} options={DAY_OPTIONS} required />
-              <Input type="number" label="Period" value={slotForm.period_number} onChange={(e) => setSlotForm((p) => ({ ...p, period_number: e.target.value }))} required />
-              <Input type="time" label="Start" value={slotForm.start_time} onChange={(e) => setSlotForm((p) => ({ ...p, start_time: e.target.value }))} required />
-              <Input type="time" label="End" value={slotForm.end_time} onChange={(e) => setSlotForm((p) => ({ ...p, end_time: e.target.value }))} required />
-              <Input label="Room" value={slotForm.room_number} onChange={(e) => setSlotForm((p) => ({ ...p, room_number: e.target.value }))} placeholder="Optional room" />
-              <div className="flex items-end">
-                <Button type="submit" variant="primary" loading={saving}>Add Slot</Button>
-              </div>
-            </form>
-          </Panel>
+        <div className="space-y-4">
 
-          <Panel title="Timetable Slots" icon={LayoutGrid}>
-            {loading ? <Skeleton rows={5} /> : !timetable.length ? <EmptyState icon={CalendarRange} title="No timetable slots" description="Create timetable slots for teachers in the current session." /> : (
-              <div className="space-y-3">
-                {timetable.map((item) => (
-                  <RowCard
-                    key={item.id}
-                    title={`${item.teacher_name} • ${item.subject_name}`}
-                    meta={`${labelDay(item.day_of_week)} period ${item.period_number} | ${item.class_name} ${item.section_name} | ${item.start_time} - ${item.end_time}${item.room_number ? ` | Room ${item.room_number}` : ''}`}
-                    badge={item.is_active ? 'Active' : 'Inactive'}
-                    badgeVariant={item.is_active ? 'green' : 'grey'}
-                    actionLabel={item.is_active ? 'Deactivate' : 'Activate'}
-                    onAction={() => toggleSlot(item)}
-                  />
+          {/* toolbar */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <SmallSelect value={ttFilterClass} onChange={(e) => { setTtFilterClass(e.target.value); setTtFilterSection('') }} options={[{ value: '', label: 'All Classes' }, ...classOptions]} />
+              {ttFilterClass && (
+                <SmallSelect value={ttFilterSection} onChange={(e) => setTtFilterSection(e.target.value)} options={[{ value: '', label: 'All Sections' }, ...(sectionsByClass[ttFilterClass] || []).map((s) => ({ value: String(s.id), label: s.name }))]} />
+              )}
+              <SmallSelect value={ttFilterTeacher} onChange={(e) => setTtFilterTeacher(e.target.value)} options={[{ value: '', label: 'All Teachers' }, ...teacherOptions]} />
+              {/* view toggle */}
+              <div className="flex overflow-hidden rounded-2xl border" style={{ borderColor: 'var(--color-border)' }}>
+                {[{ id: 'grid', Icon: Grid3x3 }, { id: 'list', Icon: CalendarRange }].map(({ id, Icon }) => (
+                  <button key={id} type="button" onClick={() => setTtView(id)}
+                    className="flex min-h-9 items-center gap-1.5 px-3 text-xs font-semibold transition-all"
+                    style={{ backgroundColor: ttView === id ? '#0f766e' : 'var(--color-surface)', color: ttView === id ? '#fff' : 'var(--color-text-secondary)' }}>
+                    <Icon size={13} />{id === 'grid' ? 'Grid' : 'List'}
+                  </button>
                 ))}
               </div>
-            )}
-          </Panel>
-        </>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSlotForm((p) => !p)}
+              className="inline-flex min-h-10 items-center gap-2 rounded-2xl px-4 text-sm font-semibold"
+              style={{ backgroundColor: '#0f766e', color: '#fff', border: 'none' }}
+            >
+              <Zap size={14} />{showSlotForm ? 'Cancel' : 'New Slot'}
+            </button>
+          </div>
+
+          {/* slot form */}
+          {showSlotForm && (
+            <div className="rounded-[24px] border p-5" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+              <p className="mb-4 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Create Timetable Slot</p>
+              <form className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4" onSubmit={handleSlotCreate}>
+                <Select label="Teacher" value={slotForm.teacher_id} onChange={(e) => setSlotForm((p) => ({ ...p, teacher_id: e.target.value, subject_id: '' }))} options={teacherOptions} required />
+                <Select label="Class"   value={slotForm.class_id}   onChange={(e) => setSlotForm((p) => ({ ...p, class_id: e.target.value, section_id: '', subject_id: '' }))} options={classOptions} required />
+                <Select label="Section" value={slotForm.section_id} onChange={(e) => setSlotForm((p) => ({ ...p, section_id: e.target.value, subject_id: '' }))} options={slotSectionOpts} required />
+                <Select label="Subject" value={slotForm.subject_id} onChange={(e) => setSlotForm((p) => ({ ...p, subject_id: e.target.value }))} options={slotSubjectOpts} placeholder="Select assigned subject" required />
+                <Select label="Day" value={slotForm.day_of_week} onChange={(e) => setSlotForm((p) => ({ ...p, day_of_week: e.target.value }))} options={DAY_OPTIONS.map((d) => ({ value: d.value, label: DAY_FULL[d.value] }))} required />
+                <Input type="number" label="Period #" value={slotForm.period_number} onChange={(e) => setSlotForm((p) => ({ ...p, period_number: e.target.value }))} min="1" max="10" required />
+                <Input type="time"   label="Start"    value={slotForm.start_time}    onChange={(e) => setSlotForm((p) => ({ ...p, start_time: e.target.value }))} required />
+                <Input type="time"   label="End"      value={slotForm.end_time}      onChange={(e) => setSlotForm((p) => ({ ...p, end_time: e.target.value }))} required />
+                <div className="sm:col-span-2 xl:col-span-3">
+                  <Input label="Room (optional)" value={slotForm.room_number} onChange={(e) => setSlotForm((p) => ({ ...p, room_number: e.target.value }))} placeholder="e.g. 6-A" />
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" variant="primary" loading={saving} className="w-full">Add Slot</Button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* timetable view */}
+          {loading ? <GridSkeleton /> : !filteredSlots.length ? (
+            <EmptyState icon={CalendarRange} title="No timetable slots" description="Add slots or adjust your filters." />
+          ) : ttView === 'grid' ? (
+            <TimetableGrid matrix={ttMatrix} onToggle={toggleSlot} />
+          ) : (
+            <TimetableList slots={filteredSlots} onToggle={toggleSlot} />
+          )}
+        </div>
       )}
 
+      {/* ════════════════════════════════════════
+          TAB: WORKFLOWS
+      ════════════════════════════════════════ */}
       {tab === 'workflows' && (
-        <>
-          <Panel title="Teacher Leave Approval Queue" icon={UserRoundCheck}>
-            {loading ? <Skeleton rows={4} /> : !leaves.length ? <EmptyState icon={UserRoundCheck} title="No leave requests" description="Teacher leave applications will appear here." /> : (
-              <div className="space-y-3">
-                {leaves.map((item) => (
-                  <WorkflowCard
-                    key={item.id}
-                    title={`${item.teacher_name} • ${item.leave_type.replace('_', ' ')}`}
-                    meta={`${item.from_date} to ${item.to_date} | ${Number(item.days_count || 0)} day(s)`}
-                    description={item.reason}
-                    status={item.status}
-                    onApprove={item.status === 'pending' ? () => reviewLeave(item, 'approved') : null}
-                    onReject={item.status === 'pending' ? () => reviewLeave(item, 'rejected') : null}
-                  />
-                ))}
+        <div className="space-y-4">
+          <WorkflowSection title="Leave Approval Queue" icon={UserRoundCheck} items={leaves} loading={loading}
+            renderItem={(item) => (
+              <WorkflowCard key={item.id}
+                title={`${item.teacher_name} • ${(item.leave_type || '').replace('_', ' ')}`}
+                meta={`${item.from_date} → ${item.to_date} | ${Number(item.days_count || 0)} day(s)`}
+                description={item.reason} status={item.status}
+                onApprove={item.status === 'pending' ? () => reviewLeave(item, 'approved') : null}
+                onReject={item.status  === 'pending' ? () => reviewLeave(item, 'rejected') : null}
+              />
+            )}
+            emptyTitle="No leave requests" emptyDesc="Teacher leave applications will appear here."
+          />
+          <WorkflowSection title="Profile Correction Requests" icon={ShieldCheck} items={corrections} loading={loading}
+            renderItem={(item) => (
+              <WorkflowCard key={item.id}
+                title={`${item.teacher_name} • ${item.field_name}`}
+                meta={`${item.current_value || '--'} → ${item.requested_value}`}
+                description={item.reason} status={item.status}
+                onApprove={item.status === 'pending' ? () => reviewCorrection(item, 'approved') : null}
+                onReject={item.status  === 'pending' ? () => reviewCorrection(item, 'rejected') : null}
+              />
+            )}
+            emptyTitle="No correction requests" emptyDesc="Correction requests will appear here."
+          />
+          <WorkflowSection title="Homework Oversight" icon={BookOpenText} items={homework} loading={loading}
+            renderItem={(item) => (
+              <div key={item.id} className="rounded-[22px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
+                <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{item.teacher_name} • {item.title}</p>
+                <p className="mt-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{item.class_name} {item.section_name} | {item.subject_name} | Due {item.due_date}</p>
+                <Badge className="mt-2" variant={item.status === 'active' ? 'green' : 'grey'}>{item.status}</Badge>
               </div>
             )}
-          </Panel>
-
-          <Panel title="Profile Correction Approvals" icon={ShieldCheck}>
-            {loading ? <Skeleton rows={4} /> : !corrections.length ? <EmptyState icon={ShieldCheck} title="No correction requests" description="Teacher profile correction requests will appear here." /> : (
-              <div className="space-y-3">
-                {corrections.map((item) => (
-                  <WorkflowCard
-                    key={item.id}
-                    title={`${item.teacher_name} • ${item.field_name}`}
-                    meta={`${item.current_value || '--'} -> ${item.requested_value}`}
-                    description={item.reason}
-                    status={item.status}
-                    onApprove={item.status === 'pending' ? () => reviewCorrection(item, 'approved') : null}
-                    onReject={item.status === 'pending' ? () => reviewCorrection(item, 'rejected') : null}
-                  />
-                ))}
-              </div>
-            )}
-          </Panel>
-
-          <Panel title="Homework Oversight" icon={BookOpenText}>
-            {loading ? <Skeleton rows={4} /> : !homework.length ? <EmptyState icon={BookOpenText} title="No homework items" description="Teacher homework for the current session will appear here." /> : (
-              <div className="space-y-3">
-                {homework.map((item) => (
-                  <ActionSelectCard
-                    key={item.id}
-                    title={`${item.teacher_name} • ${item.title}`}
-                    meta={`${item.class_name} ${item.section_name} | ${item.subject_name} | Due ${item.due_date}`}
-                    status={item.status}
-                    options={['active', 'completed', 'cancelled']}
-                    onSave={(status) => updateHomeworkStatus(item, status)}
-                  />
-                ))}
-              </div>
-            )}
-          </Panel>
-
-          <Panel title="Teacher Notices Oversight" icon={ClipboardList}>
-            {loading ? <Skeleton rows={4} /> : !notices.length ? <EmptyState icon={ClipboardList} title="No notices" description="Teacher notices will appear here." /> : (
-              <div className="space-y-3">
-                {notices.map((item) => (
-                  <RowCard
-                    key={item.id}
-                    title={`${item.teacher_name} • ${item.title}`}
-                    meta={`${item.category} | ${item.class_name ? `${item.class_name} ${item.section_name}` : 'Teachers'} | Read by ${item.read_count || 0}`}
-                    badge={item.is_active ? 'Active' : 'Inactive'}
-                    badgeVariant={item.is_active ? 'green' : 'grey'}
-                    actionLabel={item.is_active ? 'Disable' : 'Enable'}
-                    onAction={() => toggleNotice(item)}
-                  />
-                ))}
-              </div>
-            )}
-          </Panel>
-        </>
-      )}
-
-      {tab === 'overrides' && (
-        <>
-          <Panel title="Marks Overrides" icon={BookOpenText}>
-            {loading ? <Skeleton rows={4} /> : !marks.length ? <EmptyState icon={BookOpenText} title="No mark records" description="Exam result rows will appear here for admin override." /> : (
-              <div className="space-y-3">
-                {marks.map((item) => (
-                  <MarkOverrideCard
-                    key={item.id}
-                    item={item}
-                    onSave={async (payload) => {
-                      setSaving(true)
-                      try {
-                        await teacherControlApi.updateTeacherControlMark(item.id, payload)
-                        toastSuccess('Marks updated.')
-                        await load()
-                      } catch (error) {
-                        toastError(error?.message || 'Unable to update marks.')
-                      } finally {
-                        setSaving(false)
-                      }
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </Panel>
-
-          <Panel title="Remark Overrides" icon={ShieldCheck}>
-            {loading ? <Skeleton rows={4} /> : !remarks.length ? <EmptyState icon={ShieldCheck} title="No remarks" description="Teacher remarks will appear here for admin edit." /> : (
-              <div className="space-y-3">
-                {remarks.map((item) => (
-                  <RemarkOverrideCard
-                    key={item.id}
-                    item={item}
-                    onSave={async (payload) => {
-                      setSaving(true)
-                      try {
-                        await teacherControlApi.updateTeacherControlRemark(item.id, payload)
-                        toastSuccess('Remark updated.')
-                        await load()
-                      } catch (error) {
-                        toastError(error?.message || 'Unable to update remark.')
-                      } finally {
-                        setSaving(false)
-                      }
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </Panel>
-        </>
+            emptyTitle="No homework" emptyDesc="Homework assigned by teachers will appear here."
+          />
+        </div>
       )}
     </div>
   )
 }
 
-const DAY_OPTIONS = [
-  { value: 'monday', label: 'Monday' },
-  { value: 'tuesday', label: 'Tuesday' },
-  { value: 'wednesday', label: 'Wednesday' },
-  { value: 'thursday', label: 'Thursday' },
-  { value: 'friday', label: 'Friday' },
-  { value: 'saturday', label: 'Saturday' },
-]
+/* ════════════════════════════════════════════════════════════════════════════
+   Assignment Card
+════════════════════════════════════════════════════════════════════════════ */
+const AssignmentCard = ({ group, onToggle }) => {
+  const [open, setOpen] = useState(false)
+  const active = group.subjectTeachers.filter((s) => s.is_active).length
 
-const labelDay = (value) => value ? `${value[0].toUpperCase()}${value.slice(1)}` : '--'
+  return (
+    <article className="overflow-hidden rounded-[24px] border" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+      {/* header row */}
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition-all"
+        style={{ backgroundColor: 'var(--color-surface-raised)' }}
+      >
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
+          {/* class pill */}
+          <span className="inline-flex h-8 items-center rounded-xl px-3 text-xs font-bold" style={{ backgroundColor: '#0c4a6e', color: '#e0f2fe' }}>
+            {group.class_name} — {group.section_name}
+          </span>
+          {group.classTeacher ? (
+            <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              CT: <span style={{ color: 'var(--color-text-primary)', fontWeight: 600 }}>{group.classTeacher.teacher_name}</span>
+            </span>
+          ) : (
+            <span className="text-xs font-semibold" style={{ color: '#dc2626' }}>No class teacher</span>
+          )}
+          <span className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+            {active}/{group.subjectTeachers.length} subjects active
+          </span>
+          {group.inactiveCount > 0 && (
+            <span className="rounded-lg px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: '#fef3c7', color: '#92400e' }}>
+              {group.inactiveCount} inactive
+            </span>
+          )}
+        </div>
+        {open ? <ChevronDown size={16} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} /> : <ChevronRight size={16} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} />}
+      </button>
 
-const TabButton = ({ active, onClick, icon: Icon, label }) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="inline-flex min-h-11 items-center gap-2 rounded-2xl px-4 text-sm font-semibold"
-    style={{
-      backgroundColor: active ? '#0f766e' : 'var(--color-surface)',
-      color: active ? '#fff' : 'var(--color-text-primary)',
-      border: `1px solid ${active ? '#0f766e' : 'var(--color-border)'}`,
-    }}
+      {/* expanded body */}
+      {open && (
+        <div className="p-5">
+          {/* subject grid */}
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {group.subjectTeachers.map((item) => (
+              <SubjectChip key={item.id} item={item} onToggle={onToggle} />
+            ))}
+            {!group.subjectTeachers.length && (
+              <p className="col-span-full text-sm" style={{ color: 'var(--color-text-secondary)' }}>No subject teachers assigned.</p>
+            )}
+          </div>
+        </div>
+      )}
+    </article>
+  )
+}
+
+const SubjectChip = ({ item, onToggle }) => (
+  <div
+    className="flex items-center justify-between gap-3 rounded-[18px] border p-3"
+    style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)', opacity: item.is_active ? 1 : 0.55 }}
   >
-    <Icon size={16} />
-    {label}
-  </button>
+    <div className="flex items-center gap-2.5 min-w-0">
+      <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: subjectColor(item.subject_id) }} />
+      <div className="min-w-0">
+        <p className="truncate text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>{item.subject_name || 'Subject'}</p>
+        <p className="truncate text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>{item.teacher_name}</p>
+      </div>
+    </div>
+    <button
+      type="button"
+      onClick={() => onToggle(item)}
+      className="flex-shrink-0 rounded-xl px-2.5 py-1 text-[11px] font-semibold transition-all"
+      style={{ backgroundColor: item.is_active ? '#d1fae5' : '#fee2e2', color: item.is_active ? '#065f46' : '#991b1b' }}
+    >
+      {item.is_active ? 'Active' : 'Off'}
+    </button>
+  </div>
 )
 
-const Panel = ({ title, icon: Icon, children }) => (
-  <section className="rounded-[28px] border p-5 sm:p-6" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-    <div className="mb-4 flex items-center gap-2">
-      <Icon size={16} style={{ color: 'var(--color-text-secondary)' }} />
-      <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</h2>
+/* ════════════════════════════════════════════════════════════════════════════
+   Timetable Grid
+════════════════════════════════════════════════════════════════════════════ */
+const TimetableGrid = ({ matrix, onToggle }) => {
+  const periods = [1, 2, 3, 4, 5, 6, 7]
+  const days    = ['monday','tuesday','wednesday','thursday','friday','saturday']
+
+  return (
+    <div className="overflow-x-auto rounded-[24px] border" style={{ borderColor: 'var(--color-border)' }}>
+      <table className="w-full min-w-[700px] border-collapse text-sm">
+        <thead>
+          <tr style={{ backgroundColor: 'var(--color-surface-raised)' }}>
+            <th className="border-b border-r p-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)', width: 80 }}>Period</th>
+            {days.map((d) => (
+              <th key={d} className="border-b border-r p-3 text-center text-xs font-semibold uppercase tracking-wider" style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}>
+                {DAY_FULL[d]}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {periods.map((p) => (
+            <tr key={p} style={{ borderBottom: '1px solid var(--color-border)' }}>
+              {/* period label */}
+              <td className="border-r p-3 align-top" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
+                <p className="text-xs font-bold" style={{ color: 'var(--color-text-primary)' }}>P{p}</p>
+                <p className="mt-0.5 text-[10px]" style={{ color: 'var(--color-text-secondary)' }}>{PERIOD_TIMES[p] || ''}</p>
+              </td>
+              {days.map((d) => {
+                const slots = (matrix[d]?.[p]) || []
+                return (
+                  <td key={d} className="border-r p-2 align-top" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)', minWidth: 100 }}>
+                    {slots.length ? (
+                      <div className="space-y-1">
+                        {slots.map((s) => (
+                          <TimetableCell key={s.id} slot={s} onToggle={onToggle} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="h-12 rounded-xl" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
+                    )}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
-    {children}
+  )
+}
+
+const TimetableCell = ({ slot, onToggle }) => {
+  const color = subjectColor(slot.subject_id)
+  return (
+    <div
+      className="group relative cursor-pointer overflow-hidden rounded-xl p-2 transition-all"
+      style={{ backgroundColor: `${color}18`, border: `1px solid ${color}40`, opacity: slot.is_active ? 1 : 0.45 }}
+      title={`${slot.subject_name} • ${slot.teacher_name}${slot.room_number ? ` • Room ${slot.room_number}` : ''}`}
+    >
+      <div className="h-1 w-8 rounded-full mb-1.5" style={{ backgroundColor: color }} />
+      <p className="truncate text-[11px] font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+        {slot.subject_name}
+      </p>
+      <p className="truncate text-[10px]" style={{ color: 'var(--color-text-secondary)' }}>
+        {slot.teacher_name?.split(' ')[0]}
+        {slot.section_name ? ` · ${slot.class_name} ${slot.section_name}` : ''}
+      </p>
+      {/* hover toggle */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onToggle(slot) }}
+        className="absolute inset-0 flex items-center justify-center rounded-xl text-[10px] font-bold opacity-0 transition-opacity group-hover:opacity-100"
+        style={{ backgroundColor: slot.is_active ? 'rgba(220,38,38,.85)' : 'rgba(5,150,105,.85)', color: '#fff' }}
+      >
+        {slot.is_active ? 'Deactivate' : 'Activate'}
+      </button>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Timetable List
+════════════════════════════════════════════════════════════════════════════ */
+const TimetableList = ({ slots, onToggle }) => {
+  const grouped = useMemo(() => {
+    const g = {}
+    slots.forEach((s) => {
+      const d = s.day_of_week
+      if (!g[d]) g[d] = []
+      g[d].push(s)
+    })
+    return g
+  }, [slots])
+
+  return (
+    <div className="space-y-4">
+      {['monday','tuesday','wednesday','thursday','friday','saturday'].filter((d) => grouped[d]).map((d) => (
+        <section key={d}>
+          <p className="mb-2 text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>{DAY_FULL[d]}</p>
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            {(grouped[d] || []).sort((a, b) => a.period_number - b.period_number).map((slot) => (
+              <TimetableListRow key={slot.id} slot={slot} onToggle={onToggle} />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+const TimetableListRow = ({ slot, onToggle }) => {
+  const color = subjectColor(slot.subject_id)
+  return (
+    <div
+      className="flex items-center gap-3 rounded-[20px] border p-3"
+      style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)', opacity: slot.is_active ? 1 : 0.55 }}
+    >
+      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-xs font-bold" style={{ backgroundColor: `${color}20`, color }}>
+        P{slot.period_number}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{slot.subject_name}</p>
+        <p className="truncate text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+          {slot.teacher_name} · {slot.class_name} {slot.section_name}
+          {slot.room_number ? ` · Room ${slot.room_number}` : ''}
+        </p>
+        <p className="mt-0.5 flex items-center gap-1 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+          <Clock size={10} />{slot.start_time} – {slot.end_time}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onToggle(slot)}
+        className="flex-shrink-0 rounded-xl px-2.5 py-1 text-[11px] font-semibold"
+        style={{ backgroundColor: slot.is_active ? '#d1fae5' : '#fee2e2', color: slot.is_active ? '#065f46' : '#991b1b' }}
+      >
+        {slot.is_active ? 'On' : 'Off'}
+      </button>
+    </div>
+  )
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   Workflow helpers
+════════════════════════════════════════════════════════════════════════════ */
+const WorkflowSection = ({ title, icon: Icon, items, loading, renderItem, emptyTitle, emptyDesc }) => (
+  <section className="rounded-[24px] border p-5" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+    <div className="mb-4 flex items-center gap-2">
+      <Icon size={15} style={{ color: 'var(--color-text-secondary)' }} />
+      <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</h2>
+      {items.length > 0 && (
+        <span className="ml-auto rounded-xl px-2.5 py-0.5 text-xs font-bold" style={{ backgroundColor: 'var(--color-surface-raised)', color: 'var(--color-text-secondary)' }}>{items.length}</span>
+      )}
+    </div>
+    {loading ? <GridSkeleton rows={2} /> : !items.length ? (
+      <EmptyState icon={Icon} title={emptyTitle} description={emptyDesc} />
+    ) : (
+      <div className="space-y-2">{items.map(renderItem)}</div>
+    )}
   </section>
 )
 
-const StatCard = ({ title, value, tone }) => (
-  <div className="rounded-[22px] border px-4 py-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-    <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>{title}</p>
-    <p className="mt-2 text-2xl font-bold" style={{ color: tone }}>{value}</p>
-  </div>
-)
-
-const RowCard = ({ title, meta, badge, badgeVariant, actionLabel, onAction }) => (
-  <article className="rounded-[24px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      <div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={badgeVariant}>{badge}</Badge>
-        </div>
-        <p className="mt-3 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</p>
-        <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{meta}</p>
-      </div>
-      <Button variant="secondary" onClick={onAction}>{actionLabel}</Button>
-    </div>
-  </article>
-)
-
-const ClassAssignmentGroup = ({ group, onToggle }) => {
-  const totalAssignments = (group.classTeacher ? 1 : 0) + group.subjectTeachers.length
-  const activeSubjects = group.subjectTeachers.filter((item) => item.is_active).length
-
-  return (
-    <article
-      className="overflow-hidden rounded-[26px] border"
-      style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
-    >
-      <div
-        className="border-b px-5 py-4 sm:px-6"
-        style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}
-      >
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="blue">{group.class_name} {group.section_name}</Badge>
-              <Badge variant={group.inactiveCount ? 'yellow' : 'green'}>
-                {group.inactiveCount ? `${group.inactiveCount} inactive` : 'Fully active'}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-lg font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-                {group.class_name} {group.section_name} teaching roster
-              </p>
-              <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                {group.session_name || 'Current session'} assignment map for class teacher ownership and subject coverage.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 sm:min-w-[260px]">
-            <AssignmentStat label="Assignments" value={totalAssignments} />
-            <AssignmentStat label="Subjects Active" value={activeSubjects} />
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-5 p-5 sm:p-6">
-        <section className="space-y-3">
-          <SectionHeading
-            title="Class Teacher"
-            description="Single ownership for overall classroom coordination."
-          />
-          {group.classTeacher ? (
-            <AssignmentLineItem
-              item={group.classTeacher}
-              label="Class Teacher"
-              detail={group.classTeacher.teacher_name}
-              description="Full class responsibility"
-              onToggle={onToggle}
-            />
-          ) : (
-            <AssignmentEmptyState
-              title="No class teacher assigned"
-              description="Assign one teacher to own attendance, coordination, and parent-facing follow-up for this section."
-            />
-          )}
-        </section>
-
-        <section className="space-y-3">
-          <SectionHeading
-            title="Subject Teachers"
-            description="Each subject assignment appears as an individual roster card."
-          />
-          {group.subjectTeachers.length ? (
-            <div className="grid gap-3 xl:grid-cols-2">
-              {group.subjectTeachers.map((item) => (
-                <AssignmentLineItem
-                  key={item.id}
-                  item={item}
-                  label={item.subject_name || 'Subject Teacher'}
-                  detail={item.teacher_name}
-                  description={item.subject_code ? `${item.subject_code} subject assignment` : 'Subject assignment'}
-                  onToggle={onToggle}
-                />
-              ))}
-            </div>
-          ) : (
-            <AssignmentEmptyState
-              title="No subject teachers assigned"
-              description="This class section does not have any subject mapping yet."
-            />
-          )}
-        </section>
-      </div>
-    </article>
-  )
-}
-
-const AssignmentStat = ({ label, value }) => (
-  <div className="rounded-2xl border px-4 py-3" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-    <p className="text-[11px] font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>
-      {label}
-    </p>
-    <p className="mt-2 text-xl font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-      {value}
-    </p>
-  </div>
-)
-
-const SectionHeading = ({ title, description }) => (
-  <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-    <div>
-      <h3 className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</h3>
-      <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{description}</p>
-    </div>
-  </div>
-)
-
-const AssignmentEmptyState = ({ title, description }) => (
-  <div className="rounded-2xl border border-dashed p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-    <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</p>
-    <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{description}</p>
-  </div>
-)
-
-const AssignmentLineItem = ({ item, label, detail, description, onToggle }) => (
-  <div className="rounded-2xl border p-4 shadow-sm" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={item.is_active ? 'green' : 'grey'}>{item.is_active ? 'Active' : 'Inactive'}</Badge>
-            <Badge variant={item.is_class_teacher ? 'dark' : 'blue'}>{label}</Badge>
-          </div>
-          <div>
-            <p className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>{detail}</p>
-            <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{description}</p>
-          </div>
-        </div>
-
-        <Button variant="secondary" size="sm" onClick={() => onToggle(item)}>
-          {item.is_active ? 'Deactivate' : 'Activate'}
-        </Button>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <AssignmentMeta label="Role" value={item.is_class_teacher ? 'Class ownership' : 'Subject coverage'} />
-        <AssignmentMeta label="Subject Code" value={item.subject_code || (item.is_class_teacher ? 'Not required' : '--')} />
-      </div>
-    </div>
-  </div>
-)
-
-const AssignmentMeta = ({ label, value }) => (
-  <div className="rounded-xl border px-3 py-2.5" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-    <p className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--color-text-muted)' }}>
-      {label}
-    </p>
-    <p className="mt-1 text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-      {value}
-    </p>
-  </div>
-)
-
 const WorkflowCard = ({ title, meta, description, status, onApprove, onReject }) => (
-  <article className="rounded-[24px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+  <article className="rounded-[20px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={status === 'approved' ? 'green' : status === 'rejected' ? 'red' : status === 'pending' ? 'yellow' : 'grey'}>
-            {status}
-          </Badge>
+          <span className="rounded-xl px-2.5 py-0.5 text-[11px] font-bold capitalize" style={{
+            backgroundColor: status === 'approved' ? '#d1fae5' : status === 'rejected' ? '#fee2e2' : '#fef3c7',
+            color: status === 'approved' ? '#065f46' : status === 'rejected' ? '#991b1b' : '#92400e',
+          }}>{status}</span>
         </div>
-        <p className="mt-3 break-words text-sm font-semibold leading-5" style={{ color: 'var(--color-text-primary)' }}>{title}</p>
-        <p className="mt-1 break-words text-xs leading-5 sm:text-sm" style={{ color: 'var(--color-text-secondary)' }}>{meta}</p>
-        <p className="mt-2 break-words text-xs leading-5 sm:text-sm" style={{ color: 'var(--color-text-secondary)' }}>{description}</p>
+        <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</p>
+        <p className="mt-0.5 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{meta}</p>
+        {description && <p className="mt-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{description}</p>}
       </div>
-      <div className="flex shrink-0 flex-wrap gap-2 lg:max-w-[220px] lg:justify-end">
-        {onReject ? <Button variant="secondary" onClick={onReject}>Reject</Button> : null}
-        {onApprove ? <Button variant="primary" onClick={onApprove}>Approve</Button> : null}
-      </div>
+      {(onApprove || onReject) && (
+        <div className="flex flex-shrink-0 gap-2">
+          {onReject  && <Button variant="secondary" size="sm" onClick={onReject}>Reject</Button>}
+          {onApprove && <Button variant="primary"   size="sm" onClick={onApprove}>Approve</Button>}
+        </div>
+      )}
     </div>
   </article>
 )
 
-const ActionSelectCard = ({ title, meta, status, options, onSave }) => {
-  const [value, setValue] = useState(status)
+/* ════════════════════════════════════════════════════════════════════════════
+   Small helpers
+════════════════════════════════════════════════════════════════════════════ */
+const HeroStat = ({ label, value, color }) => (
+  <div className="rounded-[20px] border px-4 py-3" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+    <p className="mt-1.5 text-2xl font-bold" style={{ color }}>{value}</p>
+  </div>
+)
 
-  useEffect(() => {
-    setValue(status)
-  }, [status])
+const SmallSelect = ({ value, onChange, options }) => (
+  <select
+    value={value}
+    onChange={onChange}
+    className="min-h-9 rounded-2xl px-3 text-xs font-semibold"
+    style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+  >
+    {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+  </select>
+)
 
-  return (
-    <article className="rounded-[24px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{title}</p>
-          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{meta}</p>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <select
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className="min-h-11 rounded-2xl px-3 text-sm"
-            style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
-          >
-            {options.map((option) => <option key={option} value={option}>{option}</option>)}
-          </select>
-          <Button variant="primary" onClick={() => onSave(value)}>Save</Button>
-        </div>
-      </div>
-    </article>
-  )
-}
-
-const AttendanceOverrideCard = ({ item, onSave }) => {
-  const [status, setStatus] = useState(item.status)
-  const [reason, setReason] = useState(item.override_reason || '')
-
-  useEffect(() => {
-    setStatus(item.status)
-    setReason(item.override_reason || '')
-  }, [item.id, item.override_reason, item.status])
-
-  return (
-    <article className="rounded-[24px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_160px_minmax(220px,320px)_auto] xl:items-end">
-        <div>
-          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-            {item.first_name} {item.last_name} • {item.class_name} {item.section_name} • Roll {item.roll_number || '--'}
-          </p>
-          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            {item.date} | Marked by {item.marked_by_name || 'Unknown'} | Current: {item.status}
-          </p>
-        </div>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="min-h-11 rounded-2xl px-3 text-sm" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}>
-          {['present', 'absent', 'late', 'half_day'].map((option) => <option key={option} value={option}>{option}</option>)}
-        </select>
-        <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Override reason" />
-        <Button variant="primary" onClick={() => onSave({ status, reason })}>Save</Button>
-      </div>
-    </article>
-  )
-}
-
-const MarkOverrideCard = ({ item, onSave }) => {
-  const [marksObtained, setMarksObtained] = useState(item.marks_obtained ?? '')
-  const [isAbsent, setIsAbsent] = useState(Boolean(item.is_absent))
-  const [reason, setReason] = useState(item.override_reason || '')
-
-  useEffect(() => {
-    setMarksObtained(item.marks_obtained ?? '')
-    setIsAbsent(Boolean(item.is_absent))
-    setReason(item.override_reason || '')
-  }, [item.id, item.is_absent, item.marks_obtained, item.override_reason])
-
-  return (
-    <article className="rounded-[24px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1fr)_110px_130px_minmax(220px,320px)_auto] xl:items-end">
-        <div>
-          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-            {item.first_name} {item.last_name} • {item.exam_name} • {item.subject_name}
-          </p>
-          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            {item.class_name} {item.section_name} • Roll {item.roll_number || '--'} | Current: {item.is_absent ? 'Absent' : item.marks_obtained}
-          </p>
-        </div>
-        <Input type="number" value={marksObtained} onChange={(e) => setMarksObtained(e.target.value)} disabled={isAbsent} placeholder="Marks" />
-        <button
-          type="button"
-          onClick={() => setIsAbsent((prev) => !prev)}
-          className="min-h-11 rounded-2xl px-4 text-sm font-semibold"
-          style={{ backgroundColor: isAbsent ? '#ef4444' : 'var(--color-surface)', color: isAbsent ? '#fff' : 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
-        >
-          {isAbsent ? 'Absent' : 'Present'}
-        </button>
-        <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Override reason" />
-        <Button variant="primary" onClick={() => onSave({ marks_obtained: marksObtained === '' ? null : Number(marksObtained), is_absent: isAbsent, reason })}>Save</Button>
-      </div>
-    </article>
-  )
-}
-
-const RemarkOverrideCard = ({ item, onSave }) => {
-  const [text, setText] = useState(item.remark_text)
-  const [visibility, setVisibility] = useState(item.visibility)
-  const [reason, setReason] = useState('')
-
-  useEffect(() => {
-    setText(item.remark_text)
-    setVisibility(item.visibility)
-    setReason('')
-  }, [item.id, item.remark_text, item.visibility])
-
-  return (
-    <article className="rounded-[24px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-      <div className="space-y-3">
-        <div>
-          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-            {item.first_name} {item.last_name} • {item.class_name} {item.section_name} • {item.remark_type}
-          </p>
-          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-            Teacher: {item.teacher_name} | Roll {item.roll_number || '--'}
-          </p>
-        </div>
-        <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} />
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-[180px_minmax(220px,320px)_auto] xl:items-end">
-          <select value={visibility} onChange={(e) => setVisibility(e.target.value)} className="min-h-11 rounded-2xl px-3 text-sm" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}>
-            {['private', 'share_parent', 'share_student'].map((option) => <option key={option} value={option}>{option}</option>)}
-          </select>
-          <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Override reason" />
-          <Button variant="primary" onClick={() => onSave({ remark_text: text, visibility, reason })}>Save</Button>
-        </div>
-      </div>
-    </article>
-  )
-}
-
-const Skeleton = ({ rows = 4 }) => (
-  <div className="space-y-3">
-    {[...Array(rows)].map((_, index) => (
-      <div key={index} className="h-20 animate-pulse rounded-[24px]" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
+const GridSkeleton = ({ rows = 3 }) => (
+  <div className="space-y-2">
+    {Array.from({ length: rows }).map((_, i) => (
+      <div key={i} className="h-16 animate-pulse rounded-[22px]" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
     ))}
   </div>
 )
