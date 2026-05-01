@@ -64,7 +64,7 @@ const AvatarCircle = ({ name, size = 36 }) => {
   )
 }
 
-// ─── Three-dot dropdown menu ──────────────────────────────────────────────────
+// ─── Three-dot dropdown menu (grid cards only) ────────────────────────────────
 const CardMenu = ({ onView, onEdit, onDelete }) => {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -90,7 +90,7 @@ const CardMenu = ({ onView, onEdit, onDelete }) => {
         style={{
           width: 28, height: 28, borderRadius: 7,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: '1px solid var(--color-border)',
+          border: 'none',
           backgroundColor: open ? 'var(--color-surface-raised)' : 'transparent',
           color: 'var(--color-text-muted)',
           cursor: 'pointer', transition: 'all 0.12s',
@@ -139,35 +139,52 @@ const CardMenu = ({ onView, onEdit, onDelete }) => {
   )
 }
 
-// ─── Grid Card (matches reference UI) ────────────────────────────────────────
+// ─── Grid Card ────────────────────────────────────────────────────────────────
 const StudentGridCard = ({ student, onView, onEdit, onDelete }) => {
   const fullName   = `${student.first_name} ${student.last_name}`
   const enrollment = student.current_enrollment
   const gCfg       = GENDER_BADGE[student.gender] || { label: student.gender, variant: 'grey' }
 
-  const classLabel = enrollment
+  const classLabel   = enrollment
     ? [enrollment.class, formatStream(enrollment.stream)].filter(Boolean).join(', ')
     : null
   const sectionLabel = enrollment?.section ? `${enrollment.section}` : null
 
   return (
     <div style={{
-      borderRadius: 14,
+      borderRadius: 16,
       backgroundColor: 'var(--color-surface)',
       border: '1px solid var(--color-border)',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.055), 0 1px 3px rgba(0,0,0,0.04)',
       overflow: 'visible',
       display: 'flex', flexDirection: 'column',
-    }}>
-      {/* Top row: admission no + status + menu */}
+      minHeight: 320,
+      transition: 'box-shadow 0.18s, transform 0.15s',
+    }}
+      onMouseEnter={e => {
+        e.currentTarget.style.boxShadow = '0 6px 22px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05)'
+        e.currentTarget.style.transform = 'translateY(-1px)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.055), 0 1px 3px rgba(0,0,0,0.04)'
+        e.currentTarget.style.transform = 'translateY(0)'
+      }}
+    >
+      {/* Top row */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '12px 14px 10px',
+        padding: '14px 16px 12px',
         borderBottom: '1px solid var(--color-border)',
       }}>
-        <span style={{
-          fontSize: 12.5, fontWeight: 600, fontFamily: 'monospace',
-          color: '#2563eb',
-        }}>
+        <span
+          onClick={onView}
+          style={{
+            fontSize: 12.5, fontWeight: 600, fontFamily: 'monospace',
+            color: '#2563eb', cursor: 'pointer',
+          }}
+          onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+          onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+        >
           {student.admission_no}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -178,26 +195,23 @@ const StudentGridCard = ({ student, onView, onEdit, onDelete }) => {
         </div>
       </div>
 
-      {/* Student info block */}
+      {/* Student info — no border, no background */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '14px 14px 12px',
+        display: 'flex', alignItems: 'center', gap: 14,
+        padding: '18px 16px 16px',
         borderBottom: '1px solid var(--color-border)',
-        backgroundColor: 'var(--color-surface-raised)',
-        margin: '10px 10px 0',
-        borderRadius: 10,
       }}>
-        <AvatarCircle name={fullName} size={46} />
+        <AvatarCircle name={fullName} size={52} />
         <div style={{ minWidth: 0 }}>
           <p style={{
-            margin: 0, fontSize: 14, fontWeight: 600,
+            margin: 0, fontSize: 14.5, fontWeight: 600,
             color: 'var(--color-text-primary)', lineHeight: 1.3,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
             {fullName}
           </p>
           {(classLabel || sectionLabel) && (
-            <p style={{ margin: '2px 0 0', fontSize: 12, color: 'var(--color-text-secondary)' }}>
+            <p style={{ margin: '3px 0 0', fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
               {[classLabel, sectionLabel].filter(Boolean).join(', ')}
             </p>
           )}
@@ -208,47 +222,85 @@ const StudentGridCard = ({ student, onView, onEdit, onDelete }) => {
       <div style={{
         display: 'grid',
         gridTemplateColumns: enrollment?.roll_number ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
-        padding: '12px 14px',
-        gap: 8,
+        padding: '14px 16px 16px',
+        gap: 10,
       }}>
         {enrollment?.roll_number && (
           <div>
             <p style={{ margin: 0, fontSize: 10.5, color: 'var(--color-text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Roll No</p>
-            <p style={{ margin: '3px 0 0', fontSize: 13, fontWeight: 600, color: '#2563eb' }}>{enrollment.roll_number}</p>
+            <p style={{ margin: '4px 0 0', fontSize: 13.5, fontWeight: 600, color: 'var(--color-text-primary)' }}>{enrollment.roll_number}</p>
           </div>
         )}
         <div>
           <p style={{ margin: 0, fontSize: 10.5, color: 'var(--color-text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gender</p>
-          <p style={{ margin: '3px 0 0', fontSize: 13, fontWeight: 600, color: '#2563eb' }}>
+          <p style={{ margin: '4px 0 0', fontSize: 13.5, fontWeight: 600, color: 'var(--color-text-primary)' }}>
             {gCfg.label}
           </p>
         </div>
         <div>
           <p style={{ margin: 0, fontSize: 10.5, color: 'var(--color-text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Joined On</p>
-          <p style={{ margin: '3px 0 0', fontSize: 13, fontWeight: 600, color: '#2563eb' }}>
+          <p style={{ margin: '4px 0 0', fontSize: 13.5, fontWeight: 600, color: 'var(--color-text-primary)' }}>
             {formatDate(student.date_of_birth)}
           </p>
+        </div>
+      </div>
+
+      {/* Action bar */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '10px 16px 14px',
+        borderTop: '1px solid var(--color-border)',
+        marginTop: 'auto',
+      }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {[
+            { title: 'Message', path: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
+            { title: 'Call',    path: 'M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.61 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.92-8.17A2 2 0 0 1 4.68 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z' },
+            { title: 'Email',   path: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22,6 12,13 2,6' },
+          ].map(({ title, path }) => (
+            <button
+              key={title}
+              title={title}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: 32, height: 32, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                border: '1px solid var(--color-border)',
+                backgroundColor: 'transparent',
+                color: 'var(--color-text-muted)',
+                cursor: 'pointer', transition: 'all 0.12s', flexShrink: 0,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--color-text-muted)' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                {title === 'Email'
+                  ? <><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></>
+                  : <path d={path} />
+                }
+              </svg>
+            </button>
+          ))}
         </div>
       </div>
     </div>
   )
 }
 
-// ─── List Row (desktop) ───────────────────────────────────────────────────────
-const StudentRow = ({ student, isLast, onView, onEdit, onDelete }) => {
+// ─── List Row (desktop) — full row clickable, NO three-dot ───────────────────
+const StudentRow = ({ student, onView }) => {
   const fullName   = `${student.first_name} ${student.last_name}`
   const gCfg       = GENDER_BADGE[student.gender] || { label: student.gender, variant: 'grey' }
   const enrollment = student.current_enrollment
 
   return (
-    <tr style={{
-      borderBottom: isLast ? 'none' : '1px solid var(--color-border)',
-      transition: 'background 0.12s',
-    }}
+    <tr
+      onClick={onView}
+      style={{ transition: 'background 0.12s', cursor: 'pointer' }}
       onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
     >
-      <td style={{ padding: '11px 20px' }}>
+      <td style={{ padding: '13px 20px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <AvatarCircle name={fullName} size={36} />
           <div>
@@ -267,39 +319,44 @@ const StudentRow = ({ student, isLast, onView, onEdit, onDelete }) => {
           </div>
         </div>
       </td>
-      <td style={{ padding: '11px 20px', fontSize: 12.5, fontFamily: 'monospace', color: '#2563eb' }}>
-        {student.admission_no}
+      <td style={{ padding: '13px 20px' }}>
+        <span style={{ fontSize: 12.5, fontFamily: 'monospace', color: '#2563eb' }}>
+          {student.admission_no}
+        </span>
       </td>
-      <td style={{ padding: '11px 20px', fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
+      <td style={{ padding: '13px 20px', fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
         {formatDate(student.date_of_birth)}
       </td>
-      <td style={{ padding: '11px 20px' }}>
+      <td style={{ padding: '13px 20px' }}>
         <Badge variant={gCfg.variant}>{gCfg.label}</Badge>
       </td>
-      <td style={{ padding: '11px 20px' }}>
+      <td style={{ padding: '13px 20px' }}>
         <Badge variant={student.is_deleted ? 'grey' : 'green'} dot>
           {student.is_deleted ? 'Inactive' : 'Active'}
         </Badge>
-      </td>
-      <td style={{ padding: '11px 20px' }}>
-        <CardMenu onView={onView} onEdit={onEdit} onDelete={onDelete} />
       </td>
     </tr>
   )
 }
 
-// ─── Mobile List Card ─────────────────────────────────────────────────────────
-const StudentMobileCard = ({ student, isLast, onView, onEdit, onDelete }) => {
+// ─── Mobile List Card — full card clickable, NO three-dot ────────────────────
+const StudentMobileCard = ({ student, isLast, onView }) => {
   const fullName   = `${student.first_name} ${student.last_name}`
   const enrollment = student.current_enrollment
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: 12,
-      padding: '13px 16px',
-      borderBottom: isLast ? 'none' : '1px solid var(--color-border)',
-      transition: 'background 0.12s',
-    }}>
+    <div
+      onClick={onView}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 12,
+        padding: '14px 16px',
+        borderBottom: isLast ? 'none' : '1px solid var(--color-border)',
+        transition: 'background 0.12s',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
+      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+    >
       <AvatarCircle name={fullName} size={40} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ margin: 0, fontSize: 13.5, fontWeight: 500, color: 'var(--color-text-primary)' }}>
@@ -318,12 +375,9 @@ const StudentMobileCard = ({ student, isLast, onView, onEdit, onDelete }) => {
           </p>
         )}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-        <Badge variant={student.is_deleted ? 'grey' : 'green'} dot>
-          {student.is_deleted ? 'Inactive' : 'Active'}
-        </Badge>
-        <CardMenu onView={onView} onEdit={onEdit} onDelete={onDelete} />
-      </div>
+      <Badge variant={student.is_deleted ? 'grey' : 'green'} dot>
+        {student.is_deleted ? 'Inactive' : 'Active'}
+      </Badge>
     </div>
   )
 }
@@ -342,8 +396,7 @@ const ListSkeleton = () => (
     {Array.from({ length: 6 }).map((_, i) => (
       <div key={i} style={{
         display: 'flex', alignItems: 'center', gap: 14,
-        padding: '12px 20px',
-        borderBottom: i < 5 ? '1px solid var(--color-border)' : 'none',
+        padding: '13px 20px',
       }}>
         <Pulse w={36} h={36} r={18} />
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
@@ -353,7 +406,6 @@ const ListSkeleton = () => (
         <Pulse w={80} h={12} />
         <Pulse w={70} h={12} />
         <Pulse w={60} h={20} r={99} />
-        <Pulse w={28} h={28} r={7} />
       </div>
     ))}
   </div>
@@ -362,30 +414,31 @@ const ListSkeleton = () => (
 const GridSkeleton = () => (
   <div style={{
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
-    gap: 14, padding: 16,
+    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+    gap: 16, padding: 18,
   }}>
-    {Array.from({ length: 8 }).map((_, i) => (
+    {Array.from({ length: 6 }).map((_, i) => (
       <div key={i} style={{
-        borderRadius: 14,
+        borderRadius: 16,
         backgroundColor: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.055)',
         overflow: 'hidden',
       }}>
-        <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Pulse w={90} h={13} />
           <Pulse w={60} h={20} r={99} />
         </div>
-        <div style={{ margin: '10px 10px 0', padding: '14px', borderRadius: 10, backgroundColor: 'var(--color-surface-raised)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <Pulse w={46} h={46} r={23} />
+        <div style={{ padding: '18px 16px 16px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Pulse w={52} h={52} r={26} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
             <Pulse w="70%" h={14} />
             <Pulse w="45%" h={11} />
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', padding: '12px 14px', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', padding: '14px 16px 16px', gap: 10 }}>
           {[1, 2, 3].map(j => (
-            <div key={j} style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div key={j} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <Pulse w="60%" h={10} />
               <Pulse w="80%" h={13} />
             </div>
@@ -620,8 +673,8 @@ const StudentsPage = () => {
             className="sp-grid"
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
-              gap: 14, padding: 16,
+              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gap: 16, padding: 18,
             }}
           >
             {students.map(student => (
@@ -639,12 +692,12 @@ const StudentsPage = () => {
 
           // ── List view ──
           <>
-            {/* Desktop table */}
+            {/* Desktop table — row click navigates, no three-dot */}
             <div className="sp-desktop-tbl" style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    {['Student', 'Admission No', 'Date of Birth', 'Gender', 'Status', ''].map(h => (
+                    {['Student', 'Admission No', 'Date of Birth', 'Gender', 'Status'].map(h => (
                       <th key={h} style={{
                         padding: '10px 20px', textAlign: 'left',
                         fontSize: 10.5, fontWeight: 600,
@@ -657,14 +710,11 @@ const StudentsPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {students.map((student, i) => (
+                  {students.map((student) => (
                     <StudentRow
                       key={student.id}
                       student={student}
-                      isLast={i === students.length - 1}
                       onView={() => goToDetail(student.id)}
-                      onEdit={() => goToEdit(student.id)}
-                      onDelete={() => {/* wire up delete modal */}}
                     />
                   ))}
                 </tbody>
@@ -679,8 +729,6 @@ const StudentsPage = () => {
                   student={student}
                   isLast={i === students.length - 1}
                   onView={() => goToDetail(student.id)}
-                  onEdit={() => goToEdit(student.id)}
-                  onDelete={() => {/* wire up delete modal */}}
                 />
               ))}
             </div>
