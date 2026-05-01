@@ -4,18 +4,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
-  ArrowLeft,
-  BadgeCheck,
-  Briefcase,
-  Check,
-  Copy,
-  GraduationCap,
-  KeyRound,
-  Mail,
-  Plus,
-  Search,
-  ShieldCheck,
-  UserRound,
+  ArrowLeft, ArrowRight, BadgeCheck, BookOpen, Briefcase,
+  Check, Copy, GraduationCap, KeyRound, Mail, Plus,
+  Search, ShieldCheck, UserRound, Users,
 } from 'lucide-react'
 import * as userApi from '@/api/userManagementApi'
 import { ROUTES } from '@/constants/app'
@@ -26,184 +17,215 @@ import Button from '@/components/ui/Button'
 import Modal from '@/components/ui/Modal'
 import { formatDate } from '@/utils/helpers'
 
+/* ─── schema ─── */
 const teacherSchema = z.object({
-  name: z.string().trim().min(1, 'Teacher name is required'),
-  email: z.string().trim().email('Valid email is required'),
-  phone: z.string().trim().optional(),
-  employee_id: z.string().trim().optional(),
-  department: z.string().trim().optional(),
-  designation: z.string().trim().optional(),
-  joining_date: z.string().optional(),
-  highest_qualification: z.string().trim().optional(),
-  specialization: z.string().trim().optional(),
-  university_name: z.string().trim().optional(),
-  graduation_year: z.string().trim().optional(),
-  years_of_experience: z.string().trim().optional(),
-  address: z.string().trim().optional(),
-  internal_notes: z.string().trim().optional(),
+  name:                   z.string().trim().min(1, 'Teacher name is required'),
+  email:                  z.string().trim().email('Valid email is required'),
+  phone:                  z.string().trim().optional(),
+  employee_id:            z.string().trim().optional(),
+  department:             z.string().trim().optional(),
+  designation:            z.string().trim().optional(),
+  joining_date:           z.string().optional(),
+  highest_qualification:  z.string().trim().optional(),
+  specialization:         z.string().trim().optional(),
+  university_name:        z.string().trim().optional(),
+  graduation_year:        z.string().trim().optional(),
+  years_of_experience:    z.string().trim().optional(),
+  address:                z.string().trim().optional(),
+  internal_notes:         z.string().trim().optional(),
 })
 
 const defaultValues = {
-  name: '',
-  email: '',
-  phone: '',
-  employee_id: '',
-  department: '',
-  designation: '',
-  joining_date: '',
-  highest_qualification: '',
-  specialization: '',
-  university_name: '',
-  graduation_year: '',
-  years_of_experience: '',
-  address: '',
-  internal_notes: '',
+  name: '', email: '', phone: '', employee_id: '', department: '',
+  designation: '', joining_date: '', highest_qualification: '',
+  specialization: '', university_name: '', graduation_year: '',
+  years_of_experience: '', address: '', internal_notes: '',
 }
 
-const ADMIT_STEPS = [
-  { id: 1, label: 'Identity', desc: 'Basic details' },
-  { id: 2, label: 'Professional', desc: 'Education details' },
-  { id: 3, label: 'Profile', desc: 'Address and notes' },
-  { id: 4, label: 'Access', desc: 'Review and create' },
+const STEPS = [
+  { id: 1, label: 'Identity',      icon: UserRound,     desc: 'Name, email, employee info' },
+  { id: 2, label: 'Education',     icon: GraduationCap, desc: 'Qualifications & experience' },
+  { id: 3, label: 'Notes',         icon: Briefcase,     desc: 'Address & internal notes' },
+  { id: 4, label: 'Review',        icon: ShieldCheck,   desc: 'Confirm & create account' },
 ]
 
-const panelStyle = {
-  backgroundColor: 'var(--color-surface)',
-  border: '1px solid var(--color-border)',
-}
-
-const inputClassName = (hasError = false) => `w-full rounded-2xl px-4 py-3 text-sm outline-none transition-all ${
-  hasError ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-cyan-500 focus:ring-cyan-100'
-}`
-
-const CreatedCredentialRow = ({ icon: Icon, label, value, onCopy }) => (
-  <div
-    className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
-    style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}
-  >
-    <div className="flex min-w-0 items-center gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl" style={{ backgroundColor: '#ecfeff', color: '#0f766e' }}>
-        <Icon size={17} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>
-          {label}
-        </p>
-        <p className="truncate text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-          {value || '--'}
-        </p>
-      </div>
-    </div>
-    <Button variant="secondary" size="sm" onClick={() => onCopy(value)} icon={Copy}>
-      Copy
-    </Button>
-  </div>
-)
-
-const Field = ({
-  label, required, error, hint, children,
-}) => (
+/* ─── tiny primitives ─── */
+const Field = ({ label, required, error, hint, children }) => (
   <div className="space-y-1.5">
-    <label className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>
-      {label}
-      {required ? <span className="ml-1 text-red-500">*</span> : null}
+    <label className="block text-xs font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--color-text-secondary)' }}>
+      {label}{required && <span className="ml-1 text-red-400">*</span>}
     </label>
     {children}
-    {error ? (
-      <p className="text-xs" style={{ color: '#dc2626' }}>{error}</p>
-    ) : hint ? (
-      <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{hint}</p>
-    ) : null}
+    {error
+      ? <p className="text-xs font-medium" style={{ color: '#f87171' }}>{error}</p>
+      : hint
+        ? <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{hint}</p>
+        : null}
   </div>
 )
 
+const TextInput = ({ error, ...props }) => (
+  <input
+    {...props}
+    className="w-full rounded-[14px] px-4 py-2.5 text-sm outline-none transition-all"
+    style={{
+      backgroundColor: 'var(--color-surface-raised)',
+      border: `1px solid ${error ? '#f87171' : 'var(--color-border)'}`,
+      color: 'var(--color-text-primary)',
+    }}
+    onFocus={(e) => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 3px rgba(14,165,233,.12)' }}
+    onBlur={(e)  => { e.target.style.borderColor = error ? '#f87171' : 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
+  />
+)
+
+const ReviewRow = ({ label, value }) => (
+  <div className="flex items-start justify-between gap-4 py-2.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
+    <span className="text-xs font-semibold uppercase tracking-[0.12em] shrink-0" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
+    <span className="text-sm text-right font-medium break-all" style={{ color: 'var(--color-text-primary)' }}>{value || <span style={{ color: 'var(--color-text-secondary)' }}>—</span>}</span>
+  </div>
+)
+
+const CredRow = ({ icon: Icon, label, value, onCopy }) => (
+  <div className="flex items-center justify-between gap-3 rounded-[18px] p-4" style={{ backgroundColor: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}>
+    <div className="flex items-center gap-3 min-w-0">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: '#0c4a6e', color: '#bae6fd' }}>
+        <Icon size={15} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+        <p className="truncate text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{value || '—'}</p>
+      </div>
+    </div>
+    <button
+      type="button"
+      onClick={() => onCopy(value)}
+      className="flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all"
+      style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0ea5e9'; e.currentTarget.style.color = '#0ea5e9' }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.color = 'var(--color-text-secondary)' }}
+    >
+      <Copy size={11} /> Copy
+    </button>
+  </div>
+)
+
+/* ════════════════════════════════════════════════════════════
+   Teacher List Panel
+════════════════════════════════════════════════════════════ */
 const TeacherListPanel = ({ navigate, toastError }) => {
-  const [teachers, setTeachers] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [search, setSearch] = useState('')
+  const [teachers, setTeachers]   = useState([])
+  const [loading, setLoading]     = useState(false)
+  const [search, setSearch]       = useState('')
 
   useEffect(() => {
-    const loadTeachers = async () => {
-      setIsLoading(true)
+    const load = async () => {
+      setLoading(true)
       try {
-        const response = await userApi.getUsers({
-          role: 'teacher',
-          search: search.trim(),
-          page: 1,
-          perPage: 50,
-        })
-        setTeachers(response?.data?.users || [])
-      } catch (error) {
-        toastError(error.message || 'Failed to load teachers')
+        const res = await userApi.getUsers({ role: 'teacher', search: search.trim(), page: 1, perPage: 50 })
+        setTeachers(res?.data?.users || [])
+      } catch (err) {
+        toastError(err.message || 'Failed to load teachers')
         setTeachers([])
-      } finally {
-        setIsLoading(false)
-      }
+      } finally { setLoading(false) }
     }
-
-    const timer = setTimeout(loadTeachers, 300)
-    return () => clearTimeout(timer)
+    const t = setTimeout(load, 300)
+    return () => clearTimeout(t)
   }, [search, toastError])
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-2xl p-4" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl" style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-          <Search size={16} style={{ color: 'var(--color-text-muted)' }} />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search teacher by name, email, employee ID..."
-            className="flex-1 text-sm outline-none bg-transparent"
-            style={{ color: 'var(--color-text-primary)' }}
-          />
-        </div>
+    <div className="space-y-4">
+      {/* search */}
+      <div
+        className="flex items-center gap-3 rounded-[18px] px-4 py-3"
+        style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
+      >
+        <Search size={15} style={{ color: 'var(--color-text-secondary)', flexShrink: 0 }} />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search by name, email or employee ID…"
+          className="flex-1 bg-transparent text-sm outline-none"
+          style={{ color: 'var(--color-text-primary)' }}
+        />
+        {search && (
+          <button
+            type="button"
+            onClick={() => setSearch('')}
+            className="text-xs"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
+            Clear
+          </button>
+        )}
       </div>
 
-      <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-        {isLoading ? (
-          <div className="animate-pulse divide-y" style={{ borderColor: 'var(--color-border)' }}>
-            {[1, 2, 3, 4].map((idx) => (
-              <div key={idx} className="h-14" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
+      {/* table */}
+      <div className="overflow-hidden rounded-[22px]" style={{ border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+        {loading ? (
+          <div className="divide-y" style={{ borderColor: 'var(--color-border)' }}>
+            {[1,2,3,4,5].map((i) => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <div className="h-8 w-8 animate-pulse rounded-xl" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-40 animate-pulse rounded-lg" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
+                  <div className="h-2.5 w-28 animate-pulse rounded-lg" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
+                </div>
+              </div>
             ))}
           </div>
-        ) : teachers.length === 0 ? (
-          <div className="py-14 text-center">
-            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>No teachers found</p>
+        ) : !teachers.length ? (
+          <div className="py-16 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: 'var(--color-surface-raised)' }}>
+              <Users size={20} style={{ color: 'var(--color-text-secondary)' }} />
+            </div>
+            <p className="text-sm font-medium" style={{ color: 'var(--color-text-secondary)' }}>
+              {search ? 'No teachers match your search' : 'No teachers yet'}
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  {['Teacher', 'Employee ID', 'Department', 'Joined', 'Status'].map((header) => (
-                    <th key={header} className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
-                      {header}
-                    </th>
+                <tr style={{ borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
+                  {['Teacher', 'Employee ID', 'Department', 'Designation', 'Joined', 'Status'].map((h) => (
+                    <th key={h} className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {teachers.map((teacher, index) => (
+                {teachers.map((t, idx) => (
                   <tr
-                    key={teacher.source_id || teacher.id}
-                    onClick={() => navigate(ROUTES.TEACHER_DETAIL.replace(':id', String(teacher.source_id || teacher.id)))}
-                    style={{ borderBottom: index < teachers.length - 1 ? '1px solid var(--color-border)' : 'none' }}
-                    className="cursor-pointer transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    key={t.source_id || t.id}
+                    onClick={() => navigate(ROUTES.TEACHER_DETAIL.replace(':id', String(t.source_id || t.id)))}
+                    className="group cursor-pointer transition-colors"
+                    style={{ borderBottom: idx < teachers.length - 1 ? '1px solid var(--color-border)' : 'none' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
                   >
-                    <td className="px-5 py-4">
-                      <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{teacher.name}</p>
-                      <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{teacher.email}</p>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        {/* avatar */}
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
+                          style={{ backgroundColor: `hsl(${((t.name || '').charCodeAt(0) * 37) % 360} 60% 88%)`, color: `hsl(${((t.name || '').charCodeAt(0) * 37) % 360} 60% 28%)` }}
+                        >
+                          {(t.name || '?')[0].toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{t.name}</p>
+                          <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{t.email}</p>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-5 py-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{teacher.employee_id || '--'}</td>
-                    <td className="px-5 py-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{teacher.department || '--'}</td>
-                    <td className="px-5 py-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                      {teacher.joining_date ? formatDate(teacher.joining_date) : '--'}
-                    </td>
-                    <td className="px-5 py-4">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${teacher.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${teacher.is_active ? 'bg-green-500' : 'bg-gray-400'}`} />
-                        {teacher.is_active ? 'Active' : 'Inactive'}
+                    <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t.employee_id || '—'}</td>
+                    <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t.department || '—'}</td>
+                    <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t.designation || '—'}</td>
+                    <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>{t.joining_date ? formatDate(t.joining_date) : '—'}</td>
+                    <td className="px-5 py-3.5">
+                      <span className="inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-[11px] font-semibold"
+                        style={{ backgroundColor: t.is_active ? '#dcfce7' : 'var(--color-surface-raised)', color: t.is_active ? '#166534' : 'var(--color-text-secondary)' }}>
+                        <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: t.is_active ? '#16a34a' : '#9ca3af' }} />
+                        {t.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
                   </tr>
@@ -217,450 +239,355 @@ const TeacherListPanel = ({ navigate, toastError }) => {
   )
 }
 
+/* ════════════════════════════════════════════════════════════
+   Wizard sidebar stepper
+════════════════════════════════════════════════════════════ */
+const StepSidebar = ({ current }) => (
+  <div className="hidden lg:flex lg:flex-col lg:gap-1 lg:w-52 lg:shrink-0">
+    {STEPS.map((s) => {
+      const done    = current > s.id
+      const active  = current === s.id
+      const Icon    = s.icon
+      return (
+        <div
+          key={s.id}
+          className="flex items-center gap-3 rounded-[18px] px-4 py-3 transition-all"
+          style={{ backgroundColor: active ? 'var(--color-surface)' : 'transparent', border: active ? '1px solid var(--color-border)' : '1px solid transparent' }}
+        >
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all"
+            style={{
+              backgroundColor: done ? '#16a34a' : active ? '#0369a1' : 'var(--color-surface-raised)',
+              color: done || active ? '#fff' : 'var(--color-text-secondary)',
+            }}
+          >
+            {done ? <Check size={13} /> : <Icon size={13} />}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold" style={{ color: active ? 'var(--color-text-primary)' : done ? '#16a34a' : 'var(--color-text-secondary)' }}>{s.label}</p>
+            <p className="text-[10px]" style={{ color: 'var(--color-text-secondary)' }}>{s.desc}</p>
+          </div>
+        </div>
+      )
+    })}
+    {/* vertical progress bar */}
+    <div className="mt-4 mx-8 h-1 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--color-surface-raised)' }}>
+      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${((current - 1) / (STEPS.length - 1)) * 100}%`, backgroundColor: '#0369a1' }} />
+    </div>
+    <p className="mt-2 text-center text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>
+      Step {current} of {STEPS.length}
+    </p>
+  </div>
+)
+
+/* ════════════════════════════════════════════════════════════
+   Main Page
+════════════════════════════════════════════════════════════ */
 const CreateTeacherPage = () => {
   usePageTitle('Teacher')
-
   const navigate = useNavigate()
   const { toastSuccess, toastError, toastInfo } = useToast()
-  const [isSaving, setIsSaving] = useState(false)
-  const [createdTeacher, setCreatedTeacher] = useState(null)
-  const [showAdmitForm, setShowAdmitForm] = useState(false)
-  const [admitStep, setAdmitStep] = useState(1)
+
+  const [isSaving, setIsSaving]         = useState(false)
+  const [createdTeacher, setCreated]    = useState(null)
+  const [showForm, setShowForm]         = useState(false)
+  const [step, setStep]                 = useState(1)
 
   const defaultPermissions = useMemo(() => getDefaultPermissionsForRole('teacher'), [])
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    reset,
-    getValues,
-    trigger,
-    formState: { errors },
-  } = useForm({
+  const { register, handleSubmit, watch, reset, getValues, trigger, formState: { errors } } = useForm({
     resolver: zodResolver(teacherSchema),
     defaultValues,
   })
 
-  const teacherEmail = watch('email')
-  const teacherName = watch('name')
-  const loginId = teacherEmail?.trim().toLowerCase() || ''
+  const emailVal = watch('email')
+  const nameVal  = watch('name')
 
   const handleCopy = async (value) => {
     if (!value) return
-
-    try {
-      await navigator.clipboard.writeText(value)
-      toastInfo('Copied to clipboard')
-    } catch {
-      toastError('Unable to copy to clipboard')
-    }
+    try { await navigator.clipboard.writeText(value); toastInfo('Copied') }
+    catch  { toastError('Unable to copy') }
   }
 
-  const openAdmitWizard = () => {
-    reset(defaultValues)
-    setAdmitStep(1)
-    setShowAdmitForm(true)
+  const openForm = () => { reset(defaultValues); setStep(1); setShowForm(true) }
+  const closeForm = () => { setShowForm(false); setStep(1); reset(defaultValues) }
+
+  const next = async () => {
+    if (step === 1) { const ok = await trigger(['name','email']); if (!ok) return }
+    setStep((p) => Math.min(4, p + 1))
   }
-
-  const closeAdmitWizard = () => {
-    setShowAdmitForm(false)
-    setAdmitStep(1)
-    reset(defaultValues)
-  }
-
-  const goNextStep = async () => {
-    if (admitStep === 1) {
-      const valid = await trigger(['name', 'email'])
-      if (!valid) return
-    }
-
-    setAdmitStep((prev) => Math.min(4, prev + 1))
-  }
-
-  const goBackStep = () => {
-    if (admitStep === 1) {
-      closeAdmitWizard()
-      return
-    }
-
-    setAdmitStep((prev) => prev - 1)
-  }
+  const back = () => { if (step === 1) { closeForm(); return } setStep((p) => p - 1) }
 
   const onSubmit = async (values) => {
     setIsSaving(true)
     try {
-      const response = await userApi.createUser({
+      const res = await userApi.createUser({
         ...values,
-        graduation_year: values.graduation_year ? Number(values.graduation_year) : null,
+        graduation_year:     values.graduation_year     ? Number(values.graduation_year)     : null,
         years_of_experience: values.years_of_experience ? Number(values.years_of_experience) : null,
         role: 'teacher',
         auto_password: true,
         force_password_change: true,
         permission_names: defaultPermissions,
       })
-
-      const data = response?.data || {}
-
-      setCreatedTeacher({
-        id: data.user?.id,
-        name: data.user?.name || values.name,
-        email: data.user?.email || values.email,
-        login_id: data.user?.email || values.email,
-        generated_password: data.generated_password || '',
+      const d = res?.data || {}
+      setCreated({
+        name:               d.user?.name              || values.name,
+        email:              d.user?.email             || values.email,
+        login_id:           d.user?.email             || values.email,
+        generated_password: d.generated_password      || '',
       })
-
-      toastSuccess('Teacher profile created successfully')
-      setAdmitStep(1)
-      reset(defaultValues)
-    } catch (error) {
-      toastError(error.message || 'Failed to create teacher')
-    } finally {
-      setIsSaving(false)
-    }
+      toastSuccess('Teacher created.')
+      setStep(1); reset(defaultValues)
+    } catch (err) { toastError(err.message || 'Failed to create teacher') }
+    finally { setIsSaving(false) }
   }
 
-  const reviewValues = getValues()
+  const rv = getValues()
 
   return (
     <>
-      <div className="mx-auto max-w-5xl space-y-6 pb-16">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex-1">
-            <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-              Teacher
-            </h1>
-            <p className="text-sm mt-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-              Manage teacher admissions and profiles
-            </p>
+      <div className="mx-auto max-w-5xl space-y-5 pb-20">
+
+        {/* ── page header ── */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>Teachers</h1>
+            <p className="mt-0.5 text-sm" style={{ color: 'var(--color-text-secondary)' }}>Manage teacher accounts and profiles</p>
           </div>
-          {!showAdmitForm && (
-            <Button icon={Plus} onClick={openAdmitWizard}>
-              Admit New Teacher
-            </Button>
+          {!showForm && (
+            <button
+              type="button"
+              onClick={openForm}
+              className="inline-flex items-center gap-2 rounded-[18px] px-4 py-2.5 text-sm font-semibold transition-all"
+              style={{ backgroundColor: '#0369a1', color: '#fff', border: 'none' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0284c7' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0369a1' }}
+            >
+              <Plus size={15} /> Admit Teacher
+            </button>
           )}
         </div>
 
-        {showAdmitForm ? (
-          <div className="max-w-3xl space-y-6">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={goBackStep}
-                className="p-2 rounded-xl transition-colors"
-                style={{ color: 'var(--color-text-secondary)' }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)' }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
-              >
-                <ArrowLeft size={20} />
-              </button>
-              <div>
-                <h2 className="text-xl font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                  Admit New Teacher
-                </h2>
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                  Step {admitStep} of 4 - {ADMIT_STEPS[admitStep - 1]?.desc}
-                </p>
+        {showForm ? (
+          /* ── WIZARD ── */
+          <div className="flex gap-6 items-start">
+            <StepSidebar current={step} />
+
+            <div className="flex-1 min-w-0 space-y-4">
+              {/* mobile step indicator */}
+              <div className="flex items-center gap-3 lg:hidden">
+                <button type="button" onClick={back} className="rounded-xl p-2" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+                  <ArrowLeft size={16} style={{ color: 'var(--color-text-secondary)' }} />
+                </button>
+                <div className="flex-1 overflow-hidden rounded-full h-1.5" style={{ backgroundColor: 'var(--color-surface-raised)' }}>
+                  <div className="h-full rounded-full transition-all duration-500" style={{ width: `${((step - 1) / 3) * 100}%`, backgroundColor: '#0369a1' }} />
+                </div>
+                <span className="text-xs font-semibold shrink-0" style={{ color: 'var(--color-text-secondary)' }}>{step}/4</span>
               </div>
-            </div>
 
-            <div
-              className="p-4 rounded-2xl"
-              style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-            >
-              <div className="flex items-center">
-                {ADMIT_STEPS.map((step, i) => {
-                  const isDone = admitStep > step.id
-                  const isCurrent = admitStep === step.id
+              {/* step heading */}
+              <div className="rounded-[22px] px-6 py-5" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+                <div className="flex items-center gap-3 mb-5">
+                  {(() => { const Icon = STEPS[step - 1].icon; return <div className="flex h-9 w-9 items-center justify-center rounded-xl" style={{ backgroundColor: '#0c4a6e', color: '#bae6fd' }}><Icon size={16} /></div> })()}
+                  <div>
+                    <p className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>{STEPS[step - 1].label}</p>
+                    <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>{STEPS[step - 1].desc}</p>
+                  </div>
+                </div>
 
-                  return (
-                    <div key={step.id} className="flex items-center flex-1 last:flex-none">
-                      <div className="flex flex-col items-center gap-1">
-                        <div
-                          className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300"
-                          style={{
-                            backgroundColor: isDone ? '#22c55e' : isCurrent ? 'var(--color-brand)' : 'var(--color-surface-raised)',
-                            color: isDone || isCurrent ? '#fff' : 'var(--color-text-muted)',
-                            border: isCurrent ? '2px solid var(--color-brand)' : '2px solid transparent',
-                          }}
-                        >
-                          {isDone ? <Check size={14} /> : step.id}
-                        </div>
-                        <span
-                          className="text-xs font-medium hidden sm:block"
-                          style={{ color: isCurrent ? 'var(--color-brand)' : 'var(--color-text-muted)' }}
-                        >
-                          {step.label}
-                        </span>
-                      </div>
-
-                      {i < ADMIT_STEPS.length - 1 && (
-                        <div
-                          className="flex-1 h-0.5 mx-2 transition-all duration-500"
-                          style={{ backgroundColor: isDone ? '#22c55e' : 'var(--color-border)' }}
-                        />
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <div className="rounded-2xl p-6 space-y-4" style={panelStyle}>
-                {admitStep === 1 && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <UserRound size={16} style={{ color: 'var(--color-brand)' }} />
-                      <h3 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Identity Details</h3>
-                    </div>
+                <form onSubmit={handleSubmit(onSubmit)}>
+                  {/* ── step 1: identity ── */}
+                  {step === 1 && (
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field label="Full Name" required error={errors.name?.message}>
-                        <input
-                          {...register('name')}
-                          autoFocus
-                          placeholder="Ananya Sharma"
-                          className={inputClassName(!!errors.name)}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                        <TextInput {...register('name')} autoFocus placeholder="Ananya Sharma" error={!!errors.name} />
                       </Field>
-                      <Field label="Email Address" required error={errors.email?.message} hint="This email is also used as login ID.">
-                        <input
-                          {...register('email')}
-                          type="email"
-                          placeholder="ananya@school.edu.in"
-                          className={inputClassName(!!errors.email)}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                      <Field label="Email Address" required error={errors.email?.message} hint="Used as login ID">
+                        <TextInput {...register('email')} type="email" placeholder="ananya@school.edu.in" error={!!errors.email} />
                       </Field>
-                      <Field label="Phone Number">
-                        <input
-                          {...register('phone')}
-                          placeholder="+91 9876543210"
-                          className={inputClassName()}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                      <Field label="Phone">
+                        <TextInput {...register('phone')} placeholder="+91 9876543210" />
                       </Field>
                       <Field label="Employee ID">
-                        <input
-                          {...register('employee_id')}
-                          placeholder="TCH-014"
-                          className={inputClassName()}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                        <TextInput {...register('employee_id')} placeholder="TCH-014" />
                       </Field>
                       <Field label="Department">
-                        <input
-                          {...register('department')}
-                          placeholder="Science"
-                          className={inputClassName()}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                        <TextInput {...register('department')} placeholder="Science" />
                       </Field>
                       <Field label="Designation">
-                        <input
-                          {...register('designation')}
-                          placeholder="Class Teacher"
-                          className={inputClassName()}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                        <TextInput {...register('designation')} placeholder="Class Teacher" />
                       </Field>
-                      <Field label="Joining Date">
-                        <input
-                          {...register('joining_date')}
-                          type="date"
-                          className={inputClassName()}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                      <Field label="Joining Date" hint="Optional">
+                        <TextInput {...register('joining_date')} type="date" />
                       </Field>
                     </div>
-                  </>
-                )}
+                  )}
 
-                {admitStep === 2 && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <GraduationCap size={16} style={{ color: 'var(--color-brand)' }} />
-                      <h3 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Professional Details</h3>
-                    </div>
+                  {/* ── step 2: education ── */}
+                  {step === 2 && (
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Field label="Highest Qualification">
-                        <input
-                          {...register('highest_qualification')}
-                          placeholder="M.Ed, M.Sc, B.Ed"
-                          className={inputClassName()}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                        <TextInput {...register('highest_qualification')} placeholder="M.Ed, M.Sc, B.Ed" />
                       </Field>
                       <Field label="Specialization">
-                        <input
-                          {...register('specialization')}
-                          placeholder="Mathematics Education"
-                          className={inputClassName()}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                        <TextInput {...register('specialization')} placeholder="Mathematics Education" />
                       </Field>
                       <Field label="University / Institution">
-                        <input
-                          {...register('university_name')}
-                          placeholder="Delhi University"
-                          className={inputClassName()}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                        <TextInput {...register('university_name')} placeholder="Delhi University" />
                       </Field>
                       <Field label="Graduation Year">
-                        <input
-                          {...register('graduation_year')}
-                          type="number"
-                          min="1900"
-                          max="2100"
-                          placeholder="2020"
-                          className={inputClassName()}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                        <TextInput {...register('graduation_year')} type="number" min="1960" max="2100" placeholder="2020" />
                       </Field>
-                      <Field label="Experience (Years)">
-                        <input
-                          {...register('years_of_experience')}
-                          type="number"
-                          min="0"
-                          step="0.5"
-                          placeholder="5"
-                          className={inputClassName()}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
-                        />
+                      <Field label="Years of Experience">
+                        <TextInput {...register('years_of_experience')} type="number" min="0" step="0.5" placeholder="5" />
                       </Field>
                     </div>
-                  </>
-                )}
+                  )}
 
-                {admitStep === 3 && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <Briefcase size={16} style={{ color: 'var(--color-brand)' }} />
-                      <h3 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Profile Notes</h3>
-                    </div>
+                  {/* ── step 3: notes ── */}
+                  {step === 3 && (
                     <div className="space-y-4">
                       <Field label="Address">
                         <textarea
                           {...register('address')}
                           rows={3}
                           placeholder="Residential address"
-                          className={`${inputClassName()} resize-none`}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
+                          className="w-full resize-none rounded-[14px] px-4 py-2.5 text-sm outline-none transition-all"
+                          style={{ backgroundColor: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                          onFocus={(e) => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 3px rgba(14,165,233,.12)' }}
+                          onBlur={(e)  => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
                         />
                       </Field>
-                      <Field label="Internal Notes">
+                      <Field label="Internal Notes" hint="Visible to admins only">
                         <textarea
                           {...register('internal_notes')}
                           rows={4}
-                          placeholder="Optional notes for admin use only"
-                          className={`${inputClassName()} resize-none`}
-                          style={{ backgroundColor: 'var(--color-bg)', borderWidth: 1, color: 'var(--color-text-primary)' }}
+                          placeholder="Optional admin-only notes"
+                          className="w-full resize-none rounded-[14px] px-4 py-2.5 text-sm outline-none transition-all"
+                          style={{ backgroundColor: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
+                          onFocus={(e) => { e.target.style.borderColor = '#0ea5e9'; e.target.style.boxShadow = '0 0 0 3px rgba(14,165,233,.12)' }}
+                          onBlur={(e)  => { e.target.style.borderColor = 'var(--color-border)'; e.target.style.boxShadow = 'none' }}
                         />
                       </Field>
                     </div>
-                  </>
-                )}
+                  )}
 
-                {admitStep === 4 && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <ShieldCheck size={16} style={{ color: 'var(--color-brand)' }} />
-                      <h3 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Access & Review</h3>
-                    </div>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>Teacher Name</p>
-                        <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{reviewValues.name || '--'}</p>
+                  {/* ── step 4: review ── */}
+                  {step === 4 && (
+                    <div className="space-y-5">
+                      {/* summary grid */}
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {[
+                          { label: 'Name',        value: rv.name },
+                          { label: 'Email',        value: rv.email },
+                          { label: 'Employee ID',  value: rv.employee_id },
+                          { label: 'Department',   value: rv.department },
+                          { label: 'Designation',  value: rv.designation },
+                          { label: 'Joining Date', value: rv.joining_date },
+                          { label: 'Qualification',value: rv.highest_qualification },
+                          { label: 'Experience',   value: rv.years_of_experience ? `${rv.years_of_experience} yrs` : null },
+                        ].map(({ label, value }) => (
+                          <div key={label} className="rounded-[14px] px-4 py-3" style={{ backgroundColor: 'var(--color-surface-raised)', border: '1px solid var(--color-border)' }}>
+                            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-secondary)' }}>{label}</p>
+                            <p className="mt-1 text-sm font-medium truncate" style={{ color: value ? 'var(--color-text-primary)' : 'var(--color-text-secondary)' }}>
+                              {value || '—'}
+                            </p>
+                          </div>
+                        ))}
                       </div>
-                      <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>Login Email</p>
-                        <p className="mt-1 text-sm font-semibold break-all" style={{ color: 'var(--color-text-primary)' }}>{reviewValues.email || '--'}</p>
-                      </div>
-                      <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>Role</p>
-                        <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>Teacher</p>
-                      </div>
-                      <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: 'var(--color-bg)', border: '1px solid var(--color-border)' }}>
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: 'var(--color-text-muted)' }}>Default Permissions</p>
-                        <p className="mt-1 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{defaultPermissions.length} permissions assigned</p>
-                      </div>
-                    </div>
 
-                    <div className="rounded-2xl px-4 py-3" style={{ backgroundColor: '#fff7ed', border: '1px solid #fed7aa' }}>
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: '#9a3412' }}>Password</p>
-                      <p className="mt-1 text-sm font-semibold" style={{ color: '#7c2d12' }}>
-                        Temporary password will be auto-generated after creating this teacher.
-                      </p>
+                      {/* access notice */}
+                      <div className="rounded-[18px] p-4 space-y-2" style={{ backgroundColor: '#0c4a6e18', border: '1px solid #0369a140' }}>
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck size={14} style={{ color: '#0369a1' }} />
+                          <p className="text-xs font-bold uppercase tracking-wider" style={{ color: '#0369a1' }}>Access Setup</p>
+                        </div>
+                        <p className="text-sm" style={{ color: 'var(--color-text-primary)' }}>
+                          <strong>{defaultPermissions.length} permissions</strong> will be assigned automatically based on the Teacher role.
+                        </p>
+                        <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                          A temporary password will be generated. The teacher must change it on first login.
+                        </p>
+                        <p className="text-xs font-semibold" style={{ color: '#0369a1' }}>
+                          Login ID: {emailVal?.trim().toLowerCase() || '—'}
+                        </p>
+                      </div>
                     </div>
+                  )}
 
-                    <div className="rounded-2xl p-4" style={{ backgroundColor: '#ecfdf5', border: '1px solid #bbf7d0' }}>
-                      <p className="text-sm font-semibold" style={{ color: '#166534' }}>
-                        First login will require password change.
-                      </p>
-                      <p className="mt-1 text-sm" style={{ color: '#166534' }}>
-                        Login ID is the teacher email: {loginId || '--'}
-                      </p>
-                    </div>
-                  </>
-                )}
+                  {/* ── nav buttons ── */}
+                  <div className="mt-6 flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={back}
+                      className="inline-flex items-center gap-2 rounded-[16px] px-4 py-2.5 text-sm font-semibold transition-all"
+                      style={{ backgroundColor: 'var(--color-surface-raised)', color: 'var(--color-text-primary)', border: '1px solid var(--color-border)' }}
+                    >
+                      <ArrowLeft size={14} />
+                      {step === 1 ? 'Cancel' : 'Back'}
+                    </button>
+
+                    {step < 4 ? (
+                      <button
+                        type="button"
+                        onClick={next}
+                        className="inline-flex items-center gap-2 rounded-[16px] px-5 py-2.5 text-sm font-semibold transition-all"
+                        style={{ backgroundColor: '#0369a1', color: '#fff', border: 'none' }}
+                        onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#0284c7' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#0369a1' }}
+                      >
+                        Next <ArrowRight size={14} />
+                      </button>
+                    ) : (
+                      <button
+                        type="submit"
+                        disabled={isSaving}
+                        className="inline-flex items-center gap-2 rounded-[16px] px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-60"
+                        style={{ backgroundColor: '#16a34a', color: '#fff', border: 'none' }}
+                        onMouseEnter={(e) => { if (!isSaving) e.currentTarget.style.backgroundColor = '#15803d' }}
+                        onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#16a34a' }}
+                      >
+                        {isSaving ? (
+                          <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" /> Creating…</>
+                        ) : (
+                          <><BadgeCheck size={15} /> Create Teacher</>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </form>
               </div>
-
-              <div className="mt-5 flex items-center justify-between gap-3">
-                <Button type="button" variant="secondary" onClick={goBackStep}>
-                  {admitStep === 1 ? 'Back to Teacher List' : 'Back'}
-                </Button>
-
-                {admitStep < 4 ? (
-                  <Button type="button" onClick={goNextStep}>
-                    Next
-                  </Button>
-                ) : (
-                  <Button type="submit" loading={isSaving} icon={BadgeCheck}>
-                    {isSaving ? 'Creating Teacher...' : 'Create Teacher'}
-                  </Button>
-                )}
-              </div>
-            </form>
+            </div>
           </div>
         ) : (
+          /* ── LIST ── */
           <TeacherListPanel navigate={navigate} toastError={toastError} />
         )}
       </div>
 
+      {/* ── success modal ── */}
       <Modal
         open={!!createdTeacher}
-        onClose={() => setCreatedTeacher(null)}
-        title="Teacher Created Successfully"
+        onClose={() => setCreated(null)}
+        title="Teacher Created"
         footer={(
           <>
-            <Button variant="secondary" onClick={() => setCreatedTeacher(null)}>
-              Create Another
-            </Button>
-            <Button
-              onClick={() => {
-                setCreatedTeacher(null)
-                closeAdmitWizard()
-              }}
-            >
-              Go to Teacher List
-            </Button>
+            <Button variant="secondary" onClick={() => setCreated(null)}>Add Another</Button>
+            <Button onClick={() => { setCreated(null); closeForm() }}>Back to List</Button>
           </>
         )}
       >
-        <div className="space-y-4">
-          <div className="rounded-[24px] p-4" style={{ backgroundColor: '#ecfdf5', border: '1px solid #bbf7d0' }}>
+        <div className="space-y-3">
+          <div className="rounded-[18px] p-4" style={{ backgroundColor: '#dcfce7', border: '1px solid #bbf7d0' }}>
             <p className="text-sm font-semibold" style={{ color: '#166534' }}>
-              Share these credentials with {createdTeacher?.name || 'the teacher'}.
+              Account ready for <strong>{createdTeacher?.name}</strong>. Share the credentials below.
             </p>
-            <p className="mt-1 text-sm" style={{ color: '#166534' }}>
-              The account is ready now, and the first login will require a password change.
-            </p>
+            <p className="mt-1 text-xs" style={{ color: '#166534' }}>Password must be changed on first login.</p>
           </div>
-
-          <CreatedCredentialRow icon={UserRound} label="Teacher" value={createdTeacher?.name} onCopy={handleCopy} />
-          <CreatedCredentialRow icon={Mail} label="Login Email" value={createdTeacher?.login_id} onCopy={handleCopy} />
-          <CreatedCredentialRow icon={KeyRound} label="Temporary Password" value={createdTeacher?.generated_password} onCopy={handleCopy} />
+          <CredRow icon={UserRound} label="Teacher"            value={createdTeacher?.name}               onCopy={handleCopy} />
+          <CredRow icon={Mail}      label="Login Email"        value={createdTeacher?.login_id}            onCopy={handleCopy} />
+          <CredRow icon={KeyRound}  label="Temporary Password" value={createdTeacher?.generated_password}  onCopy={handleCopy} />
         </div>
       </Modal>
     </>
