@@ -54,7 +54,7 @@ const AvatarCircle = ({ name, size = 36 }) => {
       border: `1px solid ${p.border}`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexShrink: 0,
-      fontSize: size > 38 ? 15 : 12,
+      fontSize: size > 38 ? 15 : size < 32 ? 10 : 12,
       fontWeight: 600,
       color: p.color,
       letterSpacing: '-0.01em',
@@ -139,7 +139,7 @@ const CardMenu = ({ onView, onEdit, onDelete }) => {
   )
 }
 
-// ─── Grid Card ────────────────────────────────────────────────────────────────
+// ─── Grid Card (desktop) ──────────────────────────────────────────────────────
 const StudentGridCard = ({ student, onView, onEdit, onDelete }) => {
   const fullName   = `${student.first_name} ${student.last_name}`
   const enrollment = student.current_enrollment
@@ -195,7 +195,7 @@ const StudentGridCard = ({ student, onView, onEdit, onDelete }) => {
         </div>
       </div>
 
-      {/* Student info — no border, no background */}
+      {/* Student info */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 14,
         padding: '18px 16px 16px',
@@ -238,7 +238,7 @@ const StudentGridCard = ({ student, onView, onEdit, onDelete }) => {
           </p>
         </div>
         <div>
-          <p style={{ margin: 0, fontSize: 10.5, color: 'var(--color-text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Joined On</p>
+          <p style={{ margin: 0, fontSize: 10.5, color: 'var(--color-text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Date of Birth</p>
           <p style={{ margin: '4px 0 0', fontSize: 13.5, fontWeight: 600, color: 'var(--color-text-primary)' }}>
             {formatDate(student.date_of_birth)}
           </p>
@@ -256,7 +256,7 @@ const StudentGridCard = ({ student, onView, onEdit, onDelete }) => {
           {[
             { title: 'Message', path: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
             { title: 'Call',    path: 'M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.61 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.92-8.17A2 2 0 0 1 4.68 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z' },
-            { title: 'Email',   path: 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22,6 12,13 2,6' },
+            { title: 'Email',   path: '' },
           ].map(({ title, path }) => (
             <button
               key={title}
@@ -287,7 +287,77 @@ const StudentGridCard = ({ student, onView, onEdit, onDelete }) => {
   )
 }
 
-// ─── List Row (desktop) — full row clickable, NO three-dot ───────────────────
+// ─── Mobile Grid Card — compact 2-column card ─────────────────────────────────
+const StudentMobileGridCard = ({ student, onView, onEdit, onDelete }) => {
+  const fullName   = `${student.first_name} ${student.last_name}`
+  const enrollment = student.current_enrollment
+  const classLabel = enrollment
+    ? [`Class ${enrollment.class}`, enrollment.section ? `Sec ${enrollment.section}` : null].filter(Boolean).join(' · ')
+    : null
+
+  return (
+    <div
+      onClick={onView}
+      style={{
+        borderRadius: 14,
+        backgroundColor: 'var(--color-surface)',
+        border: '1px solid var(--color-border)',
+        boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
+        display: 'flex', flexDirection: 'column',
+        overflow: 'hidden',
+        transition: 'box-shadow 0.15s',
+        cursor: 'pointer',
+      }}
+    >
+      {/* Status bar at top */}
+      <div style={{
+        height: 3,
+        backgroundColor: student.is_deleted ? 'var(--color-border)' : '#22c55e',
+      }} />
+
+      {/* Card body */}
+      <div style={{ padding: '12px 12px 10px' }}>
+        {/* Avatar + menu row */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+          <AvatarCircle name={fullName} size={40} />
+          <div onClick={e => e.stopPropagation()}>
+            <CardMenu onView={onView} onEdit={onEdit} onDelete={onDelete} />
+          </div>
+        </div>
+
+        {/* Name */}
+        <p style={{
+          margin: 0, fontSize: 13, fontWeight: 600,
+          color: 'var(--color-text-primary)', lineHeight: 1.3,
+          display: '-webkit-box', WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>
+          {fullName}
+        </p>
+
+        {/* Admission no */}
+        <p style={{
+          margin: '4px 0 0', fontSize: 11, fontFamily: 'monospace',
+          fontWeight: 600, color: '#2563eb',
+        }}>
+          {student.admission_no}
+        </p>
+
+        {/* Class info */}
+        {classLabel && (
+          <p style={{
+            margin: '4px 0 0', fontSize: 11, color: 'var(--color-text-muted)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>
+            {classLabel}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── List Row (desktop) ───────────────────────────────────────────────────────
 const StudentRow = ({ student, onView }) => {
   const fullName   = `${student.first_name} ${student.last_name}`
   const gCfg       = GENDER_BADGE[student.gender] || { label: student.gender, variant: 'grey' }
@@ -339,17 +409,18 @@ const StudentRow = ({ student, onView }) => {
   )
 }
 
-// ─── Mobile List Card — full card clickable, NO three-dot ────────────────────
+// ─── Mobile List Card — improved layout ───────────────────────────────────────
 const StudentMobileCard = ({ student, isLast, onView }) => {
   const fullName   = `${student.first_name} ${student.last_name}`
   const enrollment = student.current_enrollment
+  const gCfg       = GENDER_BADGE[student.gender] || { label: student.gender, variant: 'grey' }
 
   return (
     <div
       onClick={onView}
       style={{
         display: 'flex', alignItems: 'center', gap: 12,
-        padding: '14px 16px',
+        padding: '13px 16px',
         borderBottom: isLast ? 'none' : '1px solid var(--color-border)',
         transition: 'background 0.12s',
         cursor: 'pointer',
@@ -357,27 +428,49 @@ const StudentMobileCard = ({ student, isLast, onView }) => {
       onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
       onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
     >
-      <AvatarCircle name={fullName} size={40} />
+      <AvatarCircle name={fullName} size={44} />
+
+      {/* Main info block */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ margin: 0, fontSize: 13.5, fontWeight: 500, color: 'var(--color-text-primary)' }}>
+        <p style={{
+          margin: 0, fontSize: 13.5, fontWeight: 600,
+          color: 'var(--color-text-primary)', lineHeight: 1.3,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
           {fullName}
         </p>
-        <p style={{ margin: '2px 0 0', fontSize: 11.5, fontFamily: 'monospace', color: '#2563eb' }}>
-          {student.admission_no}
-        </p>
+
+        {/* Admission no + gender row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+          <span style={{ fontSize: 11.5, fontFamily: 'monospace', fontWeight: 600, color: '#2563eb' }}>
+            {student.admission_no}
+          </span>
+          <span style={{ width: 3, height: 3, borderRadius: '50%', backgroundColor: 'var(--color-text-muted)', flexShrink: 0 }} />
+          <span style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>{gCfg.label}</span>
+        </div>
+
+        {/* Class info */}
         {enrollment && (
-          <p style={{ margin: '2px 0 0', fontSize: 11.5, color: 'var(--color-text-secondary)' }}>
+          <p style={{
+            margin: '2px 0 0', fontSize: 11.5, color: 'var(--color-text-secondary)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>
             {[
               `Class ${enrollment.class}`,
               formatStream(enrollment.stream),
-              `Sec ${enrollment.section}`,
+              enrollment.section ? `Sec ${enrollment.section}` : null,
             ].filter(Boolean).join(' · ')}
           </p>
         )}
       </div>
-      <Badge variant={student.is_deleted ? 'grey' : 'green'} dot>
-        {student.is_deleted ? 'Inactive' : 'Active'}
-      </Badge>
+
+      {/* Right side: status + chevron */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+        <Badge variant={student.is_deleted ? 'grey' : 'green'} dot>
+          {student.is_deleted ? 'Inactive' : 'Active'}
+        </Badge>
+        <ChevronRight size={14} style={{ color: 'var(--color-text-muted)' }} />
+      </div>
     </div>
   )
 }
@@ -411,39 +504,56 @@ const ListSkeleton = () => (
   </div>
 )
 
-const GridSkeleton = () => (
+const GridSkeleton = ({ mobile = false }) => (
   <div style={{
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: 16, padding: 18,
+    gridTemplateColumns: mobile
+      ? 'repeat(2, 1fr)'
+      : 'repeat(auto-fill, minmax(320px, 1fr))',
+    gap: mobile ? 10 : 16,
+    padding: mobile ? 12 : 18,
   }}>
-    {Array.from({ length: 6 }).map((_, i) => (
+    {Array.from({ length: mobile ? 4 : 6 }).map((_, i) => (
       <div key={i} style={{
-        borderRadius: 16,
+        borderRadius: mobile ? 14 : 16,
         backgroundColor: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
         boxShadow: '0 2px 10px rgba(0,0,0,0.055)',
         overflow: 'hidden',
       }}>
-        <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Pulse w={90} h={13} />
-          <Pulse w={60} h={20} r={99} />
-        </div>
-        <div style={{ padding: '18px 16px 16px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Pulse w={52} h={52} r={26} />
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
-            <Pulse w="70%" h={14} />
-            <Pulse w="45%" h={11} />
-          </div>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', padding: '14px 16px 16px', gap: 10 }}>
-          {[1, 2, 3].map(j => (
-            <div key={j} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <Pulse w="60%" h={10} />
-              <Pulse w="80%" h={13} />
+        {mobile ? (
+          <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Pulse w={40} h={40} r={20} />
+              <Pulse w={24} h={24} r={6} />
             </div>
-          ))}
-        </div>
+            <Pulse w="80%" h={13} />
+            <Pulse w="55%" h={10} />
+            <Pulse w="65%" h={10} />
+          </div>
+        ) : (
+          <>
+            <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Pulse w={90} h={13} />
+              <Pulse w={60} h={20} r={99} />
+            </div>
+            <div style={{ padding: '18px 16px 16px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <Pulse w={52} h={52} r={26} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                <Pulse w="70%" h={14} />
+                <Pulse w="45%" h={11} />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', padding: '14px 16px 16px', gap: 10 }}>
+              {[1, 2, 3].map(j => (
+                <div key={j} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <Pulse w="60%" h={10} />
+                  <Pulse w="80%" h={13} />
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     ))}
   </div>
@@ -529,22 +639,47 @@ const StudentsPage = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       <style>{`
         @keyframes skpulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+        /* ── Mobile (≤640px) ── */
         @media (max-width: 640px) {
-          .sp-header       { flex-direction: column !important; align-items: flex-start !important; }
-          .sp-filter-row   { flex-direction: column !important; }
-          .sp-filter-row select { width: 100% !important; min-width: unset !important; }
-          .sp-desktop-tbl  { display: none !important; }
-          .sp-mobile-list  { display: block !important; }
-          .sp-grid         { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; }
-          .sp-view-toggle  { display: none !important; }
+          .sp-header          { flex-direction: column !important; align-items: stretch !important; }
+          .sp-header-actions  { display: flex !important; align-items: center !important; justify-content: space-between !important; width: 100% !important; }
+
+          /* Filter row: search full-width, class select + clear inline */
+          .sp-filter-row         { flex-direction: column !important; gap: 8px !important; }
+          .sp-filter-selects     { display: flex !important; gap: 8px !important; }
+          .sp-filter-selects select { flex: 1 !important; min-width: unset !important; }
+
+          /* Search bar */
+          .sp-search-wrap { width: 100% !important; }
+
+          /* List: hide desktop table, show mobile list */
+          .sp-desktop-tbl { display: none !important; }
+          .sp-mobile-list { display: block !important; }
+
+          /* Grid: desktop cards hidden, mobile 2-col grid shown */
+          .sp-desktop-grid { display: none !important; }
+          .sp-mobile-grid  { display: grid !important; }
+
+          /* Always show view toggle on mobile */
+          .sp-view-toggle { display: flex !important; }
+
+          /* Pagination: center on mobile */
+          .sp-pagination { flex-direction: column !important; align-items: center !important; gap: 10px !important; }
+          .sp-pagination p { text-align: center !important; }
         }
+
+        /* ── Desktop (≥641px) ── */
         @media (min-width: 641px) {
-          .sp-mobile-list  { display: none !important; }
+          .sp-mobile-list { display: none !important; }
+          .sp-mobile-grid { display: none !important; }
+          .sp-header-actions { display: flex !important; }
+          .sp-filter-selects { display: contents !important; }
         }
       `}</style>
 
       {/* ── Header ── */}
-      <div className="sp-header" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div className="sp-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ flex: 1 }}>
           <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: 'var(--color-text-primary)' }}>
             Students
@@ -555,13 +690,15 @@ const StudentsPage = () => {
               : 'Manage current-session student admissions and profiles'}
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <div className="sp-view-toggle">
+
+        {/* Header actions — view toggle always visible, admit button conditional */}
+        <div className="sp-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+          <div className="sp-view-toggle" style={{ display: 'flex' }}>
             <ViewToggle view={view} setView={setView} />
           </div>
           {isAdmin && (
             <Button icon={Plus} onClick={() => navigate(ROUTES.STUDENT_NEW)}>
-              Admit Student
+              <span className="sp-btn-label">Admit Student</span>
             </Button>
           )}
         </div>
@@ -577,7 +714,8 @@ const StudentsPage = () => {
           border: '1px solid var(--color-border)',
         }}
       >
-        <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
+        {/* Search input — always full width on mobile */}
+        <div className="sp-search-wrap" style={{ position: 'relative', flex: 1, minWidth: 0 }}>
           <Search size={14} style={{
             position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
             color: 'var(--color-text-muted)', pointerEvents: 'none',
@@ -595,52 +733,56 @@ const StudentsPage = () => {
               border: '1px solid var(--color-border)',
               color: 'var(--color-text-primary)',
               outline: 'none', transition: 'border-color 0.15s',
+              boxSizing: 'border-box',
             }}
             onFocus={e => e.target.style.borderColor = 'var(--color-brand)'}
             onBlur={e  => e.target.style.borderColor = 'var(--color-border)'}
           />
         </div>
 
-        <select
-          value={filters.class_id}
-          onChange={e => { setFilters(f => ({ ...f, class_id: e.target.value })); setPage(1) }}
-          style={{
-            padding: '7px 12px', borderRadius: 9, fontSize: 13,
-            backgroundColor: 'var(--color-bg)',
-            border: '1px solid var(--color-border)',
-            color: 'var(--color-text-primary)',
-            outline: 'none', minWidth: 160,
-            transition: 'border-color 0.15s',
-          }}
-          onFocus={e => e.target.style.borderColor = 'var(--color-brand)'}
-          onBlur={e  => e.target.style.borderColor = 'var(--color-border)'}
-        >
-          <option value="">All Classes</option>
-          {classes.map(cls => (
-            <option key={cls.id} value={cls.id}>
-              {cls.display_name || cls.name}
-            </option>
-          ))}
-        </select>
-
-        {hasActiveFilters && (
-          <button
-            onClick={clearFilters}
+        {/* Class select + clear: side-by-side on mobile */}
+        <div className="sp-filter-selects" style={{ display: 'contents' }}>
+          <select
+            value={filters.class_id}
+            onChange={e => { setFilters(f => ({ ...f, class_id: e.target.value })); setPage(1) }}
             style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '7px 12px', borderRadius: 9, fontSize: 12.5,
-              color: 'var(--color-text-secondary)',
+              padding: '7px 12px', borderRadius: 9, fontSize: 13,
+              backgroundColor: 'var(--color-bg)',
               border: '1px solid var(--color-border)',
-              backgroundColor: 'transparent',
-              cursor: 'pointer', transition: 'background 0.12s',
-              whiteSpace: 'nowrap',
+              color: 'var(--color-text-primary)',
+              outline: 'none', minWidth: 160,
+              transition: 'border-color 0.15s',
             }}
-            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+            onFocus={e => e.target.style.borderColor = 'var(--color-brand)'}
+            onBlur={e  => e.target.style.borderColor = 'var(--color-border)'}
           >
-            <X size={12} /> Clear
-          </button>
-        )}
+            <option value="">All Classes</option>
+            {classes.map(cls => (
+              <option key={cls.id} value={cls.id}>
+                {cls.display_name || cls.name}
+              </option>
+            ))}
+          </select>
+
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '7px 12px', borderRadius: 9, fontSize: 12.5,
+                color: 'var(--color-text-secondary)',
+                border: '1px solid var(--color-border)',
+                backgroundColor: 'transparent',
+                cursor: 'pointer', transition: 'background 0.12s',
+                whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <X size={12} /> Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Content ── */}
@@ -650,7 +792,16 @@ const StudentsPage = () => {
         border: '1px solid var(--color-border)',
       }}>
         {isLoading ? (
-          view === 'grid' ? <GridSkeleton /> : <ListSkeleton />
+          <>
+            {/* Desktop skeleton */}
+            <div className="sp-desktop-grid" style={{}}>
+              {view === 'grid' ? <GridSkeleton /> : <ListSkeleton />}
+            </div>
+            {/* Mobile skeleton matches active view */}
+            <div className="sp-mobile-list" style={{}}>
+              {view === 'grid' ? <GridSkeleton mobile /> : <ListSkeleton />}
+            </div>
+          </>
         ) : students.length === 0 ? (
           <EmptyState
             icon={Users}
@@ -667,32 +818,51 @@ const StudentsPage = () => {
             )}
           />
         ) : view === 'grid' ? (
+          <>
+            {/* ── Desktop grid ── */}
+            <div
+              className="sp-desktop-grid"
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+                gap: 16, padding: 18,
+              }}
+            >
+              {students.map(student => (
+                <StudentGridCard
+                  key={student.id}
+                  student={student}
+                  onView={() => goToDetail(student.id)}
+                  onEdit={() => goToEdit(student.id)}
+                  onDelete={() => {/* wire up delete modal */}}
+                />
+              ))}
+            </div>
 
-          // ── Grid view ──
-          <div
-            className="sp-grid"
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: 16, padding: 18,
-            }}
-          >
-            {students.map(student => (
-              <StudentGridCard
-                key={student.id}
-                student={student}
-                onView={() => goToDetail(student.id)}
-                onEdit={() => goToEdit(student.id)}
-                onDelete={() => {/* wire up delete modal */}}
-              />
-            ))}
-          </div>
-
+            {/* ── Mobile 2-col compact grid ── */}
+            <div
+              className="sp-mobile-grid"
+              style={{
+                display: 'none', // overridden by media query
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: 10, padding: 12,
+              }}
+            >
+              {students.map(student => (
+                <StudentMobileGridCard
+                  key={student.id}
+                  student={student}
+                  onView={() => goToDetail(student.id)}
+                  onEdit={() => goToEdit(student.id)}
+                  onDelete={() => {/* wire up delete modal */}}
+                />
+              ))}
+            </div>
+          </>
         ) : (
-
           // ── List view ──
           <>
-            {/* Desktop table — row click navigates, no three-dot */}
+            {/* Desktop table */}
             <div className="sp-desktop-tbl" style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
@@ -721,8 +891,8 @@ const StudentsPage = () => {
               </table>
             </div>
 
-            {/* Mobile list */}
-            <div className="sp-mobile-list">
+            {/* Mobile list — improved */}
+            <div className="sp-mobile-list" style={{ display: 'none' }}>
               {students.map((student, i) => (
                 <StudentMobileCard
                   key={student.id}
@@ -738,7 +908,7 @@ const StudentsPage = () => {
 
       {/* ── Pagination ── */}
       {pagination.totalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+        <div className="sp-pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
           <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-muted)' }}>
             Page {pagination.page} of {pagination.totalPages} · {pagination.total} students
           </p>

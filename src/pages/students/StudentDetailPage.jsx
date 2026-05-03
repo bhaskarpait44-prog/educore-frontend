@@ -4,6 +4,7 @@ import {
   AlertTriangle, ArrowLeft, Trash2, BookOpen, ScrollText,
   KeyRound, Copy, Mail, IdCard, CalendarCheck, GraduationCap, Wallet,
   Phone, Heart, User, ChevronLeft, ChevronRight as ChevronRIcon,
+  ChevronDown, ChevronUp,
 } from 'lucide-react'
 import useStudentStore from '@/store/studentStore'
 import usePageTitle from '@/hooks/usePageTitle'
@@ -21,7 +22,7 @@ import TabFees from './tabs/TabFees'
 import TabIdentity from './tabs/TabIdentity'
 import TabProfile from './tabs/TabProfile'
 
-// ─── Palette (flat, no gradients) ────────────────────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────────
 const PALETTES = [
   { a: '#4338ca', light: '#eef2ff', text: '#3730a3', border: '#c7d2fe' },
   { a: '#0e7490', light: '#ecfeff', text: '#155e75', border: '#a5f3fc' },
@@ -68,121 +69,206 @@ const SecLabel = ({ icon: Icon, title, color }) => (
   </div>
 )
 
-// ─── LEFT PANEL ───────────────────────────────────────────────────────────────
+// ─── LEFT PANEL (desktop sidebar / mobile collapsible card) ───────────────────
 const LeftPanel = ({ student, palette, isAdmin, onResetPassword, onDelete }) => {
+  const [expanded, setExpanded] = useState(false)
   const fullName = `${student.first_name} ${student.last_name}`.trim()
   const enrollment = student.current_enrollment
 
-  return (
-    <div style={{
-      width: 240, flexShrink: 0, alignSelf: 'flex-start',
-      position: 'sticky', top: 16,
-      borderRadius: 14, overflow: 'hidden',
-      backgroundColor: 'var(--color-surface)',
-      border: '0.5px solid var(--color-border)',
-    }}>
-      {/* Avatar block */}
-      <div style={{
-        padding: '22px 16px 14px',
-        textAlign: 'center',
-        borderBottom: '0.5px solid var(--color-border)',
-        backgroundColor: palette.light,
-      }}>
-        <div style={{
-          width: 60, height: 60, borderRadius: '50%',
-          margin: '0 auto 10px',
-          backgroundColor: palette.light,
-          border: `1.5px solid ${palette.border}`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 20, fontWeight: 600, color: palette.a, letterSpacing: '-0.02em',
-        }}>
-          {getInitials(fullName)}
-        </div>
-        <h2 style={{
-          margin: 0, fontSize: 14, fontWeight: 600,
-          letterSpacing: '-0.01em', color: 'var(--color-text-primary)', lineHeight: 1.3,
-        }}>{fullName}</h2>
-        <p style={{
-          margin: '3px 0 8px', fontSize: 11,
-          fontFamily: 'monospace', fontWeight: 500, color: 'var(--color-text-muted)',
-        }}>{student.admission_no}</p>
-        <span style={{
-          display: 'inline-block', fontSize: 10, fontWeight: 600,
-          letterSpacing: '0.06em', textTransform: 'uppercase',
-          padding: '2px 10px', borderRadius: 99,
-          backgroundColor: student.is_deleted ? 'var(--color-surface-raised)' : '#dcfce7',
-          color: student.is_deleted ? 'var(--color-text-muted)' : '#15803d',
-          border: `0.5px solid ${student.is_deleted ? 'var(--color-border)' : '#bbf7d0'}`,
-        }}>
-          {student.is_deleted ? 'Inactive' : 'Active'}
-        </span>
-      </div>
+  const detailsBody = (
+    <div style={{ padding: '4px 14px 14px' }}>
+      {enrollment && (
+        <>
+          <SecLabel icon={BookOpen} title="Enrollment" color={palette.a} />
+          <FieldItem label="Class" value={[enrollment.class, formatStream(enrollment.stream)].filter(Boolean).join(' — ')} />
+          <FieldItem label="Section · Roll" value={`Sec ${enrollment.section}  ·  Roll ${enrollment.roll_number || '—'}`} />
+          {student.session_name && <FieldItem label="Session" value={student.session_name} />}
+        </>
+      )}
 
-      <div style={{ padding: '4px 14px 14px' }}>
-        {enrollment && (
-          <>
-            <SecLabel icon={BookOpen} title="Enrollment" color={palette.a} />
-            <FieldItem label="Class" value={[enrollment.class, formatStream(enrollment.stream)].filter(Boolean).join(' — ')} />
-            <FieldItem label="Section · Roll" value={`Sec ${enrollment.section}  ·  Roll ${enrollment.roll_number || '—'}`} />
-            {student.session_name && <FieldItem label="Session" value={student.session_name} />}
-          </>
-        )}
+      <Divider />
+      <SecLabel icon={User} title="Identity" color="#0891b2" />
+      <FieldItem label="Date of Birth" value={formatDate(student.date_of_birth, 'long')} />
+      <FieldItem label="Gender" value={student.gender} />
+      <FieldItem label="Blood Group" value={student.blood_group} />
+      {student.medical_notes && <FieldItem label="Medical Notes" value={student.medical_notes} />}
 
-        <Divider />
-        <SecLabel icon={User} title="Identity" color="#0891b2" />
-        <FieldItem label="Date of Birth" value={formatDate(student.date_of_birth, 'long')} />
-        <FieldItem label="Gender" value={student.gender} />
-        <FieldItem label="Blood Group" value={student.blood_group} />
-        {student.medical_notes && <FieldItem label="Medical Notes" value={student.medical_notes} />}
+      <Divider />
+      <SecLabel icon={Phone} title="Contact" color="#059669" />
+      <FieldItem label="Phone" value={student.phone} />
+      <FieldItem label="Email" value={student.email} />
+      <FieldItem label="Address" value={[student.city, student.address].filter(Boolean).join(', ')} />
 
-        <Divider />
-        <SecLabel icon={Phone} title="Contact" color="#059669" />
-        <FieldItem label="Phone" value={student.phone} />
-        <FieldItem label="Email" value={student.email} />
-        <FieldItem label="Address" value={[student.city, student.address].filter(Boolean).join(', ')} />
+      <Divider />
+      <SecLabel icon={Heart} title="Parents" color="#d97706" />
+      <FieldItem label="Father" value={student.father_name} />
+      <FieldItem label="Father Phone" value={student.father_phone} />
+      <FieldItem label="Mother" value={student.mother_name} />
+      <FieldItem label="Emergency" value={student.emergency_contact} />
 
-        <Divider />
-        <SecLabel icon={Heart} title="Parents" color="#d97706" />
-        <FieldItem label="Father" value={student.father_name} />
-        <FieldItem label="Father Phone" value={student.father_phone} />
-        <FieldItem label="Mother" value={student.mother_name} />
-        <FieldItem label="Emergency" value={student.emergency_contact} />
-
-        {isAdmin && (
-          <>
-            <Divider />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 2 }}>
-              <button
-                onClick={onResetPassword}
-                style={{
-                  width: '100%', padding: '7px', borderRadius: 8,
-                  fontSize: 11.5, fontWeight: 500, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                  backgroundColor: 'var(--color-surface-raised)',
-                  border: '0.5px solid var(--color-border)',
-                  color: 'var(--color-text-secondary)',
-                }}
-              >
-                <KeyRound size={11} /> Reset Password
-              </button>
-              <button
-                onClick={onDelete}
-                style={{
-                  width: '100%', padding: '7px', borderRadius: 8,
-                  fontSize: 11.5, fontWeight: 500, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                  backgroundColor: '#fef2f2',
-                  border: '0.5px solid #fecaca',
-                  color: '#dc2626',
-                }}
-              >
-                <Trash2 size={11} /> Delete Student
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+      {isAdmin && (
+        <>
+          <Divider />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 2 }}>
+            <button
+              onClick={onResetPassword}
+              style={{
+                width: '100%', padding: '7px', borderRadius: 8,
+                fontSize: 11.5, fontWeight: 500, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                backgroundColor: 'var(--color-surface-raised)',
+                border: '0.5px solid var(--color-border)',
+                color: 'var(--color-text-secondary)',
+              }}
+            >
+              <KeyRound size={11} /> Reset Password
+            </button>
+            <button
+              onClick={onDelete}
+              style={{
+                width: '100%', padding: '7px', borderRadius: 8,
+                fontSize: 11.5, fontWeight: 500, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                backgroundColor: '#fef2f2',
+                border: '0.5px solid #fecaca',
+                color: '#dc2626',
+              }}
+            >
+              <Trash2 size={11} /> Delete Student
+            </button>
+          </div>
+        </>
+      )}
     </div>
+  )
+
+  return (
+    <>
+      {/* ── Desktop sidebar (hidden on mobile) ── */}
+      <div className="sdp-left-desktop" style={{
+        width: 240, flexShrink: 0, alignSelf: 'flex-start',
+        position: 'sticky', top: 16,
+        borderRadius: 14, overflow: 'hidden',
+        backgroundColor: 'var(--color-surface)',
+        border: '0.5px solid var(--color-border)',
+      }}>
+        {/* Avatar block */}
+        <div style={{
+          padding: '22px 16px 14px',
+          textAlign: 'center',
+          borderBottom: '0.5px solid var(--color-border)',
+          backgroundColor: palette.light,
+        }}>
+          <div style={{
+            width: 60, height: 60, borderRadius: '50%',
+            margin: '0 auto 10px',
+            backgroundColor: palette.light,
+            border: `1.5px solid ${palette.border}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 20, fontWeight: 600, color: palette.a, letterSpacing: '-0.02em',
+          }}>
+            {getInitials(fullName)}
+          </div>
+          <h2 style={{
+            margin: 0, fontSize: 14, fontWeight: 600,
+            letterSpacing: '-0.01em', color: 'var(--color-text-primary)', lineHeight: 1.3,
+          }}>{fullName}</h2>
+          <p style={{
+            margin: '3px 0 8px', fontSize: 11,
+            fontFamily: 'monospace', fontWeight: 500, color: 'var(--color-text-muted)',
+          }}>{student.admission_no}</p>
+          <span style={{
+            display: 'inline-block', fontSize: 10, fontWeight: 600,
+            letterSpacing: '0.06em', textTransform: 'uppercase',
+            padding: '2px 10px', borderRadius: 99,
+            backgroundColor: student.is_deleted ? 'var(--color-surface-raised)' : '#dcfce7',
+            color: student.is_deleted ? 'var(--color-text-muted)' : '#15803d',
+            border: `0.5px solid ${student.is_deleted ? 'var(--color-border)' : '#bbf7d0'}`,
+          }}>
+            {student.is_deleted ? 'Inactive' : 'Active'}
+          </span>
+        </div>
+        {detailsBody}
+      </div>
+
+      {/* ── Mobile profile card (hidden on desktop) ── */}
+      <div className="sdp-left-mobile" style={{
+        display: 'none', // shown via media query
+        borderRadius: 14, overflow: 'hidden',
+        backgroundColor: 'var(--color-surface)',
+        border: '0.5px solid var(--color-border)',
+      }}>
+        {/* Compact header row — always visible */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12,
+          padding: '14px 16px',
+          backgroundColor: palette.light,
+          borderBottom: expanded ? '0.5px solid var(--color-border)' : 'none',
+        }}>
+          {/* Avatar */}
+          <div style={{
+            width: 46, height: 46, borderRadius: '50%', flexShrink: 0,
+            backgroundColor: palette.light,
+            border: `1.5px solid ${palette.border}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, fontWeight: 600, color: palette.a,
+          }}>
+            {getInitials(fullName)}
+          </div>
+
+          {/* Name + meta */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{
+              margin: 0, fontSize: 15, fontWeight: 600,
+              color: 'var(--color-text-primary)', lineHeight: 1.3,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            }}>{fullName}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3, flexWrap: 'wrap' }}>
+              <span style={{
+                fontSize: 11, fontFamily: 'monospace', fontWeight: 600, color: '#2563eb',
+              }}>{student.admission_no}</span>
+              {enrollment && (
+                <>
+                  <span style={{ width: 3, height: 3, borderRadius: '50%', backgroundColor: 'var(--color-text-muted)', flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                    Class {enrollment.class}{enrollment.section ? ` · Sec ${enrollment.section}` : ''}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Status badge + expand toggle */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+            <span style={{
+              fontSize: 10, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
+              padding: '2px 8px', borderRadius: 99,
+              backgroundColor: student.is_deleted ? 'var(--color-surface-raised)' : '#dcfce7',
+              color: student.is_deleted ? 'var(--color-text-muted)' : '#15803d',
+              border: `0.5px solid ${student.is_deleted ? 'var(--color-border)' : '#bbf7d0'}`,
+            }}>
+              {student.is_deleted ? 'Inactive' : 'Active'}
+            </span>
+            <button
+              onClick={() => setExpanded(v => !v)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '3px 8px', borderRadius: 6, fontSize: 11, fontWeight: 500,
+                border: '0.5px solid var(--color-border)',
+                backgroundColor: 'var(--color-surface)',
+                color: 'var(--color-text-secondary)', cursor: 'pointer',
+              }}
+            >
+              {expanded ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+              {expanded ? 'Less' : 'Details'}
+            </button>
+          </div>
+        </div>
+
+        {/* Expandable details */}
+        {expanded && detailsBody}
+      </div>
+    </>
   )
 }
 
@@ -205,7 +291,6 @@ const mockAttendance = (year, month) => {
   return out
 }
 
-// Flat status tokens — no gradients
 const STATUS = {
   present: { bg: '#f0fdf4', border: '#bbf7d0', dot: '#16a34a', text: '#166534' },
   absent:  { bg: '#fef2f2', border: '#fecaca', dot: '#dc2626', text: '#991b1b' },
@@ -256,8 +341,12 @@ const AttendanceCalendar = ({ enrollmentId }) => {
 
   return (
     <div>
-      {/* Stats row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 20 }}>
+      {/* Stats row — 2×2 on mobile, 4-col on desktop */}
+      <div className="sdp-stats-grid" style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, 1fr)',
+        gap: 8, marginBottom: 20,
+      }}>
         {STATS.map(s => (
           <div key={s.label} style={{
             padding: '11px 13px', borderRadius: 10,
@@ -281,14 +370,14 @@ const AttendanceCalendar = ({ enrollmentId }) => {
         <button
           onClick={prev}
           style={{
-            width: 30, height: 30, borderRadius: 7,
+            width: 34, height: 34, borderRadius: 8,
             border: '0.5px solid var(--color-border)',
             background: 'var(--color-surface)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'var(--color-text-secondary)',
           }}
         >
-          <ChevronLeft size={14} />
+          <ChevronLeft size={15} />
         </button>
         <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)' }}>
           {MONTHS[month]} {year}
@@ -296,14 +385,14 @@ const AttendanceCalendar = ({ enrollmentId }) => {
         <button
           onClick={next}
           style={{
-            width: 30, height: 30, borderRadius: 7,
+            width: 34, height: 34, borderRadius: 8,
             border: '0.5px solid var(--color-border)',
             background: 'var(--color-surface)', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'var(--color-text-secondary)',
           }}
         >
-          <ChevronRIcon size={14} />
+          <ChevronRIcon size={15} />
         </button>
       </div>
 
@@ -337,7 +426,7 @@ const AttendanceCalendar = ({ enrollmentId }) => {
                 aspectRatio: '1',
                 borderRadius: 7,
                 display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center', gap: 3,
+                alignItems: 'center', justifyContent: 'center', gap: 2,
                 backgroundColor: s ? s.bg : 'var(--color-surface-raised)',
                 border: isToday
                   ? '1.5px solid #3b82f6'
@@ -347,7 +436,7 @@ const AttendanceCalendar = ({ enrollmentId }) => {
               }}
             >
               <span style={{
-                fontSize: 11.5,
+                fontSize: 11,
                 fontWeight: isToday ? 700 : 400,
                 color: isToday ? '#1d4ed8' : (s ? s.text : 'var(--color-text-muted)'),
               }}>
@@ -355,7 +444,7 @@ const AttendanceCalendar = ({ enrollmentId }) => {
               </span>
               {s && (
                 <div style={{
-                  width: 3.5, height: 3.5, borderRadius: '50%',
+                  width: 3, height: 3, borderRadius: '50%',
                   backgroundColor: s.dot,
                 }} />
               )}
@@ -366,7 +455,7 @@ const AttendanceCalendar = ({ enrollmentId }) => {
 
       {/* Legend */}
       <div style={{
-        display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 14,
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10,
         marginTop: 14, paddingTop: 12,
         borderTop: '0.5px solid var(--color-border)',
       }}>
@@ -388,7 +477,7 @@ const AttendanceCalendar = ({ enrollmentId }) => {
             {k}
           </span>
         ))}
-        <span style={{ marginLeft: 'auto', fontSize: 10.5, color: 'var(--color-text-muted)' }}>
+        <span className="sdp-today-note" style={{ marginLeft: 'auto', fontSize: 10.5, color: 'var(--color-text-muted)' }}>
           Today outlined in blue
         </span>
       </div>
@@ -401,9 +490,9 @@ const RIGHT_TABS = [
   { key: 'identity',   label: 'Identity',   icon: IdCard },
   { key: 'profile',    label: 'Profile',    icon: User },
   { key: 'attendance', label: 'Attendance', icon: CalendarCheck },
-  { key: 'results',   label: 'Results',    icon: GraduationCap },
-  { key: 'fees',      label: 'Fees',       icon: Wallet },
-  { key: 'audit',     label: 'Audit Log',  icon: ScrollText },
+  { key: 'results',    label: 'Results',    icon: GraduationCap },
+  { key: 'fees',       label: 'Fees',       icon: Wallet },
+  { key: 'audit',      label: 'Audit Log',  icon: ScrollText },
 ]
 
 const RightPanel = ({ student, palette, activeTab, setActiveTab }) => (
@@ -413,11 +502,15 @@ const RightPanel = ({ student, palette, activeTab, setActiveTab }) => (
     backgroundColor: 'var(--color-surface)',
     border: '0.5px solid var(--color-border)',
   }}>
-    {/* Tab strip */}
+    {/* Tab strip — scrollable */}
     <div style={{
       display: 'flex',
       borderBottom: '0.5px solid var(--color-border)',
-      overflowX: 'auto', scrollbarWidth: 'none',
+      overflowX: 'auto',
+      scrollbarWidth: 'none',
+      WebkitOverflowScrolling: 'touch',
+      // Ensure tab strip doesn't wrap
+      whiteSpace: 'nowrap',
     }}>
       {RIGHT_TABS.map(tab => {
         const active = activeTab === tab.key
@@ -426,11 +519,11 @@ const RightPanel = ({ student, palette, activeTab, setActiveTab }) => (
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              padding: '11px 18px', fontSize: 12.5,
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '11px 16px', fontSize: 12.5,
               fontWeight: active ? 600 : 400,
               whiteSpace: 'nowrap', cursor: 'pointer',
-              border: 'none',
+              border: 'none', flexShrink: 0,
               borderBottom: `2px solid ${active ? palette.a : 'transparent'}`,
               backgroundColor: active ? palette.light : 'transparent',
               color: active ? palette.a : 'var(--color-text-secondary)',
@@ -444,8 +537,8 @@ const RightPanel = ({ student, palette, activeTab, setActiveTab }) => (
       })}
     </div>
 
-    {/* Content */}
-    <div style={{ padding: 22 }}>
+    {/* Content — tighter padding on mobile */}
+    <div className="sdp-tab-content">
       {activeTab === 'identity'   && <TabIdentity student={student} studentId={student.id} />}
       {activeTab === 'profile'    && <TabProfile  student={student} studentId={student.id} />}
       {activeTab === 'attendance' && <AttendanceCalendar enrollmentId={student.current_enrollment?.id} />}
@@ -492,6 +585,7 @@ const CredRow = ({ icon: Icon, label, value, onCopy }) => (
         padding: '4px 10px', borderRadius: 6, fontSize: 11.5, fontWeight: 500,
         cursor: 'pointer', backgroundColor: 'var(--color-surface)',
         border: '0.5px solid var(--color-border)', color: 'var(--color-text-secondary)',
+        flexShrink: 0,
       }}
     >
       <Copy size={10} /> Copy
@@ -512,8 +606,8 @@ const DetailSkeleton = () => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
     <style>{`@keyframes sk { 0%,100%{opacity:1} 50%{opacity:.35} }`}</style>
     <Pulse h={30} w={130} r={8} />
-    <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-      <div style={{
+    <div className="sdp-layout" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+      <div className="sdp-left-desktop" style={{
         width: 240, flexShrink: 0, borderRadius: 14,
         backgroundColor: 'var(--color-surface)',
         border: '0.5px solid var(--color-border)',
@@ -645,9 +739,38 @@ const StudentDetailPage = () => {
           to   { opacity: 1; transform: translateY(0) }
         }
         .sdt { animation: fadeUp .25s ease both }
+
+        /* ── Tab content padding ── */
+        .sdp-tab-content { padding: 22px }
+
+        /* ── Desktop: side-by-side layout ── */
+        .sdp-layout      { display: flex; gap: 14px; align-items: flex-start }
+        .sdp-left-mobile { display: none !important }
+        .sdp-left-desktop { display: block }
+        .sdp-stats-grid  { grid-template-columns: repeat(4, 1fr) !important }
+        .sdp-today-note  { display: inline !important }
+
+        /* ── Mobile (≤640px) ── */
+        @media (max-width: 640px) {
+          /* Stack layout vertically */
+          .sdp-layout { flex-direction: column !important; gap: 12px !important }
+
+          /* Hide desktop sidebar, show mobile card */
+          .sdp-left-desktop { display: none !important }
+          .sdp-left-mobile  { display: block !important }
+
+          /* Stats: 2×2 grid on mobile */
+          .sdp-stats-grid { grid-template-columns: repeat(2, 1fr) !important }
+
+          /* Hide today note to save space */
+          .sdp-today-note { display: none !important }
+
+          /* Reduce tab content padding */
+          .sdp-tab-content { padding: 14px !important }
+        }
       `}</style>
 
-      {/* Back */}
+      {/* ── Back button ── */}
       <button
         onClick={() => navigate(ROUTES.STUDENTS)}
         style={{
@@ -661,8 +784,8 @@ const StudentDetailPage = () => {
         <ArrowLeft size={13} /> Back to students
       </button>
 
-      {/* Two-col layout */}
-      <div className="sdt" style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+      {/* ── Main layout ── */}
+      <div className="sdt sdp-layout">
         <LeftPanel
           student={student}
           palette={palette}
