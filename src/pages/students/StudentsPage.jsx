@@ -523,7 +523,7 @@ const StudentsPage = () => {
   const hasActiveFilters = search || filters.class_id || filters.section_id
 
   const goToDetail = (id) => navigate(`${ROUTES.STUDENTS}/${id}`)
-  const goToEdit   = (id) => navigate(`${ROUTES.STUDENTS}/${id}/edit`)
+  const goToEdit   = (id) => navigate(`${ROUTES.STUDENTS}/${id}?tab=profile`)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

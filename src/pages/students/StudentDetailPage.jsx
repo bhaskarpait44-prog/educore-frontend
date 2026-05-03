@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   AlertTriangle, ArrowLeft, Trash2, BookOpen, ScrollText,
   KeyRound, Copy, Mail, IdCard, CalendarCheck, GraduationCap, Wallet,
@@ -18,6 +18,8 @@ import useAuth from '@/hooks/useAuth'
 import TabAuditLog from './tabs/TabAuditLog'
 import TabResults from './tabs/TabResults'
 import TabFees from './tabs/TabFees'
+import TabIdentity from './tabs/TabIdentity'
+import TabProfile from './tabs/TabProfile'
 
 // ─── Palette (flat, no gradients) ────────────────────────────────────────────
 const PALETTES = [
@@ -396,6 +398,8 @@ const AttendanceCalendar = ({ enrollmentId }) => {
 
 // ─── RIGHT PANEL TABS ─────────────────────────────────────────────────────────
 const RIGHT_TABS = [
+  { key: 'identity',   label: 'Identity',   icon: IdCard },
+  { key: 'profile',    label: 'Profile',    icon: User },
   { key: 'attendance', label: 'Attendance', icon: CalendarCheck },
   { key: 'results',   label: 'Results',    icon: GraduationCap },
   { key: 'fees',      label: 'Fees',       icon: Wallet },
@@ -442,6 +446,8 @@ const RightPanel = ({ student, palette, activeTab, setActiveTab }) => (
 
     {/* Content */}
     <div style={{ padding: 22 }}>
+      {activeTab === 'identity'   && <TabIdentity student={student} studentId={student.id} />}
+      {activeTab === 'profile'    && <TabProfile  student={student} studentId={student.id} />}
       {activeTab === 'attendance' && <AttendanceCalendar enrollmentId={student.current_enrollment?.id} />}
       {activeTab === 'results'    && <TabResults  studentId={student.id} />}
       {activeTab === 'fees'       && <TabFees     enrollmentId={student.current_enrollment?.id} />}
@@ -548,6 +554,7 @@ const DetailSkeleton = () => (
 const StudentDetailPage = () => {
   const { id }      = useParams()
   const navigate    = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { toastError, toastSuccess } = useToast()
   const { isAdmin } = useAuth()
   const {
@@ -558,7 +565,10 @@ const StudentDetailPage = () => {
     isSaving,
   } = useStudentStore()
 
-  const [activeTab,       setActiveTab]       = useState('attendance')
+  const initialTab = RIGHT_TABS.some(tab => tab.key === searchParams.get('tab'))
+    ? searchParams.get('tab')
+    : 'identity'
+  const [activeTab,       setActiveTab]       = useState(initialTab)
   const [pageLoading,     setPageLoading]     = useState(true)
   const [deleteOpen,      setDeleteOpen]      = useState(false)
   const [passwordOpen,    setPasswordOpen]    = useState(false)
@@ -576,6 +586,18 @@ const StudentDetailPage = () => {
       .finally(() => setPageLoading(false))
     return () => clearSelected()
   }, [id])
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (RIGHT_TABS.some(item => item.key === tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    setSearchParams(tab === 'identity' ? {} : { tab })
+  }
 
   if (pageLoading || !student) return <DetailSkeleton />
 
@@ -652,7 +674,7 @@ const StudentDetailPage = () => {
           student={student}
           palette={palette}
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={handleTabChange}
         />
       </div>
 

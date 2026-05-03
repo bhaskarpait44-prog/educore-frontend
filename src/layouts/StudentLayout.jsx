@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Bell,
   BookMarked,
@@ -111,6 +111,7 @@ const StudentSurface = ({ children, className = '' }) => (
 
 const StudentLayout = () => {
   const location = useLocation()
+  const navigate = useNavigate()
   const { theme, toggleTheme } = useUiStore()
   const { user, logout } = useAuthStore()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -324,6 +325,21 @@ const StudentLayout = () => {
                 <p className="truncate text-sm font-semibold">Student Portal</p>
                 <p className="truncate text-xs text-[var(--color-text-secondary)]">Personal, read-only school companion</p>
               </div>
+
+              <button
+                type="button"
+                onClick={() => navigate(ROUTES.STUDENT_NOTICES)}
+                className="relative flex h-10 w-10 items-center justify-center rounded-2xl border shrink-0"
+                style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+                aria-label="Open notices"
+              >
+                <Bell size={18} />
+                {unreadNotices > 0 ? (
+                  <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-red-500 px-1 text-[10px] font-bold leading-5 text-white">
+                    {unreadNotices > 9 ? '9+' : unreadNotices}
+                  </span>
+                ) : null}
+              </button>
 
               <button
                 type="button"

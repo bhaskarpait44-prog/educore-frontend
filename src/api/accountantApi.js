@@ -39,6 +39,8 @@ export const whatsappReceipt = (id) => api.post(`/accountant/receipts/${id}/what
 export const getDefaulters = (params) => api.get('/accountant/defaulters', { params })
 export const sendReminder = (data) => api.post('/accountant/defaulters/remind', data)
 export const sendReminderBulk = (data) => api.post('/accountant/defaulters/remind-bulk', data)
+export const getAccountantNotices = (params) => api.get('/accountant/notices', { params })
+export const createAccountantNotice = (data) => api.post('/accountant/notices', data)
 
 export const getConcessions = (params) => api.get('/accountant/concessions', { params })
 export const applyConcession = (data) => api.post('/accountant/concessions/apply', data)

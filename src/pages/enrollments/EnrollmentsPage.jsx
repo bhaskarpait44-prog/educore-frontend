@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BookOpen, Plus, Users, ChevronDown, ChevronUp } from 'lucide-react'
+import { BookOpen, Plus, Users, ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from 'lucide-react'
 import usePageTitle from '@/hooks/usePageTitle'
 import useToast from '@/hooks/useToast'
 import useStudentStore from '@/store/studentStore'
@@ -16,8 +16,6 @@ import { formatDate } from '@/utils/helpers'
 
 /* ─────────────────────────────────────────────────────────────
    Responsive CSS — injected once into <head>
-   Keeps all media-query logic in one place, not scattered
-   through inline styles (which can't use @media).
 ───────────────────────────────────────────────────────────── */
 const STYLE_ID = 'ep-responsive'
 if (typeof document !== 'undefined' && !document.getElementById(STYLE_ID)) {
@@ -88,6 +86,15 @@ if (typeof document !== 'undefined' && !document.getElementById(STYLE_ID)) {
     .ep-mono          { font-family:monospace; font-size:12px; }
     .ep-skeleton      { height:120px; border-radius:16px; background:var(--color-surface-raised); }
 
+    /* ── pagination ── */
+    .ep-pagination    { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:14px 16px; border-top:1px solid var(--color-border); flex-wrap:wrap; }
+    .ep-page-info     { font-size:12px; color:var(--color-text-muted); }
+    .ep-page-controls { display:flex; align-items:center; gap:6px; }
+    .ep-page-btn      { display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:8px; border:1px solid var(--color-border); background:transparent; color:var(--color-text-secondary); cursor:pointer; font-size:12px; font-weight:500; transition:background .15s, color .15s; }
+    .ep-page-btn:hover:not(:disabled) { background:var(--color-surface-raised); color:var(--color-text-primary); }
+    .ep-page-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    .ep-page-btn.active   { background:var(--color-text-primary); color:var(--color-surface); border-color:var(--color-text-primary); }
+
     /* ── RESPONSIVE BREAKPOINTS ── */
     @media (max-width: 768px) {
       .ep-stats   { grid-template-columns:1fr 1fr; }
@@ -142,6 +149,8 @@ function groupByClass(students) {
 /* ═══════════════════════════════════════════════════════════
    EnrollmentsPage
 ═══════════════════════════════════════════════════════════ */
+const PER_PAGE = 20
+
 export default function EnrollmentsPage() {
   usePageTitle('Enrollments')
 
@@ -154,6 +163,7 @@ export default function EnrollmentsPage() {
   const [filters, setFilters] = useState({ session_id: '', class_id: '', section_id: '' })
   const [sections, setSections] = useState([])
   const [loadingSections, setLoadingSections] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
   /* fetch on mount */
   useEffect(() => {
@@ -168,15 +178,21 @@ export default function EnrollmentsPage() {
       setFilters((p) => ({ ...p, session_id: String(currentSession.id) }))
   }, [currentSession, filters.session_id])
 
-  /* fetch students on filter change */
+  /* reset to page 1 whenever filters change */
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters])
+
+  /* fetch students on filter or page change */
   useEffect(() => {
     fetchStudents({
-      page: 1, perPage: 100,
+      page:       currentPage,
+      perPage:    PER_PAGE,
       class_id:   filters.class_id   || undefined,
       section_id: filters.section_id || undefined,
       session_id: filters.session_id || undefined,
     }).catch(() => toastError('Failed to load enrollments'))
-  }, [filters, fetchStudents, toastError])
+  }, [filters, currentPage, fetchStudents, toastError])
 
   /* fetch sections when class changes */
   useEffect(() => {
@@ -198,6 +214,12 @@ export default function EnrollmentsPage() {
   const grouped        = useMemo(() => groupByClass(students), [students])
   const classKeys      = [...grouped.keys()]
 
+  /* pagination derived */
+  const totalStudents = pagination.total || 0
+  const totalPages    = Math.ceil(totalStudents / PER_PAGE) || 1
+  const pageStart     = totalStudents === 0 ? 0 : (currentPage - 1) * PER_PAGE + 1
+  const pageEnd       = Math.min(currentPage * PER_PAGE, totalStudents)
+
   return (
     <div className="ep-page">
 
@@ -214,9 +236,9 @@ export default function EnrollmentsPage() {
 
       {/* ── Stats ── */}
       <div className="ep-stats">
-        <StatCard icon={Users}    label="Total Students"  value={pagination.total || students.length} color="#2563eb" />
-        <StatCard icon={BookOpen} label="With Enrollment" value={activeCount}                         color="#059669" />
-        <StatCard icon={BookOpen} label="Current Session" value={currentSession?.name || '—'}         color="#7c3aed" compact />
+        <StatCard icon={Users}    label="Total Students"  value={totalStudents}                        color="#2563eb" />
+        <StatCard icon={BookOpen} label="With Enrollment" value={activeCount}                          color="#059669" />
+        <StatCard icon={BookOpen} label="Current Session" value={currentSession?.name || '—'}          color="#7c3aed" compact />
       </div>
 
       {/* ── Filters ── */}
@@ -261,18 +283,106 @@ export default function EnrollmentsPage() {
           />
         </div>
       ) : (
-        <div className="ep-card-list">
-          {classKeys.map((cls, idx) => (
-            <ClassCard
-              key={cls}
-              className={cls}
-              sectionsMap={grouped.get(cls)}
-              color={getColor(idx)}
-              onRowClick={(id) => navigate(`${ROUTES.STUDENTS}/${id}`)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="ep-card-list">
+            {classKeys.map((cls, idx) => (
+              <ClassCard
+                key={cls}
+                className={cls}
+                sectionsMap={grouped.get(cls)}
+                color={getColor(idx)}
+                onRowClick={(id) => navigate(`${ROUTES.STUDENTS}/${id}`)}
+              />
+            ))}
+          </div>
+
+          {/* ── Pagination ── */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageStart={pageStart}
+            pageEnd={pageEnd}
+            total={totalStudents}
+            onChange={setCurrentPage}
+          />
+        </>
       )}
+    </div>
+  )
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Pagination
+═══════════════════════════════════════════════════════════ */
+function Pagination({ currentPage, totalPages, pageStart, pageEnd, total, onChange }) {
+  if (totalPages <= 1) return null
+
+  /* Build page number buttons — show at most 5 around current page */
+  const pages = useMemo(() => {
+    const range = []
+    const delta = 2
+    const left  = Math.max(1, currentPage - delta)
+    const right = Math.min(totalPages, currentPage + delta)
+    for (let i = left; i <= right; i++) range.push(i)
+    return range
+  }, [currentPage, totalPages])
+
+  return (
+    <div className="ep-pagination">
+      <span className="ep-page-info">
+        Showing {pageStart}–{pageEnd} of {total} students
+      </span>
+
+      <div className="ep-page-controls">
+        {/* Prev */}
+        <button
+          className="ep-page-btn"
+          disabled={currentPage === 1}
+          onClick={() => onChange(currentPage - 1)}
+          aria-label="Previous page"
+        >
+          <ChevronLeft size={14} />
+        </button>
+
+        {/* First page + ellipsis */}
+        {pages[0] > 1 && (
+          <>
+            <button className="ep-page-btn" onClick={() => onChange(1)}>1</button>
+            {pages[0] > 2 && <span style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '0 2px' }}>…</span>}
+          </>
+        )}
+
+        {/* Page numbers */}
+        {pages.map((p) => (
+          <button
+            key={p}
+            className={`ep-page-btn${p === currentPage ? ' active' : ''}`}
+            onClick={() => onChange(p)}
+          >
+            {p}
+          </button>
+        ))}
+
+        {/* Last page + ellipsis */}
+        {pages[pages.length - 1] < totalPages && (
+          <>
+            {pages[pages.length - 1] < totalPages - 1 && (
+              <span style={{ fontSize: 12, color: 'var(--color-text-muted)', padding: '0 2px' }}>…</span>
+            )}
+            <button className="ep-page-btn" onClick={() => onChange(totalPages)}>{totalPages}</button>
+          </>
+        )}
+
+        {/* Next */}
+        <button
+          className="ep-page-btn"
+          disabled={currentPage === totalPages}
+          onClick={() => onChange(currentPage + 1)}
+          aria-label="Next page"
+        >
+          <ChevronRight size={14} />
+        </button>
+      </div>
     </div>
   )
 }

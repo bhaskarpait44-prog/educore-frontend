@@ -104,6 +104,7 @@ export const ROUTES = {
   TEACHER_DETAIL: '/teachers/:id',
   TEACHER_NEW: '/teachers/new',
   ADMIN_TEACHER_CONTROL: '/admin/teacher-control',
+  ADMIN_NOTICES: '/admin/notices',
 
   // Teacher Portal
   TEACHER_CLASSES: '/teacher/classes',
@@ -138,6 +139,7 @@ export const ROUTES = {
   ACCOUNTANT_RECEIPT_DETAIL: '/accountant/receipts/:id',
   ACCOUNTANT_DEFAULTERS: '/accountant/defaulters',
   ACCOUNTANT_REMINDERS: '/accountant/defaulters/reminders',
+  ACCOUNTANT_NOTICES: '/accountant/notices',
   ACCOUNTANT_CONCESSIONS: '/accountant/concessions',
   ACCOUNTANT_CONCESSIONS_APPLY: '/accountant/concessions/apply',
   ACCOUNTANT_REPORTS: '/accountant/reports',

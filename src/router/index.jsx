@@ -82,6 +82,7 @@ const RefundList = lazy(() => import('@/pages/accountant/refunds/RefundList'))
 const ProcessRefund = lazy(() => import('@/pages/accountant/refunds/ProcessRefund'))
 const ChequeManagement = lazy(() => import('@/pages/accountant/cheques/ChequeManagement'))
 const AccountantProfile = lazy(() => import('@/pages/accountant/AccountantProfile'))
+const AccountantNotices = lazy(() => import('@/pages/accountant/AccountantNotices'))
 
 const StudentDashboard = lazy(() => import('@/pages/student/StudentDashboard'))
 const MyAttendance = lazy(() => import('@/pages/student/attendance/MyAttendance'))
@@ -197,6 +198,7 @@ const router = createBrowserRouter([
       { path: ROUTES.ACCOUNTANT_RECEIPT_DETAIL, element: <Lazy component={ReceiptDetail} /> },
       { path: ROUTES.ACCOUNTANT_DEFAULTERS, element: <Lazy component={DefaulterList} /> },
       { path: ROUTES.ACCOUNTANT_REMINDERS, element: <Lazy component={ReminderManager} /> },
+      { path: ROUTES.ACCOUNTANT_NOTICES, element: <Lazy component={AccountantNotices} /> },
       { path: ROUTES.ACCOUNTANT_CONCESSIONS, element: <Lazy component={ConcessionList} /> },
       { path: ROUTES.ACCOUNTANT_CONCESSIONS_APPLY, element: <Lazy component={ApplyConcession} /> },
       { path: ROUTES.ACCOUNTANT_REPORTS, element: <Lazy component={ReportsHome} /> },
@@ -316,6 +318,14 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.ADMIN_TEACHER_CONTROL,
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN]}>
+            <Lazy component={AdminTeacherControlPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: ROUTES.ADMIN_NOTICES,
         element: (
           <ProtectedRoute roles={[ROLES.ADMIN]}>
             <Lazy component={AdminTeacherControlPage} />

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { BellPlus, BellRing, CheckCheck, Edit3, Eye, Filter, Search } from 'lucide-react'
+import { BellPlus, BellRing, CheckCheck, Edit3, Eye, Filter, Search, UserRoundPlus } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import useAuthStore from '@/store/authStore'
 import usePageTitle from '@/hooks/usePageTitle'
@@ -25,7 +25,7 @@ const CATEGORY_OPTIONS = [
 ]
 
 const NoticeList = () => {
-  usePageTitle('View Notices')
+  usePageTitle('Notice')
 
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
@@ -98,11 +98,14 @@ const NoticeList = () => {
               View teacher and class-targeted notices, mark them as read, and manage your own posted notices.
             </p>
           </div>
-          {canPost ? (
-            <Button variant="primary" icon={BellPlus} onClick={() => navigate(ROUTES.TEACHER_NOTICE_NEW)}>
-              Post Notice
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button variant="secondary" icon={UserRoundPlus} onClick={() => navigate(ROUTES.TEACHER_NOTICE_NEW, { state: { targetMode: 'student' } })}>
+              Student Notice
             </Button>
-          ) : null}
+            <Button variant="primary" icon={BellPlus} onClick={() => navigate(ROUTES.TEACHER_NOTICE_NEW)}>
+              Create Notice
+            </Button>
+          </div>
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">

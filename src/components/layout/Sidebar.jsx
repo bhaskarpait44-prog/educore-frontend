@@ -11,7 +11,6 @@ import { cn } from '@/utils/helpers'
 const getNavGroups = (user) => {
   const isTeacher    = user?.role === ROLES.TEACHER
   const isAccountant = user?.role === ROLES.ACCOUNTANT
-  const canPostNotices = Array.isArray(user?.permissions) && user.permissions.includes('notices.post')
   const can = (permission) => user?.role === ROLES.ADMIN || (Array.isArray(user?.permissions) && user.permissions.includes(permission))
 
   if (isTeacher) {
@@ -45,9 +44,8 @@ const getNavGroups = (user) => {
       {
         label: 'Communication',
         items: [
-          { label: 'Chat',          icon: 'MessageSquare', path: ROUTES.TEACHER_CHAT },
-          { label: 'View Notices',  icon: 'BellRing',      path: ROUTES.TEACHER_NOTICES },
-          ...(canPostNotices ? [{ label: 'Post Notice', icon: 'Send', path: ROUTES.TEACHER_NOTICE_NEW }] : []),
+          { label: 'Chat',   icon: 'MessageSquare', path: ROUTES.TEACHER_CHAT },
+          { label: 'Notice', icon: 'BellRing',      path: ROUTES.TEACHER_NOTICES },
         ],
       },
       {
@@ -83,6 +81,7 @@ const getNavGroups = (user) => {
           { label: 'Fee Structure', icon: 'NotebookTabs', path: ROUTES.ACCOUNTANT_FEE_STRUCTURE },
           ...(can('fees.edit') ? [{ label: 'Manage Structure', icon: 'PencilRuler', path: ROUTES.ACCOUNTANT_FEE_STRUCTURE_MANAGE }] : []),
           { label: 'Defaulters', icon: 'TriangleAlert', path: ROUTES.ACCOUNTANT_DEFAULTERS },
+          { label: 'Fee Notices', icon: 'BellRing', path: ROUTES.ACCOUNTANT_NOTICES },
           ...(can('fees.waive') ? [{ label: 'Concessions', icon: 'BadgePercent', path: ROUTES.ACCOUNTANT_CONCESSIONS }] : []),
           { label: 'Carry Forward', icon: 'ArrowRightLeft', path: ROUTES.ACCOUNTANT_CARRY_FORWARD },
           ...(can('fees.refund') ? [{ label: 'Refunds', icon: 'Undo2', path: ROUTES.ACCOUNTANT_REFUNDS }] : []),
@@ -134,6 +133,7 @@ const getNavGroups = (user) => {
       label: 'Administration',
       items: [
         { label: 'Sessions',   icon: 'CalendarDays',       path: ROUTES.SESSIONS,          roles: [ROLES.ADMIN] },
+        { label: 'Notices',    icon: 'BellRing',           path: ROUTES.ADMIN_NOTICES,     roles: [ROLES.ADMIN] },
         { label: 'Promotions', icon: 'ArrowUpWideNarrow',  path: ROUTES.ADMIN_PROMOTIONS,  roles: [ROLES.ADMIN] },
         { label: 'Users',      icon: 'UserCog',            path: ROUTES.USERS,             roles: [ROLES.ADMIN] },
         { label: 'Audit Logs', icon: 'ScrollText',         path: ROUTES.AUDIT,             roles: [ROLES.ADMIN] },

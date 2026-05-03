@@ -14,6 +14,7 @@ export const getTeacherControlHomework = () => api.get('/admin/teacher-control/h
 export const updateTeacherControlHomework = (id, data) => api.patch(`/admin/teacher-control/homework/${id}`, data)
 
 export const getTeacherControlNotices = () => api.get('/admin/teacher-control/notices')
+export const createTeacherControlNotice = (data) => api.post('/admin/teacher-control/notices', data)
 export const updateTeacherControlNotice = (id, data) => api.patch(`/admin/teacher-control/notices/${id}`, data)
 
 export const getTeacherControlAttendance = () => api.get('/admin/teacher-control/attendance')

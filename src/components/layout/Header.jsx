@@ -96,10 +96,25 @@ const Header = ({ onMenuClick }) => {
         }
 
         if (isTeacherUser) {
-          const res      = await teacherApi.getTeacherHomework()
+          const [homeworkRes, noticeRes] = await Promise.all([
+            teacherApi.getTeacherHomework(),
+            teacherApi.getTeacherNotices(),
+          ])
           if (!active) return
-          const homework = Array.isArray(res?.data?.homework) ? res.data.homework : []
-          const nextItems = homework
+          const homework = Array.isArray(homeworkRes?.data?.homework) ? homeworkRes.data.homework : []
+          const notices = Array.isArray(noticeRes?.data?.notices) ? noticeRes.data.notices : []
+          const noticeItems = notices
+            .filter(item => !item?.is_read)
+            .sort((a, b) => new Date(b.publish_date || 0) - new Date(a.publish_date || 0))
+            .slice(0, 5)
+            .map(item => ({
+              id          : `teacher-notice-${item.id}`,
+              title       : item.title || 'New notice',
+              description : [item.category, item.teacher_name].filter(Boolean).join(' | ') || 'A notice is waiting in your notice board.',
+              count       : 1,
+              route       : ROUTES.TEACHER_NOTICES,
+            }))
+          const homeworkItems = homework
             .filter(item => Number(item?.pending_count || 0) > 0 || item?.workflow_status === 'overdue')
             .sort((a, b) => new Date(b.created_at || b.due_date || 0) - new Date(a.created_at || a.due_date || 0))
             .slice(0, 5)
@@ -110,7 +125,7 @@ const Header = ({ onMenuClick }) => {
               count       : Math.max(Number(item.pending_count || 0), item?.workflow_status === 'overdue' ? 1 : 0),
               route       : ROUTES.TEACHER_HOMEWORK,
             }))
-          setNotifications(nextItems)
+          setNotifications([...noticeItems, ...homeworkItems].slice(0, 8))
           return
         }
 
@@ -127,10 +142,25 @@ const Header = ({ onMenuClick }) => {
           return
         }
 
-        const res      = await studentApi.getStudentHomework()
+        const [homeworkRes, noticeRes] = await Promise.all([
+          studentApi.getStudentHomework(),
+          studentApi.getStudentNotices(),
+        ])
         if (!active) return
-        const homework = Array.isArray(res?.data?.homework) ? res.data.homework : []
-        const nextItems = homework
+        const homework = Array.isArray(homeworkRes?.data?.homework) ? homeworkRes.data.homework : []
+        const notices = Array.isArray(noticeRes?.data?.notices) ? noticeRes.data.notices : []
+        const noticeItems = notices
+          .filter(item => !item?.is_read)
+          .sort((a, b) => new Date(b.publish_date || 0) - new Date(a.publish_date || 0))
+          .slice(0, 5)
+          .map(item => ({
+            id          : `student-notice-${item.id}`,
+            title       : item.title || 'New notice',
+            description : [item.category, item.posted_by].filter(Boolean).join(' | ') || 'A notice is waiting in your notice board.',
+            count       : 1,
+            route       : ROUTES.STUDENT_NOTICES,
+          }))
+        const homeworkItems = homework
           .filter(item => item?.submission_status !== 'submitted')
           .sort((a, b) => new Date(b.created_at || b.due_date || 0) - new Date(a.created_at || a.due_date || 0))
           .slice(0, 5)
@@ -141,7 +171,7 @@ const Header = ({ onMenuClick }) => {
             count       : 1,
             route       : ROUTES.STUDENT_HOMEWORK,
           }))
-        setNotifications(nextItems)
+        setNotifications([...noticeItems, ...homeworkItems].slice(0, 8))
       } catch {
         if (active) setNotifications([])
       } finally {

@@ -5,6 +5,7 @@ import usePageTitle from '@/hooks/usePageTitle'
 import useToast from '@/hooks/useToast'
 import usePermissions from '@/hooks/usePermissions'
 import useTeacherNotices from '@/hooks/useTeacherNotices'
+import { getTeacherStudents } from '@/api/teacherApi'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Textarea from '@/components/ui/Textarea'
@@ -28,6 +29,7 @@ const NoticeForm = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const editingNotice = location.state?.notice || null
+  const preferredTargetMode = location.state?.targetMode || ''
   const isEditing = Boolean(editingNotice)
 
   usePageTitle(isEditing ? 'Edit Notice' : 'Post Notice')
@@ -35,12 +37,15 @@ const NoticeForm = () => {
   const { can } = usePermissions()
   const { toastSuccess, toastError } = useToast()
   const { loadingBase, saving, classTeacherSections, assignedSections, saveNotice } = useTeacherNotices()
+  const [students, setStudents] = useState([])
+  const [loadingStudents, setLoadingStudents] = useState(false)
   const [form, setForm] = useState({
     title: '',
     content: '',
     category: 'general',
-    target_scope: '',
+    target_mode: '',
     target_key: '',
+    target_student_id: '',
     attachment_path: '',
     publish_date: todayDate(),
     expiry_date: '',
@@ -52,8 +57,9 @@ const NoticeForm = () => {
         title: editingNotice.title || '',
         content: editingNotice.content || '',
         category: editingNotice.category || 'general',
-        target_scope: editingNotice.target_scope || '',
+        target_mode: editingNotice.target_scope === 'specific_student' ? 'student' : editingNotice.target_scope || '',
         target_key: editingNotice.class_id && editingNotice.section_id ? `${editingNotice.class_id}:${editingNotice.section_id}` : '',
+        target_student_id: editingNotice.target_student_id ? String(editingNotice.target_student_id) : '',
         attachment_path: editingNotice.attachment_path || '',
         publish_date: editingNotice.publish_date ? String(editingNotice.publish_date).slice(0, 10) : todayDate(),
         expiry_date: editingNotice.expiry_date ? String(editingNotice.expiry_date).slice(0, 10) : '',
@@ -63,31 +69,69 @@ const NoticeForm = () => {
 
     setForm((prev) => ({
       ...prev,
-      target_scope: classTeacherSections.length ? 'my_class_only' : 'specific_section',
+      target_mode: preferredTargetMode || (classTeacherSections.length ? 'my_class_only' : 'specific_section'),
       target_key: classTeacherSections[0]?.value || assignedSections[0]?.value || '',
     }))
-  }, [assignedSections, classTeacherSections, editingNotice])
+  }, [assignedSections, classTeacherSections, editingNotice, preferredTargetMode])
 
-  const canPost = can('notices.post')
+  const canPost = can('notices.post') || assignedSections.length > 0 || classTeacherSections.length > 0
+  useEffect(() => {
+    let active = true
+    setLoadingStudents(true)
+    getTeacherStudents()
+      .then((res) => {
+        if (active) setStudents(res?.data?.students || [])
+      })
+      .catch(() => {
+        if (active) setStudents([])
+      })
+      .finally(() => {
+        if (active) setLoadingStudents(false)
+      })
+    return () => { active = false }
+  }, [])
+
   const targetOptions = useMemo(() => {
     const options = []
     if (classTeacherSections.length) {
-      options.push({ value: 'my_class_only', label: 'My Class Only' })
+      options.push({ value: 'my_class_only', label: 'Class Wise (Class Teacher)' })
     }
     if (assignedSections.length) {
-      options.push({ value: 'specific_section', label: 'Specific Section' })
+      options.push({ value: 'specific_section', label: 'Assigned Class / Section' })
+      options.push({ value: 'student', label: 'Student Wise' })
     }
     return options
   }, [assignedSections, classTeacherSections])
 
-  const sectionOptions = form.target_scope === 'my_class_only' ? classTeacherSections : assignedSections
+  const sectionOptions = form.target_mode === 'my_class_only' ? classTeacherSections : assignedSections
+
+  const studentOptions = useMemo(() => {
+    const selectedSection = assignedSections.find((item) => item.value === form.target_key)
+    return students
+      .filter((student) => (
+        !selectedSection ||
+        (String(student.class_id) === String(selectedSection.class_id) && String(student.section_id) === String(selectedSection.section_id))
+      ))
+      .map((student) => ({
+        value: String(student.id),
+        label: `${student.first_name} ${student.last_name} | ${student.class_name} ${student.section_name} | Roll ${student.roll_number || '--'}`,
+      }))
+  }, [assignedSections, form.target_key, students])
 
   useEffect(() => {
     if (!sectionOptions.length) return
     if (!sectionOptions.some((item) => item.value === form.target_key)) {
-      setForm((prev) => ({ ...prev, target_key: sectionOptions[0]?.value || '' }))
+      setForm((prev) => ({ ...prev, target_key: sectionOptions[0]?.value || '', target_student_id: '' }))
     }
   }, [form.target_key, sectionOptions])
+
+  useEffect(() => {
+    if (form.target_mode !== 'student') return
+    if (!studentOptions.length) return
+    if (!studentOptions.some((item) => item.value === form.target_student_id)) {
+      setForm((prev) => ({ ...prev, target_student_id: studentOptions[0]?.value || '' }))
+    }
+  }, [form.target_mode, form.target_student_id, studentOptions])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -107,9 +151,10 @@ const NoticeForm = () => {
               title: form.title.trim(),
               content: form.content.trim(),
               category: form.category,
-              target_scope: form.target_scope,
-              class_id: selectedTarget?.class_id || null,
-              section_id: selectedTarget?.section_id || null,
+              target_scope: form.target_mode === 'student' ? 'specific_student' : form.target_mode,
+              class_id: form.target_mode === 'student' ? null : selectedTarget?.class_id || null,
+              section_id: form.target_mode === 'student' ? null : selectedTarget?.section_id || null,
+              target_student_id: form.target_mode === 'student' ? Number(form.target_student_id) : null,
               attachment_path: form.attachment_path.trim() || null,
               publish_date: form.publish_date,
               expiry_date: form.expiry_date || null,
@@ -129,7 +174,7 @@ const NoticeForm = () => {
       <EmptyState
         icon={BellPlus}
         title="Notice posting is restricted"
-        description="Your account can view notices, but posting notices requires the notices.post permission."
+        description="Your account can view notices, but posting requires an active class or subject assignment."
         action={(
           <Button variant="secondary" onClick={() => navigate(ROUTES.TEACHER_NOTICES)}>
             Back to Notices
@@ -165,7 +210,7 @@ const NoticeForm = () => {
             <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
               {isEditing
                 ? 'You can update your own notice within the allowed edit window.'
-                : 'Post notices only to your assigned section or your class-teacher section. School-wide targeting remains admin-only.'}
+                : 'Class teachers can post for their class, subject teachers can post for assigned classes, and any teacher can target an accessible student.'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -192,7 +237,7 @@ const NoticeForm = () => {
                 <div className="flex items-start gap-3">
                   <Info size={16} className="mt-0.5" style={{ color: '#0f766e' }} />
                   <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                    Teachers cannot post school-wide notices. Choose either <strong>My Class Only</strong> if you are the class teacher, or <strong>Specific Section</strong> from your assigned sections.
+                    Teachers cannot post school-wide notices. Choose a class-teacher class, one of your assigned class/sections, or a single student from your assigned students.
                   </p>
                 </div>
               </div>
@@ -219,20 +264,30 @@ const NoticeForm = () => {
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <Select
                   label="Target Scope"
-                  value={form.target_scope}
-                  onChange={(event) => setForm((prev) => ({ ...prev, target_scope: event.target.value, target_key: '' }))}
+                  value={form.target_mode}
+                  onChange={(event) => setForm((prev) => ({ ...prev, target_mode: event.target.value, target_key: '', target_student_id: '' }))}
                   options={targetOptions}
                   placeholder="Select notice target"
                   required
                 />
                 <Select
-                  label="Target Section"
+                  label={form.target_mode === 'student' ? 'Student Class / Section' : 'Target Class / Section'}
                   value={form.target_key}
-                  onChange={(event) => setForm((prev) => ({ ...prev, target_key: event.target.value }))}
+                  onChange={(event) => setForm((prev) => ({ ...prev, target_key: event.target.value, target_student_id: '' }))}
                   options={sectionOptions}
                   placeholder="Select class and section"
                   required
                 />
+                {form.target_mode === 'student' ? (
+                  <Select
+                    label="Student"
+                    value={form.target_student_id}
+                    onChange={(event) => setForm((prev) => ({ ...prev, target_student_id: event.target.value }))}
+                    options={studentOptions}
+                    placeholder={loadingStudents ? 'Loading students...' : 'Select student'}
+                    required
+                  />
+                ) : null}
               </div>
             ) : null}
 
