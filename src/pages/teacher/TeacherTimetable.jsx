@@ -7,7 +7,7 @@ import * as teacherApi from '@/api/teacherApi'
 import TimetableGrid from '@/components/teacher/TimetableGrid'
 import TimetableToday from '@/components/teacher/TimetableToday'
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────── (unchanged) ──────────────
 
 const to12Hour = (value) => {
   if (!value) return '--'
@@ -28,7 +28,7 @@ const getDayName = () =>
 const getDateStr = () =>
   new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Page ────────────────────────────────────────── (logic unchanged) ────────
 
 const TeacherTimetable = () => {
   usePageTitle('Timetable')
@@ -85,7 +85,6 @@ const TeacherTimetable = () => {
           background: 'linear-gradient(135deg, rgba(15,118,110,0.12) 0%, rgba(2,132,199,0.07) 50%, var(--color-surface) 100%)',
         }}
       >
-        {/* Decorative circle */}
         <div
           className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-10"
           style={{ background: 'radial-gradient(circle, #0f766e 0%, transparent 70%)' }}
@@ -93,7 +92,6 @@ const TeacherTimetable = () => {
         />
 
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          {/* Title block */}
           <div>
             <div className="flex items-center gap-2 mb-2">
               <span
@@ -112,7 +110,6 @@ const TeacherTimetable = () => {
             </p>
           </div>
 
-          {/* Print button */}
           <button
             type="button"
             onClick={() => window.print()}
@@ -128,7 +125,7 @@ const TeacherTimetable = () => {
           </button>
         </div>
 
-        {/* ── Stat cards row ── */}
+        {/* ── Stat cards ── */}
         <div className="relative mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <PeriodCard
             label="Current Period"
@@ -189,6 +186,8 @@ const TeacherTimetable = () => {
               title="Weekly Schedule"
               description="Full teaching week — current period is highlighted."
             />
+            {/* ── Colorful subject legend ── */}
+            <SubjectLegend slots={timetable} />
             <TimetableGrid slots={timetable} currentPeriodId={currentPeriod?.id || null} />
           </section>
 
@@ -210,20 +209,87 @@ const TeacherTimetable = () => {
   )
 }
 
+// ─── Subject colour map ───────────────────────────────────────────────────────
+// Keys must match subject_name values from your API exactly (case-sensitive).
+// Add more entries as needed; unknown subjects fall back to slate grey.
+
+const SUBJECT_COLORS = {
+  'Physics':      '#7F77DD',
+  'Chemistry':    '#1D9E75',
+  'Mathematics':  '#D85A30',
+  'Math':         '#D85A30',
+  'English':      '#D4537E',
+  'Biology':      '#378ADD',
+  'History':      '#BA7517',
+  'Geography':    '#639922',
+  'Computer Sc':  '#533AB7',
+  'Computer':     '#533AB7',
+  'Hindi':        '#E24B4A',
+  'Assamese':     '#E24B4A',
+  'Economics':    '#0F6E56',
+  'Political Sc': '#993556',
+  'Physical Ed':  '#185FA5',
+  'Art':          '#D4537E',
+}
+const SUBJECT_COLOR_FALLBACK = '#888780'
+
+export const getSubjectColor = (name) => SUBJECT_COLORS[name] || SUBJECT_COLOR_FALLBACK
+
+// ─── Subject legend strip ─────────────────────────────────────────────────────
+
+const SubjectLegend = ({ slots = [] }) => {
+  const subjects = useMemo(() =>
+    [...new Set(slots.filter(s => !s.is_break && s.subject_name).map(s => s.subject_name))].sort(),
+  [slots])
+
+  if (!subjects.length) return null
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: 8,
+      padding: '10px 14px',
+      borderRadius: 12,
+      border: '1px solid var(--color-border)',
+      backgroundColor: 'var(--color-surface)',
+    }}>
+      {subjects.map(subj => (
+        <span key={subj} style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 6,
+          fontSize: 11,
+          fontWeight: 600,
+          color: 'var(--color-text-secondary)',
+        }}>
+          <span style={{
+            display: 'inline-block',
+            width: 10, height: 10,
+            borderRadius: '50%',
+            background: getSubjectColor(subj),
+            flexShrink: 0,
+          }} />
+          {subj}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 // ─── Period stat card ─────────────────────────────────────────────────────────
+// Unchanged from original — only the subject name badge gets a colour dot
 
 const PeriodCard = ({ label, icon: Icon, accent, accentBg, primary, secondary, live = false }) => (
   <div
     className="relative overflow-hidden rounded-xl border p-4"
     style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
   >
-    {/* Left accent strip */}
     <div
       className="absolute left-0 top-0 h-full w-1 rounded-l-xl"
       style={{ backgroundColor: accent }}
       aria-hidden="true"
     />
-
     <div className="ml-3">
       <div className="flex items-center gap-2 mb-2">
         <div
@@ -243,9 +309,23 @@ const PeriodCard = ({ label, icon: Icon, accent, accentBg, primary, secondary, l
           </span>
         )}
       </div>
-      <p className="text-base font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
-        {primary}
-      </p>
+
+      {/* Subject name with colour dot */}
+      <div className="flex items-center gap-1.5">
+        {live && (
+          <span style={{
+            display: 'inline-block',
+            width: 8, height: 8,
+            borderRadius: '50%',
+            background: getSubjectColor(primary),
+            flexShrink: 0,
+          }} />
+        )}
+        <p className="text-base font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
+          {primary}
+        </p>
+      </div>
+
       <p className="mt-0.5 text-xs truncate" style={{ color: 'var(--color-text-secondary)' }}>
         {secondary}
       </p>
@@ -254,6 +334,7 @@ const PeriodCard = ({ label, icon: Icon, accent, accentBg, primary, secondary, l
 )
 
 // ─── Progress card ────────────────────────────────────────────────────────────
+// Unchanged from original
 
 const ProgressCard = ({ done, total, slots }) => {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0
@@ -268,7 +349,6 @@ const ProgressCard = ({ done, total, slots }) => {
         style={{ backgroundColor: '#0f766e' }}
         aria-hidden="true"
       />
-
       <div className="ml-3">
         <div className="flex items-center gap-2 mb-2">
           <div
@@ -289,7 +369,6 @@ const ProgressCard = ({ done, total, slots }) => {
           <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>done</p>
         </div>
 
-        {/* Progress bar */}
         <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ backgroundColor: 'var(--color-surface-raised)' }}>
           <div
             className="h-full rounded-full transition-all duration-700"
@@ -306,6 +385,7 @@ const ProgressCard = ({ done, total, slots }) => {
 }
 
 // ─── Section header ───────────────────────────────────────────────────────────
+// Unchanged from original
 
 const SectionHeader = ({ title, description }) => (
   <div>
@@ -319,6 +399,7 @@ const SectionHeader = ({ title, description }) => (
 )
 
 // ─── States ───────────────────────────────────────────────────────────────────
+// Unchanged from original
 
 const LoadingState = () => (
   <div
