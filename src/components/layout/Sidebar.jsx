@@ -302,7 +302,7 @@ const Sidebar = ({ mobileOpen, onMobileClose }) => {
       {/* Mobile sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 h-screen z-50 flex flex-col w-full',
+          'fixed top-0 left-0 h-screen z-50 flex flex-col w-[280px]',
           'lg:hidden',
           'transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]',
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
