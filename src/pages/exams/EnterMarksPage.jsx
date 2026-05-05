@@ -1,6 +1,7 @@
 // src/pages/exams/EnterMarksPage.jsx
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Save, CheckCircle, AlertCircle, ChevronDown, Users, BookOpen } from 'lucide-react'
+import { Save, CheckCircle, AlertCircle, ChevronDown, Users, BookOpen, FileSpreadsheet } from 'lucide-react'
+import BulkUploadModal from './BulkUploadModal'
 import useExamStore from '@/store/examStore'
 import useSessionStore from '@/store/sessionStore'
 import useToast from '@/hooks/useToast'
@@ -89,6 +90,7 @@ const EnterMarksPage = () => {
   const [saved, setSaved] = useState({})
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [bulkOpen, setBulkOpen] = useState(false)
 
   const autoSaveTimers = useRef({})
 
@@ -327,21 +329,31 @@ const EnterMarksPage = () => {
               )}
             </div>
 
-            <button
-              onClick={handleSubmitAll}
-              disabled={submitting || isSaving}
-              style={{
-                display: 'inline-flex', alignItems: 'center', gap: 7,
-                padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
-                backgroundColor: submitting ? 'var(--color-surface-raised)' : 'var(--color-text-primary)',
-                color: submitting ? 'var(--color-text-muted)' : 'var(--color-surface)',
-                border: 'none', cursor: submitting ? 'not-allowed' : 'pointer',
-                transition: 'all 0.15s',
-              }}
-            >
-              <Save size={14} />
-              {submitting ? 'Saving…' : 'Submit all'}
-            </button>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Button
+                variant="outline"
+                icon={FileSpreadsheet}
+                onClick={() => setBulkOpen(true)}
+                disabled={submitting || isSaving}
+              >
+                Bulk Upload
+              </Button>
+              <button
+                onClick={handleSubmitAll}
+                disabled={submitting || isSaving}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 7,
+                  padding: '8px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                  backgroundColor: submitting ? 'var(--color-surface-raised)' : 'var(--color-text-primary)',
+                  color: submitting ? 'var(--color-text-muted)' : 'var(--color-surface)',
+                  border: 'none', cursor: submitting ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <Save size={14} />
+                {submitting ? 'Saving…' : 'Submit all'}
+              </button>
+            </div>
           </div>
 
           {/* Table Card */}
@@ -554,6 +566,13 @@ const EnterMarksPage = () => {
           </div>
         </>
       )}
+
+      <BulkUploadModal
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        examId={examId}
+        subjects={subjects}
+      />
     </div>
   )
 }

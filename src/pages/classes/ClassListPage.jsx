@@ -87,6 +87,28 @@ const StatCard = ({ icon: Icon, label, value, color }) => (
   </div>
 )
 
+const OccupancyBar = ({ enrolled, capacity }) => {
+  const pct = capacity > 0 ? Math.min((enrolled / capacity) * 100, 100) : 0
+  const color = pct >= 95 ? 'bg-red-500' : pct >= 80 ? 'bg-amber-500' : 'bg-emerald-500'
+  
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between items-center text-[10px] font-medium">
+        <span className="text-gray-400 dark:text-gray-500 uppercase">Occupancy</span>
+        <span className={`${pct >= 95 ? 'text-red-600' : 'text-gray-500'} tabular-nums`}>
+          {enrolled} / {capacity}
+        </span>
+      </div>
+      <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700/50 rounded-full overflow-hidden">
+        <div 
+          className={`h-full rounded-full transition-all duration-500 ${color}`} 
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  )
+}
+
 // ── Class card skeleton ───────────────────────────────────────────────────
 const ClassCardSkeleton = () => (
   <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 animate-pulse">
@@ -141,16 +163,16 @@ const ClassTableRow = ({ cls, onEdit, onDelete, onToggle, onView }) => (
       <span className="text-sm text-gray-600 dark:text-gray-300">#{cls.order_number}</span>
     </td>
     <td className="px-4 py-3">
-      <div className="flex gap-4 text-sm">
-        <span className="text-gray-600 dark:text-gray-300">
-          <span className="font-semibold text-gray-900 dark:text-gray-100">{cls.section_count || 0}</span> sections
-        </span>
-        <span className="text-gray-600 dark:text-gray-300">
-          <span className="font-semibold text-gray-900 dark:text-gray-100">{cls.subject_count || 0}</span> subjects
-        </span>
-        <span className="text-gray-600 dark:text-gray-300">
-          <span className="font-semibold text-gray-900 dark:text-gray-100">{cls.student_count || 0}</span> students
-        </span>
+      <div className="flex flex-col gap-2 min-w-[140px]">
+        <div className="flex gap-4 text-sm">
+          <span className="text-gray-600 dark:text-gray-300">
+            <span className="font-semibold text-gray-900 dark:text-gray-100">{cls.section_count || 0}</span> sec
+          </span>
+          <span className="text-gray-600 dark:text-gray-300">
+            <span className="font-semibold text-gray-900 dark:text-gray-100">{cls.subject_count || 0}</span> sub
+          </span>
+        </div>
+        <OccupancyBar enrolled={cls.student_count || 0} capacity={cls.total_capacity || 0} />
       </div>
     </td>
     <td className="px-4 py-3">
@@ -236,7 +258,10 @@ const ClassCard = ({ cls, onEdit, onDelete, onToggle, onView }) => {
       <div className="mx-5 mb-3 flex divide-x divide-gray-100 dark:divide-gray-700 bg-gray-50 dark:bg-gray-700/40 rounded-xl py-3">
         {miniStat(cls.section_count, 'Sections')}
         {miniStat(cls.subject_count, 'Subjects')}
-        {miniStat(cls.student_count, 'Students')}
+      </div>
+
+      <div className="mx-5 mb-4">
+        <OccupancyBar enrolled={cls.student_count || 0} capacity={cls.total_capacity || 0} />
       </div>
 
       {/* Tags */}

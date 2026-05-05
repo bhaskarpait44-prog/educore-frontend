@@ -24,6 +24,9 @@ export const getClassOptions = (response) =>
     stream: c.stream || null,
   }))
 
+export const getClassTeachers = () =>
+  api.get('/classes/teachers')
+
 export const getClassById = (id) =>
   api.get(`/classes/${id}`)
 

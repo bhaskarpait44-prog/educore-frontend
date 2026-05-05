@@ -42,6 +42,7 @@ const AttendancePage = lazy(() => import('@/pages/attendance/AttendancePage'))
 const FeeStructurePage = lazy(() => import('@/pages/fees/FeeStructurePage'))
 const FeeReportPage = lazy(() => import('@/pages/fees/FeeReportPage'))
 const ExamsPage = lazy(() => import('@/pages/exams/ExamsPage'))
+const ExamAnalyticsPage = lazy(() => import('@/pages/exams/ExamAnalyticsPage'))
 const AuditPage = lazy(() => import('@/pages/audit/AuditPage'))
 const ClassListPage = lazy(() => import('@/pages/classes/ClassListPage'))
 const UserManagementHomePage = lazy(() => import('@/components/admin/users/UserManagementHomePage'))
@@ -53,6 +54,7 @@ const TeacherDetailPage = lazy(() => import('@/pages/admin/TeacherDetailPage'))
 const ClassDetailPage = lazy(() => import('@/pages/classes/ClassDetailPage'))
 const SettingsPage = lazy(() => import('@/pages/SettingsPage'))
 const AdminTeacherControlPage = lazy(() => import('@/pages/admin/AdminTeacherControlPage'))
+const AdminNoticePage = lazy(() => import('@/pages/admin/AdminNoticePage'))
 const AdminPromotionPage = lazy(() => import('@/pages/admin/AdminPromotionPage'))
 const AccountantDashboard = lazy(() => import('@/pages/accountant/AccountantDashboard'))
 const FeeCollection = lazy(() => import('@/pages/accountant/collection/FeeCollection'))
@@ -328,7 +330,7 @@ const router = createBrowserRouter([
         path: ROUTES.ADMIN_NOTICES,
         element: (
           <ProtectedRoute roles={[ROLES.ADMIN]}>
-            <Lazy component={AdminTeacherControlPage} />
+            <Lazy component={AdminNoticePage} />
           </ProtectedRoute>
         ),
       },
@@ -345,6 +347,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER]}>
             <Lazy component={ExamsPage} />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: '/exams/:id/analytics',
+        element: (
+          <ProtectedRoute roles={[ROLES.ADMIN, ROLES.TEACHER]}>
+            <Lazy component={ExamAnalyticsPage} />
           </ProtectedRoute>
         ),
       },

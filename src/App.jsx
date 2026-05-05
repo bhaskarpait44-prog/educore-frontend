@@ -9,7 +9,10 @@ const App = () => {
   const initTheme = useUiStore((state) => state.initTheme)
 
   useEffect(() => {
-    initTheme()
+    const cleanup = initTheme()
+    return () => {
+      if (typeof cleanup === 'function') cleanup()
+    }
   }, [initTheme])
 
   return (

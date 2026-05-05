@@ -27,15 +27,16 @@ const AttendanceRegister = () => {
   )
 
   useEffect(() => {
-    if (!registerAssignments.length) {
-      if (assignmentKey) setAssignmentKey('')
-      return
-    }
+    if (loadingAssignments || !registerAssignments.length) return
+
     const exists = registerAssignments.some((o) => o.value === assignmentKey)
-    if (!assignmentKey || !exists) setAssignmentKey(registerAssignments[0].value)
-  }, [registerAssignments, assignmentKey])
+    if (!assignmentKey || !exists) {
+      setAssignmentKey(registerAssignments[0].value)
+    }
+  }, [loadingAssignments, registerAssignments, assignmentKey])
 
   const currentAssignment = useMemo(() => {
+    if (!assignmentKey) return null
     const [classId, sectionId] = assignmentKey.split(':')
     return (
       assignmentOptions.find(
@@ -54,7 +55,8 @@ const AttendanceRegister = () => {
   }, [assignmentOptions, assignmentKey])
 
   useEffect(() => {
-    if (!currentAssignment) return
+    if (!currentAssignment || !month || !year) return
+
     loadRegister({
       class_id: currentAssignment.class_id,
       section_id: currentAssignment.section_id,
@@ -132,18 +134,35 @@ const AttendanceRegister = () => {
 }
 
 const dedupeAssignmentsForRegister = (assignments) => {
-  const map = new Map()
-  assignments.forEach((assignment) => {
-    const key = `${assignment.class_id}:${assignment.section_id}`
-    const existing = map.get(key)
-    if (!existing || assignment.is_class_teacher) {
-      map.set(key, {
-        value: key,
-        label: `${assignment.class_name} ${assignment.section_name}${assignment.is_class_teacher ? ' | Class Teacher' : ''}`,
-      })
+  const grouped = {}
+  assignments.forEach((a) => {
+    const key = `${a.class_id}:${a.section_id}`
+    if (!grouped[key]) {
+      grouped[key] = {
+        class_name: a.class_name,
+        section_name: a.section_name,
+        subjects: [],
+        is_class_teacher: false,
+      }
+    }
+    if (a.is_class_teacher) grouped[key].is_class_teacher = true
+    if (a.subject_name && !grouped[key].subjects.includes(a.subject_name)) {
+      grouped[key].subjects.push(a.subject_name)
     }
   })
-  return [...map.values()]
+
+  return Object.entries(grouped).map(([key, info]) => {
+    let label = `${info.class_name} ${info.section_name}`
+    const details = []
+    if (info.is_class_teacher) details.push('Class Teacher')
+    if (info.subjects.length > 0) details.push(...info.subjects)
+
+    if (details.length > 0) {
+      label += ` | ${details.join(', ')}`
+    }
+
+    return { value: key, label }
+  })
 }
 
 const buildYearOptions = () => {

@@ -444,17 +444,35 @@ const firstOfMonth = () => {
 const today = () => new Date().toISOString().slice(0, 10)
 
 const dedupeAssignments = (assignments) => {
-  const map = new Map()
-  assignments.forEach((assignment) => {
-    const key = `${assignment.class_id}:${assignment.section_id}`
-    if (!map.has(key)) {
-      map.set(key, {
-        value: key,
-        label: `${assignment.class_name} ${assignment.section_name}`,
-      })
+  const grouped = {}
+  assignments.forEach((a) => {
+    const key = `${a.class_id}:${a.section_id}`
+    if (!grouped[key]) {
+      grouped[key] = {
+        class_name: a.class_name,
+        section_name: a.section_name,
+        subjects: [],
+        is_class_teacher: false,
+      }
+    }
+    if (a.is_class_teacher) grouped[key].is_class_teacher = true
+    if (a.subject_name && !grouped[key].subjects.includes(a.subject_name)) {
+      grouped[key].subjects.push(a.subject_name)
     }
   })
-  return [...map.values()]
+
+  return Object.entries(grouped).map(([key, info]) => {
+    let label = `${info.class_name} ${info.section_name}`
+    const details = []
+    if (info.is_class_teacher) details.push('Class Teacher')
+    if (info.subjects.length > 0) details.push(...info.subjects)
+
+    if (details.length > 0) {
+      label += ` | ${details.join(', ')}`
+    }
+
+    return { value: key, label }
+  })
 }
 
 const buildDailySummary = (students) => {
@@ -550,13 +568,22 @@ const AttendanceReports = () => {
   const [toDate,        setToDate]        = useState(today())
   const [threshold,     setThreshold]     = useState('75')
 
+  const reportAssignments = useMemo(
+    () => dedupeAssignments(assignmentOptions),
+    [assignmentOptions]
+  )
+
   useEffect(() => {
-    if (!assignmentOptions.length || assignmentKey) return
-    const first = assignmentOptions[0]
-    setAssignmentKey(`${first.class_id}:${first.section_id}`)
-  }, [assignmentOptions, assignmentKey])
+    if (loadingAssignments || !reportAssignments.length) return
+
+    const exists = reportAssignments.some((o) => o.value === assignmentKey)
+    if (!assignmentKey || !exists) {
+      setAssignmentKey(reportAssignments[0].value)
+    }
+  }, [loadingAssignments, reportAssignments, assignmentKey])
 
   const selectedSection = useMemo(() => {
+    if (!assignmentKey) return null
     const [classId, sectionId] = assignmentKey.split(':')
     return assignmentOptions.find((assignment) =>
       String(assignment.class_id) === String(classId) &&
@@ -565,7 +592,8 @@ const AttendanceReports = () => {
   }, [assignmentKey, assignmentOptions])
 
   useEffect(() => {
-    if (!selectedSection) return
+    if (!selectedSection || !fromDate || !toDate) return
+
     loadReports({
       summaryParams: {
         class_id: selectedSection.class_id,
@@ -628,7 +656,7 @@ const AttendanceReports = () => {
           label="Assigned Section"
           value={assignmentKey}
           onChange={(e) => setAssignmentKey(e.target.value)}
-          options={dedupeAssignments(assignmentOptions)}
+          options={reportAssignments}
           placeholder={loadingAssignments ? 'Loading…' : 'Select section'}
         />
         <DateField label="From Date" value={fromDate} onChange={setFromDate} />

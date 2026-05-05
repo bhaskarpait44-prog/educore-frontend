@@ -5,6 +5,7 @@ import {
   Plus, Search, Users, ChevronRight,
   ChevronLeft, X, LayoutGrid, LayoutList,
   MoreVertical, Eye, Pencil, Trash2,
+  Filter, Download, ExternalLink
 } from 'lucide-react'
 import useStudentStore from '@/store/studentStore'
 import useSessionStore from '@/store/sessionStore'
@@ -25,46 +26,23 @@ const GENDER_BADGE = {
   other  : { label: 'Other',  variant: 'grey'  },
 }
 
-const PALETTES = [
-  { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' },
-  { bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
-  { bg: '#fdf4ff', color: '#7e22ce', border: '#e9d5ff' },
-  { bg: '#fff7ed', color: '#c2410c', border: '#fed7aa' },
-  { bg: '#ecfdf5', color: '#0e7490', border: '#a5f3fc' },
-  { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca' },
-  { bg: '#f5f3ff', color: '#6d28d9', border: '#ddd6fe' },
-  { bg: '#fffbeb', color: '#b45309', border: '#fde68a' },
-]
-
-const getPalette = (name = '') => PALETTES[name.charCodeAt(0) % PALETTES.length]
-
 const formatStream = (stream) => {
   if (!stream) return null
   const label = stream.charAt(0).toUpperCase() + stream.slice(1)
   return stream === 'regular' ? label : `${label} Stream`
 }
 
-// ─── Avatar ───────────────────────────────────────────────────────────────────
-const AvatarCircle = ({ name, size = 36 }) => {
-  const p = getPalette(name)
+// ─── Avatar Component ─────────────────────────────────────────────────────────
+const AvatarCircle = ({ name, size = "h-9 w-9", fontSize = "text-xs" }) => {
+  const initials = getInitials(name)
   return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      backgroundColor: p.bg,
-      border: `1px solid ${p.border}`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0,
-      fontSize: size > 38 ? 15 : size < 32 ? 10 : 12,
-      fontWeight: 600,
-      color: p.color,
-      letterSpacing: '-0.01em',
-    }}>
-      {getInitials(name)}
+    <div className={`${size} rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center ${fontSize} font-bold text-indigo-600 dark:text-indigo-400 shrink-0`}>
+      {initials}
     </div>
   )
 }
 
-// ─── Three-dot dropdown menu (grid cards only) ────────────────────────────────
+// ─── Three-dot dropdown menu ──────────────────────────────────────────────────
 const CardMenu = ({ onView, onEdit, onDelete }) => {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -78,58 +56,29 @@ const CardMenu = ({ onView, onEdit, onDelete }) => {
   }, [])
 
   const items = [
-    { icon: Eye,    label: 'View Student', action: onView   },
-    { icon: Pencil, label: 'Edit',         action: onEdit   },
-    { icon: Trash2, label: 'Delete',       action: onDelete, danger: true },
+    { icon: ExternalLink, label: 'Full Profile', action: onView },
+    { icon: Pencil, label: 'Edit Profile',  action: onEdit },
+    { icon: Trash2, label: 'Delete Student', action: onDelete, danger: true },
   ]
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div ref={ref} className="relative">
       <button
         onClick={(e) => { e.stopPropagation(); setOpen(o => !o) }}
-        style={{
-          width: 28, height: 28, borderRadius: 7,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: 'none',
-          backgroundColor: open ? 'var(--color-surface-raised)' : 'transparent',
-          color: 'var(--color-text-muted)',
-          cursor: 'pointer', transition: 'all 0.12s',
-        }}
-        onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
-        onMouseLeave={e => { if (!open) e.currentTarget.style.backgroundColor = 'transparent' }}
+        className={`w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${open ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
       >
-        <MoreVertical size={14} />
+        <MoreVertical size={16} />
       </button>
 
       {open && (
-        <div style={{
-          position: 'absolute', top: 32, right: 0, zIndex: 50,
-          backgroundColor: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-          borderRadius: 12,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.09)',
-          minWidth: 170,
-          overflow: 'hidden',
-          padding: '4px',
-        }}>
+        <div className="absolute top-10 right-0 z-50 min-w-[180px] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl p-1 animate-in fade-in slide-in-from-top-2">
           {items.map(({ icon: Icon, label, action, danger }) => (
             <button
               key={label}
               onClick={(e) => { e.stopPropagation(); setOpen(false); action?.() }}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 12px', borderRadius: 8,
-                fontSize: 13, fontWeight: 400,
-                border: 'none', cursor: 'pointer',
-                backgroundColor: 'transparent',
-                color: danger ? '#dc2626' : 'var(--color-text-primary)',
-                transition: 'background 0.1s',
-                textAlign: 'left',
-              }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = danger ? '#fef2f2' : 'var(--color-surface-raised)'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-left transition-colors ${danger ? 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
             >
-              <Icon size={13} style={{ color: danger ? '#dc2626' : 'var(--color-text-muted)', flexShrink: 0 }} />
+              <Icon size={14} className={danger ? 'text-red-500' : 'text-gray-400'} />
               {label}
             </button>
           ))}
@@ -139,460 +88,121 @@ const CardMenu = ({ onView, onEdit, onDelete }) => {
   )
 }
 
-// ─── Grid Card (desktop) ──────────────────────────────────────────────────────
+// ─── Grid Card ────────────────────────────────────────────────────────────────
 const StudentGridCard = ({ student, onView, onEdit, onDelete }) => {
-  const fullName   = `${student.first_name} ${student.last_name}`
+  const fullName = `${student.first_name} ${student.last_name}`
   const enrollment = student.current_enrollment
-  const gCfg       = GENDER_BADGE[student.gender] || { label: student.gender, variant: 'grey' }
+  const gCfg = GENDER_BADGE[student.gender] || { label: student.gender, variant: 'grey' }
 
-  const classLabel   = enrollment
+  const classLabel = enrollment
     ? [enrollment.class, formatStream(enrollment.stream)].filter(Boolean).join(', ')
-    : null
-  const sectionLabel = enrollment?.section ? `${enrollment.section}` : null
+    : 'Not Enrolled'
 
   return (
-    <div style={{
-      borderRadius: 16,
-      backgroundColor: 'var(--color-surface)',
-      border: '1px solid var(--color-border)',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.055), 0 1px 3px rgba(0,0,0,0.04)',
-      overflow: 'visible',
-      display: 'flex', flexDirection: 'column',
-      minHeight: 320,
-      transition: 'box-shadow 0.18s, transform 0.15s',
-    }}
-      onMouseEnter={e => {
-        e.currentTarget.style.boxShadow = '0 6px 22px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.05)'
-        e.currentTarget.style.transform = 'translateY(-1px)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.055), 0 1px 3px rgba(0,0,0,0.04)'
-        e.currentTarget.style.transform = 'translateY(0)'
-      }}
-    >
-      {/* Top row */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 16px 12px',
-        borderBottom: '1px solid var(--color-border)',
-      }}>
-        <span
+    <div className="group bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-800 transition-all flex flex-col h-full overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b border-gray-50 dark:border-gray-700/50">
+        <span 
           onClick={onView}
-          style={{
-            fontSize: 12.5, fontWeight: 600, fontFamily: 'monospace',
-            color: '#2563eb', cursor: 'pointer',
-          }}
-          onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-          onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+          className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 cursor-pointer hover:underline bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded"
         >
           {student.admission_no}
         </span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Badge variant={student.is_deleted ? 'grey' : 'green'} dot>
-            {student.is_deleted ? 'Inactive' : 'Active'}
-          </Badge>
-          <CardMenu onView={onView} onEdit={onEdit} onDelete={onDelete} />
-        </div>
+        <CardMenu onView={onView} onEdit={onEdit} onDelete={onDelete} />
       </div>
 
-      {/* Student info */}
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: 14,
-        padding: '18px 16px 16px',
-        borderBottom: '1px solid var(--color-border)',
-      }}>
-        <AvatarCircle name={fullName} size={52} />
-        <div style={{ minWidth: 0 }}>
-          <p style={{
-            margin: 0, fontSize: 14.5, fontWeight: 600,
-            color: 'var(--color-text-primary)', lineHeight: 1.3,
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {fullName}
-          </p>
-          {(classLabel || sectionLabel) && (
-            <p style={{ margin: '3px 0 0', fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
-              {[classLabel, sectionLabel].filter(Boolean).join(', ')}
-            </p>
+      {/* Profile Info */}
+      <div className="p-5 flex flex-col items-center text-center flex-1" onClick={onView} style={{ cursor: 'pointer' }}>
+        <div className="mb-4 relative">
+          <AvatarCircle name={fullName} size="h-16 w-16" fontSize="text-lg" />
+          {!student.is_deleted && (
+            <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 border-2 border-white dark:border-gray-800 rounded-full" />
           )}
         </div>
-      </div>
+        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 line-clamp-1 mb-1">{fullName}</h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-4">{classLabel}</p>
 
-      {/* Meta row */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: enrollment?.roll_number ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
-        padding: '14px 16px 16px',
-        gap: 10,
-      }}>
-        {enrollment?.roll_number && (
-          <div>
-            <p style={{ margin: 0, fontSize: 10.5, color: 'var(--color-text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Roll No</p>
-            <p style={{ margin: '4px 0 0', fontSize: 13.5, fontWeight: 600, color: 'var(--color-text-primary)' }}>{enrollment.roll_number}</p>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 w-full gap-2 border-t border-gray-50 dark:border-gray-700/50 pt-4 mt-auto">
+          <div className="text-left">
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">Roll No</p>
+            <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{enrollment?.roll_number || '--'}</p>
           </div>
-        )}
-        <div>
-          <p style={{ margin: 0, fontSize: 10.5, color: 'var(--color-text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Gender</p>
-          <p style={{ margin: '4px 0 0', fontSize: 13.5, fontWeight: 600, color: 'var(--color-text-primary)' }}>
-            {gCfg.label}
-          </p>
-        </div>
-        <div>
-          <p style={{ margin: 0, fontSize: 10.5, color: 'var(--color-text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Date of Birth</p>
-          <p style={{ margin: '4px 0 0', fontSize: 13.5, fontWeight: 600, color: 'var(--color-text-primary)' }}>
-            {formatDate(student.date_of_birth)}
-          </p>
+          <div className="text-left">
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">Gender</p>
+            <p className="text-sm font-bold text-gray-800 dark:text-gray-200">{gCfg.label}</p>
+          </div>
         </div>
       </div>
 
-      {/* Action bar */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '10px 16px 14px',
-        borderTop: '1px solid var(--color-border)',
-        marginTop: 'auto',
-      }}>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {[
-            { title: 'Message', path: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
-            { title: 'Call',    path: 'M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.61 19a19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-2.92-8.17A2 2 0 0 1 4.68 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z' },
-            { title: 'Email',   path: '' },
-          ].map(({ title, path }) => (
-            <button
-              key={title}
-              title={title}
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: 32, height: 32, borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'transparent',
-                color: 'var(--color-text-muted)',
-                cursor: 'pointer', transition: 'all 0.12s', flexShrink: 0,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--color-text-muted)' }}
+      {/* Footer Actions */}
+      <div className="p-3 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-50 dark:border-gray-700/50 flex items-center justify-between gap-2">
+        <button 
+          onClick={onView}
+          className="flex-1 text-xs font-bold text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 py-1.5 transition-colors"
+        >
+          View Profile
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Table Row ────────────────────────────────────────────────────────────────
+const StudentTableRow = ({ student, onView }) => {
+  const fullName = `${student.first_name} ${student.last_name}`
+  const enrollment = student.current_enrollment
+  const gCfg = GENDER_BADGE[student.gender] || { label: student.gender, variant: 'grey' }
+
+  return (
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors group">
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <AvatarCircle name={fullName} />
+          <div className="min-w-0">
+            <p 
+              onClick={onView}
+              className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate hover:text-indigo-600 dark:hover:text-indigo-400 cursor-pointer"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                {title === 'Email'
-                  ? <><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,6 12,13 2,6"/></>
-                  : <path d={path} />
-                }
-              </svg>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Mobile Grid Card — compact 2-column card ─────────────────────────────────
-const StudentMobileGridCard = ({ student, onView, onEdit, onDelete }) => {
-  const fullName   = `${student.first_name} ${student.last_name}`
-  const enrollment = student.current_enrollment
-  const classLabel = enrollment
-    ? [`Class ${enrollment.class}`, enrollment.section ? `Sec ${enrollment.section}` : null].filter(Boolean).join(' · ')
-    : null
-
-  return (
-    <div
-      onClick={onView}
-      style={{
-        borderRadius: 14,
-        backgroundColor: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
-        boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
-        display: 'flex', flexDirection: 'column',
-        overflow: 'hidden',
-        transition: 'box-shadow 0.15s',
-        cursor: 'pointer',
-      }}
-    >
-      {/* Status bar at top */}
-      <div style={{
-        height: 3,
-        backgroundColor: student.is_deleted ? 'var(--color-border)' : '#22c55e',
-      }} />
-
-      {/* Card body */}
-      <div style={{ padding: '12px 12px 10px' }}>
-        {/* Avatar + menu row */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-          <AvatarCircle name={fullName} size={40} />
-          <div onClick={e => e.stopPropagation()}>
-            <CardMenu onView={onView} onEdit={onEdit} onDelete={onDelete} />
-          </div>
-        </div>
-
-        {/* Name */}
-        <p style={{
-          margin: 0, fontSize: 13, fontWeight: 600,
-          color: 'var(--color-text-primary)', lineHeight: 1.3,
-          display: '-webkit-box', WebkitLineClamp: 2,
-          WebkitBoxOrient: 'vertical', overflow: 'hidden',
-        }}>
-          {fullName}
-        </p>
-
-        {/* Admission no */}
-        <p style={{
-          margin: '4px 0 0', fontSize: 11, fontFamily: 'monospace',
-          fontWeight: 600, color: '#2563eb',
-        }}>
-          {student.admission_no}
-        </p>
-
-        {/* Class info */}
-        {classLabel && (
-          <p style={{
-            margin: '4px 0 0', fontSize: 11, color: 'var(--color-text-muted)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {classLabel}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── List Row (desktop) ───────────────────────────────────────────────────────
-const StudentRow = ({ student, onView }) => {
-  const fullName   = `${student.first_name} ${student.last_name}`
-  const gCfg       = GENDER_BADGE[student.gender] || { label: student.gender, variant: 'grey' }
-  const enrollment = student.current_enrollment
-
-  return (
-    <tr
-      onClick={onView}
-      style={{ transition: 'background 0.12s', cursor: 'pointer' }}
-      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
-      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-    >
-      <td style={{ padding: '13px 20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <AvatarCircle name={fullName} size={36} />
-          <div>
-            <p style={{ margin: 0, fontSize: 13.5, fontWeight: 500, color: 'var(--color-text-primary)' }}>
               {fullName}
             </p>
-            {enrollment && (
-              <p style={{ margin: '2px 0 0', fontSize: 11.5, color: 'var(--color-text-muted)' }}>
-                {[
-                  `Class ${enrollment.class}`,
-                  formatStream(enrollment.stream),
-                  `Sec ${enrollment.section}`,
-                ].filter(Boolean).join(' · ')}
-              </p>
-            )}
+            <p className="text-xs text-gray-400 truncate">
+              {enrollment ? `${enrollment.class} · ${enrollment.section || '-'}` : 'Not Enrolled'}
+            </p>
           </div>
         </div>
       </td>
-      <td style={{ padding: '13px 20px' }}>
-        <span style={{ fontSize: 12.5, fontFamily: 'monospace', color: '#2563eb' }}>
+      <td className="px-6 py-4">
+        <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-1 rounded">
           {student.admission_no}
         </span>
       </td>
-      <td style={{ padding: '13px 20px', fontSize: 12.5, color: 'var(--color-text-secondary)' }}>
-        {formatDate(student.date_of_birth)}
+      <td className="px-6 py-4">
+        <span className="text-sm text-gray-600 dark:text-gray-400">{formatDate(student.date_of_birth)}</span>
       </td>
-      <td style={{ padding: '13px 20px' }}>
+      <td className="px-6 py-4">
         <Badge variant={gCfg.variant}>{gCfg.label}</Badge>
       </td>
-      <td style={{ padding: '13px 20px' }}>
+      <td className="px-6 py-4">
         <Badge variant={student.is_deleted ? 'grey' : 'green'} dot>
           {student.is_deleted ? 'Inactive' : 'Active'}
         </Badge>
+      </td>
+      <td className="px-6 py-4 text-right">
+        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={onView}
+            className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </td>
     </tr>
   )
 }
 
-// ─── Mobile List Card — improved layout ───────────────────────────────────────
-const StudentMobileCard = ({ student, isLast, onView }) => {
-  const fullName   = `${student.first_name} ${student.last_name}`
-  const enrollment = student.current_enrollment
-  const gCfg       = GENDER_BADGE[student.gender] || { label: student.gender, variant: 'grey' }
-
-  return (
-    <div
-      onClick={onView}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 12,
-        padding: '13px 16px',
-        borderBottom: isLast ? 'none' : '1px solid var(--color-border)',
-        transition: 'background 0.12s',
-        cursor: 'pointer',
-      }}
-      onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
-      onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-    >
-      <AvatarCircle name={fullName} size={44} />
-
-      {/* Main info block */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{
-          margin: 0, fontSize: 13.5, fontWeight: 600,
-          color: 'var(--color-text-primary)', lineHeight: 1.3,
-          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-        }}>
-          {fullName}
-        </p>
-
-        {/* Admission no + gender row */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
-          <span style={{ fontSize: 11.5, fontFamily: 'monospace', fontWeight: 600, color: '#2563eb' }}>
-            {student.admission_no}
-          </span>
-          <span style={{ width: 3, height: 3, borderRadius: '50%', backgroundColor: 'var(--color-text-muted)', flexShrink: 0 }} />
-          <span style={{ fontSize: 11.5, color: 'var(--color-text-muted)' }}>{gCfg.label}</span>
-        </div>
-
-        {/* Class info */}
-        {enrollment && (
-          <p style={{
-            margin: '2px 0 0', fontSize: 11.5, color: 'var(--color-text-secondary)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          }}>
-            {[
-              `Class ${enrollment.class}`,
-              formatStream(enrollment.stream),
-              enrollment.section ? `Sec ${enrollment.section}` : null,
-            ].filter(Boolean).join(' · ')}
-          </p>
-        )}
-      </div>
-
-      {/* Right side: status + chevron */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-        <Badge variant={student.is_deleted ? 'grey' : 'green'} dot>
-          {student.is_deleted ? 'Inactive' : 'Active'}
-        </Badge>
-        <ChevronRight size={14} style={{ color: 'var(--color-text-muted)' }} />
-      </div>
-    </div>
-  )
-}
-
-// ─── Skeletons ────────────────────────────────────────────────────────────────
-const Pulse = ({ w = '100%', h = 14, r = 6 }) => (
-  <div style={{
-    width: w, height: h, borderRadius: r,
-    backgroundColor: 'var(--color-surface-raised)',
-    animation: 'skpulse 1.6s ease-in-out infinite',
-  }} />
-)
-
-const ListSkeleton = () => (
-  <div>
-    {Array.from({ length: 6 }).map((_, i) => (
-      <div key={i} style={{
-        display: 'flex', alignItems: 'center', gap: 14,
-        padding: '13px 20px',
-      }}>
-        <Pulse w={36} h={36} r={18} />
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
-          <Pulse w="40%" h={13} />
-          <Pulse w="28%" h={10} />
-        </div>
-        <Pulse w={80} h={12} />
-        <Pulse w={70} h={12} />
-        <Pulse w={60} h={20} r={99} />
-      </div>
-    ))}
-  </div>
-)
-
-const GridSkeleton = ({ mobile = false }) => (
-  <div style={{
-    display: 'grid',
-    gridTemplateColumns: mobile
-      ? 'repeat(2, 1fr)'
-      : 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: mobile ? 10 : 16,
-    padding: mobile ? 12 : 18,
-  }}>
-    {Array.from({ length: mobile ? 4 : 6 }).map((_, i) => (
-      <div key={i} style={{
-        borderRadius: mobile ? 14 : 16,
-        backgroundColor: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.055)',
-        overflow: 'hidden',
-      }}>
-        {mobile ? (
-          <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <Pulse w={40} h={40} r={20} />
-              <Pulse w={24} h={24} r={6} />
-            </div>
-            <Pulse w="80%" h={13} />
-            <Pulse w="55%" h={10} />
-            <Pulse w="65%" h={10} />
-          </div>
-        ) : (
-          <>
-            <div style={{ padding: '14px 16px 12px', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Pulse w={90} h={13} />
-              <Pulse w={60} h={20} r={99} />
-            </div>
-            <div style={{ padding: '18px 16px 16px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', gap: 14 }}>
-              <Pulse w={52} h={52} r={26} />
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
-                <Pulse w="70%" h={14} />
-                <Pulse w="45%" h={11} />
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', padding: '14px 16px 16px', gap: 10 }}>
-              {[1, 2, 3].map(j => (
-                <div key={j} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <Pulse w="60%" h={10} />
-                  <Pulse w="80%" h={13} />
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    ))}
-  </div>
-)
-
-// ─── View toggle ──────────────────────────────────────────────────────────────
-const ViewToggle = ({ view, setView }) => (
-  <div style={{
-    display: 'flex', borderRadius: 9, overflow: 'hidden',
-    border: '1px solid var(--color-border)',
-    backgroundColor: 'var(--color-surface-raised)',
-    padding: 2, gap: 2,
-  }}>
-    {[
-      { key: 'list', Icon: LayoutList },
-      { key: 'grid', Icon: LayoutGrid },
-    ].map(({ key, Icon }) => (
-      <button
-        key={key}
-        onClick={() => setView(key)}
-        title={key === 'list' ? 'List view' : 'Grid view'}
-        style={{
-          width: 30, height: 30,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          border: 'none', cursor: 'pointer',
-          borderRadius: 7,
-          backgroundColor: view === key ? 'var(--color-surface)' : 'transparent',
-          color: view === key ? 'var(--color-text-primary)' : 'var(--color-text-muted)',
-          transition: 'all 0.12s',
-          boxShadow: view === key ? '0 1px 3px rgba(0,0,0,0.07)' : 'none',
-        }}
-      >
-        <Icon size={14} />
-      </button>
-    ))}
-  </div>
-)
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
+// ─── Page Component ───────────────────────────────────────────────────────────
 const StudentsPage = () => {
   usePageTitle('Students')
   const navigate = useNavigate()
@@ -602,10 +212,10 @@ const StudentsPage = () => {
   const { classes, fetchClasses } = useClasses()
   const { currentSession } = useSessionStore()
 
-  const [search,  setSearch]  = useState('')
+  const [search, setSearch] = useState('')
   const [filters, setFilters] = useState({ class_id: '', section_id: '' })
-  const [page,    setPage]    = useState(1)
-  const [view,    setView]    = useState('grid')
+  const [page, setPage] = useState(1)
+  const [view, setView] = useState('grid')
 
   const doFetch = useCallback(
     debounce((q, f, p) => {
@@ -618,7 +228,7 @@ const StudentsPage = () => {
   useEffect(() => {
     if (!currentSession?.id) return
     doFetch(search, { ...filters, session_id: String(currentSession.id) }, page)
-  }, [search, filters, page, currentSession?.id])
+  }, [search, filters, page, currentSession?.id, doFetch])
 
   useEffect(() => {
     fetchClasses().catch(() => toastError('Failed to load classes'))
@@ -636,252 +246,130 @@ const StudentsPage = () => {
   const goToEdit   = (id) => navigate(`${ROUTES.STUDENTS}/${id}?tab=profile`)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <style>{`
-        @keyframes skpulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-        /* ── Mobile (≤640px) ── */
-        @media (max-width: 640px) {
-          .sp-header          { flex-direction: column !important; align-items: stretch !important; }
-          .sp-header-actions  { display: flex !important; align-items: center !important; justify-content: space-between !important; width: 100% !important; }
-
-          /* Filter row: search full-width, class select + clear inline */
-          .sp-filter-row         { flex-direction: column !important; gap: 8px !important; }
-          .sp-filter-selects     { display: flex !important; gap: 8px !important; }
-          .sp-filter-selects select { flex: 1 !important; min-width: unset !important; }
-
-          /* Search bar */
-          .sp-search-wrap { width: 100% !important; }
-
-          /* List: hide desktop table, show mobile list */
-          .sp-desktop-tbl { display: none !important; }
-          .sp-mobile-list { display: block !important; }
-
-          /* Grid: desktop cards hidden, mobile 2-col grid shown */
-          .sp-desktop-grid { display: none !important; }
-          .sp-mobile-grid  { display: grid !important; }
-
-          /* Always show view toggle on mobile */
-          .sp-view-toggle { display: flex !important; }
-
-          /* Pagination: center on mobile */
-          .sp-pagination { flex-direction: column !important; align-items: center !important; gap: 10px !important; }
-          .sp-pagination p { text-align: center !important; }
-        }
-
-        /* ── Desktop (≥641px) ── */
-        @media (min-width: 641px) {
-          .sp-mobile-list { display: none !important; }
-          .sp-mobile-grid { display: none !important; }
-          .sp-header-actions { display: flex !important; }
-          .sp-filter-selects { display: contents !important; }
-        }
-      `}</style>
-
-      {/* ── Header ── */}
-      <div className="sp-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 600, color: 'var(--color-text-primary)' }}>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
             Students
+            {pagination.total > 0 && (
+              <span className="text-xs font-medium bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full">
+                {pagination.total} Total
+              </span>
+            )}
           </h1>
-          <p style={{ margin: '3px 0 0', fontSize: 13, color: 'var(--color-text-secondary)' }}>
-            {pagination.total > 0
-              ? `${pagination.total} students enrolled in ${currentSession?.name || 'the current session'}`
-              : 'Manage current-session student admissions and profiles'}
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Managing enrollment for <span className="font-semibold text-gray-700 dark:text-gray-300">{currentSession?.name || 'current session'}</span>
           </p>
         </div>
 
-        {/* Header actions — view toggle always visible, admit button conditional */}
-        <div className="sp-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-          <div className="sp-view-toggle" style={{ display: 'flex' }}>
-            <ViewToggle view={view} setView={setView} />
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
+          <div className="bg-gray-100 dark:bg-gray-800 p-1 rounded-xl flex gap-1">
+            <button
+              onClick={() => setView('grid')}
+              className={`p-1.5 rounded-lg transition-all ${view === 'grid' ? 'bg-white dark:bg-gray-700 text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              <LayoutGrid size={18} />
+            </button>
+            <button
+              onClick={() => setView('list')}
+              className={`p-1.5 rounded-lg transition-all ${view === 'list' ? 'bg-white dark:bg-gray-700 text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              <LayoutList size={18} />
+            </button>
           </div>
+
           {isAdmin && (
             <Button icon={Plus} onClick={() => navigate(ROUTES.STUDENT_NEW)}>
-              <span className="sp-btn-label">Admit Student</span>
+              Admit Student
             </Button>
           )}
         </div>
       </div>
 
-      {/* ── Search + filters ── */}
-      <div
-        className="sp-filter-row"
-        style={{
-          display: 'flex', gap: 10, padding: '10px 12px',
-          borderRadius: 14,
-          backgroundColor: 'var(--color-surface)',
-          border: '1px solid var(--color-border)',
-        }}
-      >
-        {/* Search input — always full width on mobile */}
-        <div className="sp-search-wrap" style={{ position: 'relative', flex: 1, minWidth: 0 }}>
-          <Search size={14} style={{
-            position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-            color: 'var(--color-text-muted)', pointerEvents: 'none',
-          }} />
+      {/* Filters Bar */}
+      <div className="bg-white dark:bg-gray-800 p-4 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
           <input
             type="text"
             placeholder="Search by name or admission number…"
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
-            style={{
-              width: '100%', paddingLeft: 32, paddingRight: 12,
-              paddingTop: 7, paddingBottom: 7,
-              borderRadius: 9, fontSize: 13,
-              backgroundColor: 'var(--color-bg)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text-primary)',
-              outline: 'none', transition: 'border-color 0.15s',
-              boxSizing: 'border-box',
-            }}
-            onFocus={e => e.target.style.borderColor = 'var(--color-brand)'}
-            onBlur={e  => e.target.style.borderColor = 'var(--color-border)'}
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
           />
         </div>
 
-        {/* Class select + clear: side-by-side on mobile */}
-        <div className="sp-filter-selects" style={{ display: 'contents' }}>
-          <select
-            value={filters.class_id}
-            onChange={e => { setFilters(f => ({ ...f, class_id: e.target.value })); setPage(1) }}
-            style={{
-              padding: '7px 12px', borderRadius: 9, fontSize: 13,
-              backgroundColor: 'var(--color-bg)',
-              border: '1px solid var(--color-border)',
-              color: 'var(--color-text-primary)',
-              outline: 'none', minWidth: 160,
-              transition: 'border-color 0.15s',
-            }}
-            onFocus={e => e.target.style.borderColor = 'var(--color-brand)'}
-            onBlur={e  => e.target.style.borderColor = 'var(--color-border)'}
-          >
-            <option value="">All Classes</option>
-            {classes.map(cls => (
-              <option key={cls.id} value={cls.id}>
-                {cls.display_name || cls.name}
-              </option>
-            ))}
-          </select>
+        <div className="flex items-center gap-3">
+          <div className="relative flex-1 md:w-48">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+            <select
+              value={filters.class_id}
+              onChange={e => { setFilters(f => ({ ...f, class_id: e.target.value })); setPage(1) }}
+              className="w-full pl-9 pr-8 py-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-xl outline-none appearance-none focus:ring-2 focus:ring-indigo-500/20 text-sm"
+            >
+              <option value="">All Classes</option>
+              {classes.map(cls => (
+                <option key={cls.id} value={cls.id}>{cls.display_name || cls.name}</option>
+              ))}
+            </select>
+          </div>
 
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 5,
-                padding: '7px 12px', borderRadius: 9, fontSize: 12.5,
-                color: 'var(--color-text-secondary)',
-                border: '1px solid var(--color-border)',
-                backgroundColor: 'transparent',
-                cursor: 'pointer', transition: 'background 0.12s',
-                whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
             >
-              <X size={12} /> Clear
+              <X size={14} /> Reset
             </button>
           )}
         </div>
       </div>
 
-      {/* ── Content ── */}
-      <div style={{
-        borderRadius: 14, overflow: 'hidden',
-        backgroundColor: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
-      }}>
+      {/* Main Content */}
+      <div className="min-h-[400px]">
         {isLoading ? (
-          <>
-            {/* Desktop skeleton */}
-            <div className="sp-desktop-grid" style={{}}>
-              {view === 'grid' ? <GridSkeleton /> : <ListSkeleton />}
-            </div>
-            {/* Mobile skeleton matches active view */}
-            <div className="sp-mobile-list" style={{}}>
-              {view === 'grid' ? <GridSkeleton mobile /> : <ListSkeleton />}
-            </div>
-          </>
+          <div className={view === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6' : 'space-y-4'}>
+            {[1,2,3,4,5,6,7,8].map(i => (
+              <div key={i} className={`animate-pulse bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl ${view === 'grid' ? 'h-64' : 'h-16'}`} />
+            ))}
+          </div>
         ) : students.length === 0 ? (
           <EmptyState
             icon={Users}
-            title={hasActiveFilters ? 'No students match' : 'No students yet'}
-            description={
-              hasActiveFilters
-                ? 'Try adjusting your search or filters.'
-                : 'Admit your first student to get started.'
-            }
+            title={hasActiveFilters ? "No students found" : "No students yet"}
+            description={hasActiveFilters ? "Try adjusting your search or filters." : "Start by admitting your first student."}
             action={!hasActiveFilters && isAdmin && (
-              <Button icon={Plus} onClick={() => navigate(ROUTES.STUDENT_NEW)}>
-                Admit New Student
-              </Button>
+              <Button icon={Plus} onClick={() => navigate(ROUTES.STUDENT_NEW)}>Admit Student</Button>
             )}
           />
         ) : view === 'grid' ? (
-          <>
-            {/* ── Desktop grid ── */}
-            <div
-              className="sp-desktop-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                gap: 16, padding: 18,
-              }}
-            >
-              {students.map(student => (
-                <StudentGridCard
-                  key={student.id}
-                  student={student}
-                  onView={() => goToDetail(student.id)}
-                  onEdit={() => goToEdit(student.id)}
-                  onDelete={() => {/* wire up delete modal */}}
-                />
-              ))}
-            </div>
-
-            {/* ── Mobile 2-col compact grid ── */}
-            <div
-              className="sp-mobile-grid"
-              style={{
-                display: 'none', // overridden by media query
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: 10, padding: 12,
-              }}
-            >
-              {students.map(student => (
-                <StudentMobileGridCard
-                  key={student.id}
-                  student={student}
-                  onView={() => goToDetail(student.id)}
-                  onEdit={() => goToEdit(student.id)}
-                  onDelete={() => {/* wire up delete modal */}}
-                />
-              ))}
-            </div>
-          </>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {students.map(student => (
+              <StudentGridCard
+                key={student.id}
+                student={student}
+                onView={() => goToDetail(student.id)}
+                onEdit={() => goToEdit(student.id)}
+                onDelete={() => {}}
+              />
+            ))}
+          </div>
         ) : (
-          // ── List view ──
-          <>
-            {/* Desktop table */}
-            <div className="sp-desktop-tbl" style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    {['Student', 'Admission No', 'Date of Birth', 'Gender', 'Status'].map(h => (
-                      <th key={h} style={{
-                        padding: '10px 20px', textAlign: 'left',
-                        fontSize: 10.5, fontWeight: 600,
-                        textTransform: 'uppercase', letterSpacing: '0.08em',
-                        color: 'var(--color-text-muted)', whiteSpace: 'nowrap',
-                      }}>
-                        {h}
-                      </th>
+                  <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+                    {['Student', 'Admission No', 'Date of Birth', 'Gender', 'Status', ''].map(h => (
+                      <th key={h} className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{h}</th>
                     ))}
                   </tr>
                 </thead>
-                <tbody>
-                  {students.map((student) => (
-                    <StudentRow
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
+                  {students.map(student => (
+                    <StudentTableRow
                       key={student.id}
                       student={student}
                       onView={() => goToDetail(student.id)}
@@ -890,61 +378,47 @@ const StudentsPage = () => {
                 </tbody>
               </table>
             </div>
-
-            {/* Mobile list — improved */}
-            <div className="sp-mobile-list" style={{ display: 'none' }}>
-              {students.map((student, i) => (
-                <StudentMobileCard
-                  key={student.id}
-                  student={student}
-                  isLast={i === students.length - 1}
-                  onView={() => goToDetail(student.id)}
-                />
-              ))}
-            </div>
-          </>
+          </div>
         )}
       </div>
 
-      {/* ── Pagination ── */}
+      {/* Pagination */}
       {pagination.totalPages > 1 && (
-        <div className="sp-pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
-          <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-muted)' }}>
-            Page {pagination.page} of {pagination.totalPages} · {pagination.total} students
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+          <p className="text-xs font-medium text-gray-500">
+            Showing <span className="text-gray-900 dark:text-gray-100">{students.length}</span> of <span className="text-gray-900 dark:text-gray-100">{pagination.total}</span> students
           </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Button
-              variant="secondary" size="sm" icon={ChevronLeft}
+          <div className="flex items-center gap-2">
+            <button
               disabled={pagination.page <= 1}
               onClick={() => setPage(p => p - 1)}
-            />
-            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-              const p = pagination.page <= 3 ? i + 1 : pagination.page + i - 2
-              if (p < 1 || p > pagination.totalPages) return null
-              const isActive = p === pagination.page
-              return (
-                <button
-                  key={p}
-                  onClick={() => setPage(p)}
-                  style={{
-                    width: 32, height: 32, borderRadius: 8,
-                    fontSize: 12.5, fontWeight: isActive ? 600 : 400,
-                    cursor: 'pointer',
-                    border: '1px solid var(--color-border)',
-                    backgroundColor: isActive ? 'var(--color-brand)' : 'var(--color-surface)',
-                    color: isActive ? '#fff' : 'var(--color-text-secondary)',
-                    transition: 'all 0.12s',
-                  }}
-                >
-                  {p}
-                </button>
-              )
-            })}
-            <Button
-              variant="secondary" size="sm" icon={ChevronRight}
+              className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                const p = pagination.page <= 3 ? i + 1 : pagination.page + i - 2
+                if (p < 1 || p > pagination.totalPages) return null
+                const active = p === pagination.page
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`w-9 h-9 rounded-lg text-xs font-bold transition-all ${active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                  >
+                    {p}
+                  </button>
+                )
+              })}
+            </div>
+            <button
               disabled={pagination.page >= pagination.totalPages}
               onClick={() => setPage(p => p + 1)}
-            />
+              className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+            >
+              <ChevronRight size={16} />
+            </button>
           </div>
         </div>
       )}

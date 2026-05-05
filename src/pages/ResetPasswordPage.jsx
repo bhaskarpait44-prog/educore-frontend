@@ -71,6 +71,7 @@ const ResetPasswordPage = () => {
   const navigate       = useNavigate()
   const [searchParams] = useSearchParams()
   const token          = searchParams.get('token')
+  const email          = searchParams.get('email')
 
   const strength = getStrength(watchedPwd)
 
@@ -96,14 +97,14 @@ const ResetPasswordPage = () => {
   }, [isSuccess])
 
   const onSubmit = async ({ password }) => {
-    if (!token) {
-      setApiError('Reset token is missing. Please use the link from your email.')
+    if (!token || !email) {
+      setApiError('Reset link is invalid or incomplete. Please request a new one.')
       return
     }
     setIsLoading(true)
     setApiError(null)
     try {
-      await resetPassword({ token, password })
+      await resetPassword({ token, email, password })
       setIsSuccess(true)
     } catch (err) {
       setApiError(err.message || 'Something went wrong. The link may have expired.')
@@ -176,7 +177,7 @@ const ResetPasswordPage = () => {
               )}
 
               {/* Missing token warning */}
-              {!token && (
+              {(!token || !email) && (
                 <div
                   className="flex items-start gap-3 p-3 rounded-xl mb-5 text-sm"
                   style={{

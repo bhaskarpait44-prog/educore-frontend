@@ -13,9 +13,10 @@ const StudentList = () => {
   usePageTitle('Student List')
 
   const location = useLocation()
-  const { students, sections, loadingList, loadingStudentId, loadStudentBundle, getStudentBundle } = useTeacherStudents()
+  const { students, sections, subjects, loadingList, loadingStudentId, loadStudentBundle, getStudentBundle } = useTeacherStudents()
   const [search, setSearch] = useState('')
   const [sectionKey, setSectionKey] = useState('')
+  const [subjectId, setSubjectId] = useState('')
   const [gender, setGender] = useState('')
   const [attendanceRange, setAttendanceRange] = useState('')
   const [resultStatus, setResultStatus] = useState('')
@@ -32,6 +33,10 @@ const StudentList = () => {
     const searchText = `${student.first_name} ${student.last_name} ${student.roll_number || ''}`.toLowerCase()
     const matchesSearch = !search.trim() || searchText.includes(search.trim().toLowerCase())
     const matchesSection = !sectionKey || `${student.class_id}:${student.section_id}` === sectionKey
+    
+    const studentSubjectIds = (student.subject_ids || '').split(',').map(Number)
+    const matchesSubject = !subjectId || studentSubjectIds.includes(Number(subjectId))
+
     const matchesGender = !gender || student.gender === gender
     const attendanceValue = Number(student.attendance_percentage || 0)
     const resultValue = Number(student.last_result_percentage || 0)
@@ -46,8 +51,8 @@ const StudentList = () => {
       resultValue < 40
     )
 
-    return matchesSearch && matchesSection && matchesGender && matchesAttendance && matchesResult
-  }), [students, search, sectionKey, gender, attendanceRange, resultStatus])
+    return matchesSearch && matchesSection && matchesSubject && matchesGender && matchesAttendance && matchesResult
+  }), [students, search, sectionKey, subjectId, gender, attendanceRange, resultStatus])
 
   return (
     <div className="space-y-5">
@@ -62,7 +67,7 @@ const StudentList = () => {
           View students from your assigned sections. Class teachers get full student context, while subject teachers stay limited to their teaching scope.
         </p>
 
-        <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-5">
+        <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-6">
           <Input
             label="Search"
             value={search}
@@ -76,6 +81,13 @@ const StudentList = () => {
             onChange={(event) => setSectionKey(event.target.value)}
             options={sections}
             placeholder="All sections"
+          />
+          <Select
+            label="Subject"
+            value={subjectId}
+            onChange={(event) => setSubjectId(event.target.value)}
+            options={subjects}
+            placeholder="All subjects"
           />
           <Select
             label="Gender"

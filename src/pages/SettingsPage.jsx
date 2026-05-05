@@ -42,7 +42,7 @@ const SettingsPage = () => {
   const navigate = useNavigate()
   const { toastSuccess, toastInfo } = useToast()
   const { user } = useAuthStore()
-  const { theme, toggleTheme, sidebarCollapsed, setSidebarCollapsed } = useUiStore()
+  const { theme, setTheme, sidebarCollapsed, setSidebarCollapsed } = useUiStore()
   const { currentSession, fetchCurrentSession } = useSessionStore()
 
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
@@ -84,7 +84,7 @@ const SettingsPage = () => {
 
   const handleThemeChange = (nextTheme) => {
     if (nextTheme !== theme) {
-      toggleTheme()
+      setTheme(nextTheme)
       toastInfo(`Theme switched to ${nextTheme}`)
     }
   }
@@ -206,7 +206,7 @@ const SettingsPage = () => {
                 label="Theme"
                 hint="Choose the appearance you want across the dashboard."
               >
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   <ChoiceButton
                     active={theme === 'light'}
                     label="Light"
@@ -218,6 +218,12 @@ const SettingsPage = () => {
                     label="Dark"
                     icon={Moon}
                     onClick={() => handleThemeChange('dark')}
+                  />
+                  <ChoiceButton
+                    active={theme === 'system'}
+                    label="System"
+                    icon={MonitorCog}
+                    onClick={() => handleThemeChange('system')}
                   />
                 </div>
               </PreferenceBox>

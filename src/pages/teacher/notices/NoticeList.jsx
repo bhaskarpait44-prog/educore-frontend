@@ -445,30 +445,51 @@ const NoticeCard = ({ notice, userId, canPost, markingId, onOpen, onEdit }) => {
         </div>
 
         {/* ── Content preview ── */}
-        <p
-          className="mt-3 line-clamp-2 text-sm leading-[1.7]"
-          style={{ color: 'var(--color-text-secondary)' }}
-        >
-          {notice.content}
-        </p>
+        <div className="mt-3">
+          <p
+            className="line-clamp-2 text-sm leading-[1.7]"
+            style={{ color: 'var(--color-text-secondary)' }}
+          >
+            {notice.content}
+          </p>
+          {notice.content?.length > 120 && (
+            <button
+              onClick={() => onOpen(notice)}
+              className="mt-2 flex items-center gap-1.5 text-[10px] font-bold transition-all hover:opacity-70"
+              style={{ color: 'var(--color-brand)' }}
+            >
+              <Eye size={12} strokeWidth={2.5} />
+              <span className="underline decoration-1 underline-offset-2">Read More</span>
+            </button>
+          )}
+        </div>
 
         {/* ── Meta strip ── */}
         <div
-          className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[14px] px-3 py-2.5"
+          className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[14px] px-3 py-2.5 text-[11px]"
           style={{ backgroundColor: 'var(--color-surface-raised)' }}
         >
-          <MetaItem icon={User2}>{notice.teacher_name || 'Teacher'}</MetaItem>
-          <MetaDot />
-          <MetaItem icon={CalendarDays}>{formatDate(notice.publish_date, 'long')}</MetaItem>
-          <MetaDot />
-          <MetaItem icon={Users}>{notice.read_count || 0} read</MetaItem>
+          <span className="flex items-center gap-1">
+            <User2 size={11} style={{ color: 'var(--color-text-muted)' }} />
+            <span className="font-medium text-[var(--color-text-secondary)]">By:</span>
+            <span style={{ color: 'var(--color-text-muted)' }}>{notice.teacher_name || 'Teacher'}</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <CalendarDays size={11} style={{ color: 'var(--color-text-muted)' }} />
+            <span className="font-medium text-[var(--color-text-secondary)]">Date:</span>
+            <span style={{ color: 'var(--color-text-muted)' }}>{formatDate(notice.publish_date, 'long')}</span>
+          </span>
+          <span className="flex items-center gap-1 rounded-md bg-white/50 px-1.5 py-0.5 dark:bg-black/20">
+            <Users size={11} style={{ color: 'var(--color-brand)' }} />
+            <span className="font-bold" style={{ color: 'var(--color-brand)' }}>{notice.read_count || 0}</span>
+            <span style={{ color: 'var(--color-text-muted)' }}>Views</span>
+          </span>
           {notice.expiry_date ? (
-            <>
-              <MetaDot />
-              <MetaItem icon={Clock} warn>
-                Expires {formatDate(notice.expiry_date, 'short')}
-              </MetaItem>
-            </>
+            <span className="flex items-center gap-1" style={{ color: '#854F0B' }}>
+              <Clock size={11} />
+              <span className="font-medium">Expires:</span>
+              <span>{formatDate(notice.expiry_date, 'short')}</span>
+            </span>
           ) : null}
         </div>
       </div>
@@ -559,7 +580,7 @@ const NoticeDetail = ({ notice }) => {
         <p className="mt-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
           Posted by{' '}
           <span className="font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-            {notice.teacher_name || 'Teacher'}
+            {notice.teacher_name || 'Teacher'} ({notice.teacher_role})
           </span>
           {' · '}
           {formatDate(notice.publish_date, 'long')}
@@ -569,7 +590,7 @@ const NoticeDetail = ({ notice }) => {
       {/* ── Meta cards row ── */}
       <div className="grid grid-cols-2 gap-3 mb-5 sm:grid-cols-4">
         <ModalMetaCard icon={CalendarDays} label="Published" value={formatDate(notice.publish_date, 'long')} />
-        <ModalMetaCard icon={User2} label="Posted By" value={notice.teacher_name || 'Teacher'} />
+        <ModalMetaCard icon={User2} label="Posted By" value={`${notice.teacher_name || 'Teacher'} (${notice.teacher_role})`} />
         <ModalMetaCard
           icon={Users}
           label="Read By"

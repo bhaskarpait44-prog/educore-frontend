@@ -89,6 +89,18 @@ const useTeacherNotices = () => {
     return [...map.values()]
   }, [assignments])
 
+  const subjectTeacherSections = useMemo(() => {
+    return assignments
+      .filter((assignment) => !assignment.is_class_teacher && assignment.subject_id)
+      .map((assignment) => ({
+        value: `${assignment.class_id}:${assignment.section_id}:${assignment.subject_id}`,
+        label: `${assignment.class_name} ${assignment.section_name} - ${assignment.subject_name}`,
+        class_id: assignment.class_id,
+        section_id: assignment.section_id,
+        subject_id: assignment.subject_id,
+      }))
+  }, [assignments])
+
   const saveNotice = useCallback(async (payload, noticeId = null) => {
     setSaving(true)
     try {
@@ -120,6 +132,7 @@ const useTeacherNotices = () => {
     saving,
     classTeacherSections,
     assignedSections,
+    subjectTeacherSections,
     loadNotices,
     saveNotice,
     markAsRead,

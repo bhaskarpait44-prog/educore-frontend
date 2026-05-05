@@ -15,6 +15,7 @@ const MarkAttendance = () => {
   const location = useLocation()
   const { toastSuccess, toastError } = useToast()
   const {
+    assignments,
     classTeacherAssignments,
     todaySchedule,
     loadingAssignments,
@@ -33,7 +34,7 @@ const MarkAttendance = () => {
     const incoming = location.state
     if (!incoming?.class_id || !incoming?.section_id || loadingAssignments) return
 
-    const match = classTeacherAssignments.find(
+    const match = assignments.find(
       (a) =>
         String(a.class_id) === String(incoming.class_id) &&
         String(a.section_id) === String(incoming.section_id)
@@ -44,30 +45,31 @@ const MarkAttendance = () => {
       ...prev,
       class_id: String(match.class_id),
       section_id: String(match.section_id),
-      subject_id: '',
-      assignment_role: 'class_teacher',
+      subject_id: match.subject_id ? String(match.subject_id) : '',
+      assignment_role: match.is_class_teacher ? 'class_teacher' : 'subject_teacher',
     }))
-  }, [location.state, loadingAssignments, classTeacherAssignments, setMarkingContext])
+  }, [location.state, loadingAssignments, assignments, setMarkingContext])
 
   useEffect(() => {
     if (loadingAssignments) return
-    if (markingContext.assignment_role !== 'class_teacher') return
     if (!markingContext.class_id || !markingContext.section_id || !markingContext.date) return
 
-    const match = classTeacherAssignments.find(
+    const match = assignments.find(
       (a) =>
         String(a.class_id) === String(markingContext.class_id) &&
-        String(a.section_id) === String(markingContext.section_id)
+        String(a.section_id) === String(markingContext.section_id) &&
+        (markingContext.assignment_role === 'class_teacher' ? a.is_class_teacher : String(a.subject_id || '') === String(markingContext.subject_id || ''))
     )
     if (!match) return
 
-    const nextKey = `${markingContext.class_id}:${markingContext.section_id}:${markingContext.date}`
+    const nextKey = `${markingContext.class_id}:${markingContext.section_id}:${markingContext.subject_id || ''}:${markingContext.date}`
     if (autoLoadKeyRef.current === nextKey) return
 
     autoLoadKeyRef.current = nextKey
     loadStudents({
       class_id: String(markingContext.class_id),
       section_id: String(markingContext.section_id),
+      subject_id: markingContext.subject_id ? String(markingContext.subject_id) : undefined,
       date: markingContext.date,
     }).catch((error) => {
       autoLoadKeyRef.current = ''
@@ -75,10 +77,11 @@ const MarkAttendance = () => {
     })
   }, [
     loadingAssignments,
-    classTeacherAssignments,
+    assignments,
     markingContext.assignment_role,
     markingContext.class_id,
     markingContext.section_id,
+    markingContext.subject_id,
     markingContext.date,
     loadStudents,
     toastError,
@@ -96,29 +99,29 @@ const MarkAttendance = () => {
     if (!pendingSchedule) return null
 
     return (
-      classTeacherAssignments.find(
+      assignments.find(
         (a) =>
           String(a.class_id) === String(pendingSchedule.class_id) &&
           String(a.section_id) === String(pendingSchedule.section_id)
       ) || null
     )
-  }, [todaySchedule, classTeacherAssignments, markingContext.class_id, markingContext.section_id])
+  }, [todaySchedule, assignments, markingContext.class_id, markingContext.section_id])
 
   return (
     <div className="space-y-4 pb-24">
 
       {/* Empty state */}
-      {!loadingAssignments && classTeacherAssignments.length === 0 && (
+      {!loadingAssignments && assignments.length === 0 && (
         <EmptyState
-          title="No class teacher assignment"
-          description="You can view attendance reports and registers for your sections, but only class teachers can mark daily attendance."
+          title="No assigned classes"
+          description="You can view attendance reports and registers for your sections once you are assigned to a class or subject."
         />
       )}
 
       {/* Attendance Marker */}
-      {(loadingAssignments || classTeacherAssignments.length > 0) && (
+      {(loadingAssignments || assignments.length > 0) && (
         <AttendanceMarker
-          assignments={classTeacherAssignments}
+          assignments={assignments}
           context={markingContext}
           setContext={setMarkingContext}
           payload={studentPayload}
@@ -137,6 +140,7 @@ const MarkAttendance = () => {
               await loadStudents({
                 class_id: String(markingContext.class_id),
                 section_id: String(markingContext.section_id),
+                subject_id: markingContext.subject_id ? String(markingContext.subject_id) : undefined,
                 date: markingContext.date,
               })
               toastSuccess('Attendance submitted successfully.')

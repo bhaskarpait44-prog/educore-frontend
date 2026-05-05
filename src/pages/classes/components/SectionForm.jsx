@@ -1,12 +1,15 @@
 // src/pages/classes/components/SectionForm.jsx
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, User } from 'lucide-react'
+import useClasses from '@/hooks/useClasses'
 
 const schema = z.object({
-  name    : z.string().min(1, 'Section name is required').max(10),
-  capacity: z.coerce.number().int().min(1, 'Minimum capacity is 1').max(200, 'Maximum capacity is 200'),
+  name            : z.string().min(1, 'Section name is required').max(10),
+  capacity        : z.coerce.number().int().min(1, 'Minimum capacity is 1').max(200, 'Maximum capacity is 200'),
+  class_teacher_id: z.coerce.number().int().optional().nullable(),
 })
 
 const inputCls = (hasError) => `
@@ -27,14 +30,33 @@ const SectionForm = ({
   isSaving = false,
   isEdit   = false,
 }) => {
+  const { fetchTeachers } = useClasses()
+  const [teachers, setTeachers] = useState([])
+  const [isLoadingTeachers, setIsLoadingTeachers] = useState(false)
+
   const {
     register,
     handleSubmit,
     formState: { errors },
   } = useForm({
     resolver     : zodResolver(schema),
-    defaultValues: { name: '', capacity: 40, ...defaultValues },
+    defaultValues: {
+      name            : '',
+      capacity        : 40,
+      class_teacher_id: null,
+      ...defaultValues
+    },
   })
+
+  useEffect(() => {
+    const loadTeachers = async () => {
+      setIsLoadingTeachers(true)
+      const data = await fetchTeachers()
+      setTeachers(data || [])
+      setIsLoadingTeachers(false)
+    }
+    loadTeachers()
+  }, [fetchTeachers])
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -74,6 +96,38 @@ const SectionForm = ({
         ) : (
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Maximum number of students allowed in this section
+          </p>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          Class Teacher
+        </label>
+        <div className="relative">
+          <select
+            {...register('class_teacher_id')}
+            className={`${inputCls(!!errors.class_teacher_id)} appearance-none pr-10`}
+            disabled={isLoadingTeachers}
+          >
+            <option value="">-- No Class Teacher Assigned --</option>
+            {teachers.map(t => (
+              <option key={t.id} value={t.id}>
+                {t.name} {t.employee_id ? `(${t.employee_id})` : ''}
+              </option>
+            ))}
+          </select>
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+            <User size={16} />
+          </div>
+        </div>
+        {errors.class_teacher_id ? (
+          <p className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400">
+            <AlertCircle size={11}/>{errors.class_teacher_id.message}
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            The teacher responsible for this specific section
           </p>
         )}
       </div>

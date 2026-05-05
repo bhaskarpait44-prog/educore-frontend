@@ -9,6 +9,8 @@ import EmptyState from '@/components/ui/EmptyState'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Badge from '@/components/ui/Badge'
+import Modal from '@/components/ui/Modal'
+import { BellRing, Send, Eye } from 'lucide-react'
 
 const initialForm = {
   audience: 'all_classes',
@@ -28,6 +30,7 @@ const AccountantNotices = () => {
   const [students, setStudents] = useState([])
   const [notices, setNotices] = useState([])
   const [form, setForm] = useState(initialForm)
+  const [selectedNotice, setSelectedNotice] = useState(null)
 
   const classOptions = useMemo(() => classes.map((row) => ({ value: String(row.id), label: row.name })), [classes])
   const studentOptions = useMemo(() => students.map((row) => ({
@@ -141,23 +144,88 @@ const AccountantNotices = () => {
           ) : notices.length === 0 ? (
             <EmptyState icon={BellRing} title="No fee notices" description="Fee notices created by accountant users will appear here." />
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {notices.map((notice) => (
-                <article key={notice.id} className="rounded-2xl border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
+                <article key={notice.id} className="rounded-[22px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="yellow">Fee</Badge>
                     <Badge variant={notice.is_active ? 'green' : 'grey'}>{notice.is_active ? 'Active' : 'Inactive'}</Badge>
                     <Badge variant="blue">{notice.target_scope === 'all_students' ? 'All Classes' : notice.target_student_name || notice.class_name || 'Class'}</Badge>
                   </div>
                   <h3 className="mt-2 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{notice.title}</h3>
-                  <p className="mt-1 line-clamp-2 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{notice.content}</p>
-                  <p className="mt-2 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>Read by {notice.student_read_count || 0}</p>
+                  <div className="mt-1">
+                    <p className="line-clamp-2 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{notice.content}</p>
+                    {notice.content?.length > 120 && (
+                      <button
+                        onClick={() => setSelectedNotice(notice)}
+                        className="mt-2 flex items-center gap-1.5 text-[10px] font-bold transition-all hover:opacity-70"
+                        style={{ color: 'var(--color-brand)' }}
+                      >
+                        <Eye size={12} strokeWidth={2.5} />
+                        <span className="underline decoration-1 underline-offset-2">Read More</span>
+                      </button>
+                    )}
+                  </div>
+                  
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                    <span className="flex items-center gap-1">
+                      <span className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>By:</span> {notice.teacher_name} ({notice.teacher_role})
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="font-medium" style={{ color: 'var(--color-text-secondary)' }}>Target:</span> {notice.target_scope === 'all_students' ? 'All Classes' : notice.target_student_name || notice.class_name || 'Specific'}
+                    </span>
+                    <span className="flex items-center gap-1 rounded-md bg-white/50 px-1.5 py-0.5 dark:bg-black/20">
+                      <span className="font-bold" style={{ color: 'var(--color-brand)' }}>
+                        {notice.student_read_count || 0}
+                      </span>
+                      <span>Views</span>
+                    </span>
+                  </div>
                 </article>
               ))}
             </div>
           )}
         </section>
       </div>
+
+      <Modal
+        isOpen={!!selectedNotice}
+        onClose={() => setSelectedNotice(null)}
+        title="Fee Notice Details"
+        size="lg"
+      >
+        {selectedNotice && (
+          <div className="space-y-4">
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <Badge variant="yellow">Fee Notice</Badge>
+                <Badge variant={selectedNotice.is_active ? 'green' : 'grey'}>{selectedNotice.is_active ? 'Active' : 'Inactive'}</Badge>
+                <Badge variant="blue">{selectedNotice.target_scope === 'all_students' ? 'All Classes' : selectedNotice.target_student_name || selectedNotice.class_name || 'Specific'}</Badge>
+              </div>
+              <h3 className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>{selectedNotice.title}</h3>
+              <p className="text-[11px] mt-1" style={{ color: 'var(--color-text-muted)' }}>
+                Posted by {selectedNotice.teacher_name} ({selectedNotice.teacher_role})
+              </p>
+            </div>
+            
+            <div className="rounded-2xl p-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+              <p className="text-sm whitespace-pre-wrap leading-relaxed" style={{ color: 'var(--color-text-primary)' }}>
+                {selectedNotice.content}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                <span>Total Views: <strong>{selectedNotice.student_read_count || 0}</strong></span>
+                {selectedNotice.expiry_date && (
+                   <span>Expires: <strong>{new Date(selectedNotice.expiry_date).toLocaleDateString()}</strong></span>
+                )}
+              </div>
+              <Button variant="secondary" onClick={() => setSelectedNotice(null)}>Close</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

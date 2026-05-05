@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BellRing, RefreshCw } from 'lucide-react'
+import { BellRing, RefreshCw, CalendarDays, User2, Clock } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 import Modal from '@/components/ui/Modal'
@@ -161,31 +161,63 @@ const StudentNotices = () => {
         size="lg"
       >
         {selectedNotice && (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div className="flex flex-wrap gap-2">
               {!selectedNotice.is_read && (
-                <span className="rounded-full bg-[rgba(37,99,235,0.10)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
+                <span className="rounded-full bg-blue-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-700">
                   Unread
                 </span>
               )}
-              <span className="rounded-full bg-[rgba(124,58,237,0.10)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[var(--student-accent)]">
+              <span className="rounded-full bg-purple-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-purple-700">
                 {selectedNotice.category}
               </span>
-            </div>
-
-            <div className="rounded-[22px] border px-4 py-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-              <p className="text-sm text-[var(--color-text-secondary)]">
-                Posted by {selectedNotice.posted_by || 'School'} on {formatDate(selectedNotice.publish_date, 'long')}
-              </p>
-              {selectedNotice.expiry_date && (
-                <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                  Expires on {formatDate(selectedNotice.expiry_date, 'long')}
-                </p>
+              {selectedNotice.is_important && (
+                <span className="rounded-full bg-red-100 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-red-700">
+                  Important
+                </span>
               )}
             </div>
 
-            <div className="whitespace-pre-wrap text-sm leading-7 text-[var(--color-text-primary)]">
-              {selectedNotice.content}
+            <div className="grid gap-3 rounded-[24px] border p-4 sm:grid-cols-2" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-sm">
+                  <User2 size={18} className="text-slate-500" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Posted By</p>
+                  <p className="text-sm font-semibold">{selectedNotice.posted_by || 'School'} ({selectedNotice.posted_by_role})</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white dark:bg-slate-800 shadow-sm">
+                  <CalendarDays size={18} className="text-slate-500" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Published Date</p>
+                  <p className="text-sm font-semibold">{formatDate(selectedNotice.publish_date, 'long')}</p>
+                </div>
+              </div>
+              {selectedNotice.expiry_date && (
+                <div className="flex items-center gap-3 sm:col-span-2">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 dark:bg-orange-900/20 shadow-sm">
+                    <Clock size={18} className="text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-orange-400">Expires On</p>
+                    <p className="text-sm font-semibold text-orange-700">{formatDate(selectedNotice.expiry_date, 'long')}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-[24px] bg-slate-50 dark:bg-slate-900/40 p-5 border border-slate-100 dark:border-slate-800">
+              <p className="whitespace-pre-wrap text-sm leading-8 text-[var(--color-text-primary)]">
+                {selectedNotice.content}
+              </p>
+            </div>
+            
+            <div className="flex justify-end">
+              <Button variant="secondary" onClick={() => setSelectedNotice(null)}>Close</Button>
             </div>
           </div>
         )}

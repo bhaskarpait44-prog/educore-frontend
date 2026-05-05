@@ -9,18 +9,50 @@ const useUiStore = create(
   persist(
     (set, get) => ({
       // Theme
-      theme: 'light',   // 'light' | 'dark'
+      theme: 'system',   // 'light' | 'dark' | 'system'
+
+      setTheme: (theme) => {
+        set({ theme })
+        get().applyTheme()
+      },
 
       toggleTheme: () => {
-        const next = get().theme === 'light' ? 'dark' : 'light'
-        // Apply class to <html> element immediately
-        document.documentElement.classList.toggle('dark', next === 'dark')
-        set({ theme: next })
+        const themes = ['light', 'dark', 'system']
+        const current = get().theme
+        const next = themes[(themes.indexOf(current) + 1) % themes.length]
+        get().setTheme(next)
+      },
+
+      applyTheme: () => {
+        const { theme } = get()
+        let isDark = theme === 'dark'
+
+        if (theme === 'system') {
+          isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        }
+
+        document.documentElement.classList.toggle('dark', isDark)
+        
+        // Also update meta theme-color for mobile browsers
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]')
+        if (metaThemeColor) {
+          metaThemeColor.setAttribute('content', isDark ? '#0f172a' : '#f8fafc')
+        }
       },
 
       initTheme: () => {
-        const { theme } = get()
-        document.documentElement.classList.toggle('dark', theme === 'dark')
+        get().applyTheme()
+
+        // Listen for system theme changes
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+        const listener = () => {
+          if (get().theme === 'system') {
+            get().applyTheme()
+          }
+        }
+
+        mediaQuery.addEventListener('change', listener)
+        return () => mediaQuery.removeEventListener('change', listener)
       },
 
       // Sidebar

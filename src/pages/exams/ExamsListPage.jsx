@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
-import { Plus, ClipboardList, PenLine, Trash2, ShieldCheck, Send, BookOpen, AlertCircle } from 'lucide-react'
+import { Plus, ClipboardList, PenLine, Trash2, ShieldCheck, Send, BookOpen, AlertCircle, BarChart3 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import useExamStore from '@/store/examStore'
 import useSessionStore from '@/store/sessionStore'
 import useToast from '@/hooks/useToast'
@@ -64,6 +65,7 @@ const ActionBtn = ({ icon: Icon, onClick, children, danger = false, title }) => 
 
 /* ─── Single exam row inside a class card ────────────────── */
 const ExamRow = ({ exam, isLast, onReview, onMarks, onToggleStatus, onDelete }) => {
+  const navigate = useNavigate()
   const statusCfg = STATUS_CFG[exam.status] || { label: exam.status, variant: 'grey' }
   const pending   = Number(exam.pending_review_count || 0)
 
@@ -97,6 +99,7 @@ const ExamRow = ({ exam, isLast, onReview, onMarks, onToggleStatus, onDelete }) 
 
       {/* right: actions */}
       <div className="flex items-center gap-1 shrink-0">
+        <ActionBtn icon={BarChart3} onClick={() => navigate(`/exams/${exam.id}/analytics`)} title="View Analytics">Stats</ActionBtn>
         <ActionBtn icon={ShieldCheck} onClick={() => onReview(exam)} title="Review subjects">Review</ActionBtn>
         {exam.status !== 'draft' && (
           <ActionBtn icon={PenLine} onClick={onMarks} title="Enter marks">Marks</ActionBtn>

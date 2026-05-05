@@ -17,7 +17,7 @@ const RESULT_COLOR = {
 }
 
 const ReportCardModal = ({ open, student, onClose }) => {
-  const { studentResult, fetchStudentResult } = useExamStore()
+  const { studentResult, fetchStudentResult, downloadReportCard } = useExamStore()
   const printRef = useRef(null)
 
   useEffect(() => {
@@ -25,6 +25,12 @@ const ReportCardModal = ({ open, student, onClose }) => {
       fetchStudentResult(student.enrollment_id).catch(() => {})
     }
   }, [open, student])
+
+  const handleDownload = () => {
+    if (student?.enrollment_id) {
+      downloadReportCard(student.enrollment_id);
+    }
+  }
 
   const handlePrint = () => {
     const content = printRef.current?.innerHTML
@@ -68,7 +74,7 @@ const ReportCardModal = ({ open, student, onClose }) => {
       footer={
         <div className="flex gap-3 w-full">
           <Button variant="secondary" onClick={onClose} className="flex-1">Close</Button>
-          <Button variant="secondary" icon={Download} className="flex-1">Download PDF</Button>
+          <Button variant="secondary" icon={Download} onClick={handleDownload} className="flex-1">Download PDF</Button>
           <Button icon={Printer} onClick={handlePrint} className="flex-1">Print</Button>
         </div>
       }

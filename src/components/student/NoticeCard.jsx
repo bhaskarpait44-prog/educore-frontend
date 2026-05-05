@@ -1,4 +1,4 @@
-import { Pin, Star } from 'lucide-react'
+import { Pin, Star, Eye, CalendarDays, User2 } from 'lucide-react'
 import { formatDate } from '@/utils/helpers'
 
 const NoticeCard = ({ notice, onOpen, onTogglePin, loading = false }) => {
@@ -13,7 +13,7 @@ const NoticeCard = ({ notice, onOpen, onTogglePin, loading = false }) => {
         boxShadow: notice.is_read ? '0 14px 34px rgba(76,29,149,0.04)' : '0 18px 38px rgba(37,99,235,0.08)',
       }}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             {!notice.is_read && (
@@ -43,17 +43,24 @@ const NoticeCard = ({ notice, onOpen, onTogglePin, loading = false }) => {
               <h3 className={`text-lg font-semibold ${notice.is_read ? '' : 'font-bold'}`} style={{ color: 'var(--color-text-primary)' }}>
                 {notice.title}
               </h3>
-              <p className="mt-2 line-clamp-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+              <p className="mt-2 line-clamp-3 text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
                 {notice.content}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-[20px] px-4 py-3 sm:min-w-52" style={{ backgroundColor: 'var(--color-surface-raised)' }}>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Posted</p>
-          <p className="mt-1 text-sm font-semibold text-[var(--color-text-primary)]">{formatRelative(notice.publish_date)}</p>
-          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">By {notice.posted_by || 'School'}</p>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-[18px] px-4 py-3 text-[11px]" style={{ backgroundColor: 'var(--color-surface-raised)' }}>
+          <span className="flex items-center gap-1.5">
+            <User2 size={12} style={{ color: 'var(--color-text-muted)' }} />
+            <span className="font-semibold text-[var(--color-text-secondary)]">From:</span>
+            <span style={{ color: 'var(--color-text-muted)' }}>{notice.posted_by || 'School'} ({notice.posted_by_role})</span>
+          </span>
+          <span className="flex items-center gap-1.5 border-l pl-4 border-slate-200 dark:border-slate-800">
+            <CalendarDays size={12} style={{ color: 'var(--color-text-muted)' }} />
+            <span className="font-semibold text-[var(--color-text-secondary)]">Posted:</span>
+            <span style={{ color: 'var(--color-text-muted)' }}>{formatRelative(notice.publish_date)}</span>
+          </span>
         </div>
       </div>
 
@@ -61,16 +68,17 @@ const NoticeCard = ({ notice, onOpen, onTogglePin, loading = false }) => {
         <button
           type="button"
           onClick={() => onOpen?.(notice)}
-          className="min-h-11 flex-1 rounded-2xl px-4 text-sm font-semibold text-white"
+          className="min-h-11 flex-[2] flex items-center justify-center gap-2 rounded-2xl px-4 text-sm font-bold text-white transition-transform active:scale-[0.98]"
           style={{ backgroundColor: 'var(--student-accent)' }}
         >
-          Read More
+          <Eye size={16} />
+          Read Full Notice
         </button>
         <button
           type="button"
           onClick={() => onTogglePin?.(notice)}
           disabled={loading}
-          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-semibold"
+          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-2xl px-4 text-sm font-semibold transition-colors hover:bg-slate-200 dark:hover:bg-slate-800"
           style={{ backgroundColor: 'var(--color-surface-raised)', color: 'var(--color-text-primary)', opacity: loading ? 0.7 : 1 }}
         >
           <Pin size={15} />

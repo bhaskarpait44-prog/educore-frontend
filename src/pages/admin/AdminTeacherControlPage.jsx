@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useLocation } from 'react-router-dom'
 import {
-  Bell, BookOpenText, CalendarRange, ChevronDown, ChevronRight, Clock,
-  Grid3x3, School2, Send, ShieldCheck, UserRoundCheck, Users, Zap,
+  BookOpenText, CalendarRange, ChevronDown, ChevronRight, Clock,
+  Grid3x3, School2, ShieldCheck, UserRoundCheck, Zap,
 } from 'lucide-react'
 import * as teacherControlApi from '@/api/adminTeacherControlApi'
-import { getClasses, getClassList, getSections } from '@/api/classApi'
-import { getSubjects } from '@/api/classApi'
-import { getStudents } from '@/api/students'
+import { getClasses, getClassList, getSections, getSubjects } from '@/api/classApi'
 import usePageTitle from '@/hooks/usePageTitle'
 import useToast from '@/hooks/useToast'
 import Input from '@/components/ui/Input'
@@ -15,7 +12,6 @@ import Select from '@/components/ui/Select'
 import Button from '@/components/ui/Button'
 import Badge from '@/components/ui/Badge'
 import EmptyState from '@/components/ui/EmptyState'
-import { ROUTES } from '@/constants/app'
 
 const DAY_OPTIONS = [
   { value: 'monday',    label: 'Mon' },
@@ -48,9 +44,7 @@ const subjectColor = (id) => SUBJECT_COLORS[(id || 0) % SUBJECT_COLORS.length]
    Main page
 ════════════════════════════════════════════════════════════════════════════ */
 const AdminTeacherControlPage = () => {
-  const location = useLocation()
-  const isNoticeRoute = location.pathname === ROUTES.ADMIN_NOTICES
-  usePageTitle(isNoticeRoute ? 'Notices' : 'Teacher Control')
+  usePageTitle('Teacher Control')
   const { toastSuccess, toastError } = useToast()
 
   const [loading, setLoading] = useState(true)
@@ -66,14 +60,8 @@ const AdminTeacherControlPage = () => {
   const [leaves,      setLeaves]      = useState([])
   const [corrections, setCorrections] = useState([])
   const [homework,    setHomework]    = useState([])
-  const [notices,     setNotices]     = useState([])
-  const [noticeStudents, setNoticeStudents] = useState([])
 
-  const [tab, setTab] = useState(isNoticeRoute ? 'notices' : 'assignments')
-
-  useEffect(() => {
-    if (isNoticeRoute) setTab('notices')
-  }, [isNoticeRoute])
+  const [tab, setTab] = useState('assignments')
 
   /* timetable view mode */
   const [ttView, setTtView]       = useState('grid') // 'grid' | 'list'
@@ -96,17 +84,6 @@ const AdminTeacherControlPage = () => {
   })
   const [showAssignForm, setShowAssignForm] = useState(false)
   const [showSlotForm,   setShowSlotForm]   = useState(false)
-  const [noticeForm, setNoticeForm] = useState({
-    audience: 'all_students',
-    teacher_id: '',
-    class_id: '',
-    section_id: '',
-    student_id: '',
-    category: 'general',
-    title: '',
-    content: '',
-    expiry_date: '',
-  })
 
   /* ── load ── */
   const load = async () => {
@@ -114,13 +91,12 @@ const AdminTeacherControlPage = () => {
     try {
       const [
         overviewRes, assignmentsRes, timetableRes, homeworkRes,
-        noticesRes, leaveRes, correctionsRes, teachersRes, classesRes,
+        leaveRes, correctionsRes, teachersRes, classesRes,
       ] = await Promise.all([
         teacherControlApi.getTeacherControlOverview(),
         teacherControlApi.getTeacherControlAssignments(),
         teacherControlApi.getTeacherControlTimetable(),
         teacherControlApi.getTeacherControlHomework(),
-        teacherControlApi.getTeacherControlNotices(),
         teacherControlApi.getTeacherControlLeave(),
         teacherControlApi.getTeacherControlCorrections(),
         teacherControlApi.getTeacherControlTeachers(),
@@ -131,7 +107,6 @@ const AdminTeacherControlPage = () => {
       setAssignments(assignmentsRes?.data?.assignments || [])
       setTimetable(timetableRes?.data?.timetable || [])
       setHomework(homeworkRes?.data?.homework || [])
-      setNotices(noticesRes?.data?.notices || [])
       setLeaves(leaveRes?.data?.applications || [])
       setCorrections(correctionsRes?.data?.requests || [])
       setTeachers(teachersRes?.data?.teachers || [])
@@ -157,17 +132,6 @@ const AdminTeacherControlPage = () => {
   }
   useEffect(() => { ensureClassMeta(assignmentForm.class_id).catch(() => {}) }, [assignmentForm.class_id])
   useEffect(() => { ensureClassMeta(slotForm.class_id).catch(() => {}) },       [slotForm.class_id])
-  useEffect(() => { ensureClassMeta(noticeForm.class_id).catch(() => {}) },      [noticeForm.class_id])
-  useEffect(() => {
-    if (noticeForm.audience !== 'student' && noticeForm.audience !== 'section' && noticeForm.audience !== 'class') return
-    getStudents({
-      class_id: noticeForm.class_id || undefined,
-      section_id: noticeForm.section_id || undefined,
-      perPage: 100,
-    })
-      .then((res) => setNoticeStudents(res?.data?.students || res?.data?.data || []))
-      .catch(() => setNoticeStudents([]))
-  }, [noticeForm.audience, noticeForm.class_id, noticeForm.section_id])
 
   /* ── derived options ── */
   const classOptions   = useMemo(() => classes.map((r) => ({ value: String(r.id), label: r.name })), [classes])
@@ -177,11 +141,6 @@ const AdminTeacherControlPage = () => {
   const aSubject = useMemo(() => (subjectsByClass[assignmentForm.class_id] || []).map((r) => ({ value: String(r.id), label: r.name })), [subjectsByClass, assignmentForm.class_id])
 
   const slotSectionOpts  = useMemo(() => (sectionsByClass[slotForm.class_id] || []).map((r) => ({ value: String(r.id), label: r.name })), [sectionsByClass, slotForm.class_id])
-  const noticeSectionOpts = useMemo(() => (sectionsByClass[noticeForm.class_id] || []).map((r) => ({ value: String(r.id), label: r.name })), [sectionsByClass, noticeForm.class_id])
-  const noticeStudentOptions = useMemo(() => noticeStudents.map((s) => ({
-    value: String(s.id),
-    label: `${s.first_name} ${s.last_name} | ${s.class || ''} ${s.section || ''} | Roll ${s.roll_number || '--'}`,
-  })), [noticeStudents])
   const slotSubjectOpts  = useMemo(() => assignments.filter((a) =>
     !a.is_class_teacher && a.is_active &&
     (!slotForm.teacher_id || String(a.teacher_id) === String(slotForm.teacher_id)) &&
@@ -305,54 +264,6 @@ const AdminTeacherControlPage = () => {
     finally { setSaving(false) }
   }
 
-  const toggleNotice = async (item) => {
-    setSaving(true)
-    try {
-      await teacherControlApi.updateTeacherControlNotice(item.id, { is_active: !item.is_active })
-      toastSuccess('Notice updated.')
-      await load()
-    } catch (err) { toastError(err?.message || 'Failed to update notice.') }
-    finally { setSaving(false) }
-  }
-
-  const handleNoticeCreate = async (e) => {
-    e.preventDefault(); setSaving(true)
-    try {
-      const payload = {
-        title: noticeForm.title.trim(),
-        content: noticeForm.content.trim(),
-        category: noticeForm.category,
-        expiry_date: noticeForm.expiry_date || null,
-      }
-
-      if (noticeForm.audience === 'all_teachers') payload.target_scope = 'teachers'
-      if (noticeForm.audience === 'teacher') {
-        payload.target_scope = 'specific_teacher'
-        payload.target_teacher_id = Number(noticeForm.teacher_id)
-      }
-      if (noticeForm.audience === 'all_students') payload.target_scope = 'all_students'
-      if (noticeForm.audience === 'class') {
-        payload.target_scope = 'specific_section'
-        payload.class_id = Number(noticeForm.class_id)
-      }
-      if (noticeForm.audience === 'section') {
-        payload.target_scope = 'specific_section'
-        payload.class_id = Number(noticeForm.class_id)
-        payload.section_id = Number(noticeForm.section_id)
-      }
-      if (noticeForm.audience === 'student') {
-        payload.target_scope = 'specific_student'
-        payload.target_student_id = Number(noticeForm.student_id)
-      }
-
-      await teacherControlApi.createTeacherControlNotice(payload)
-      toastSuccess('Notice sent.')
-      setNoticeForm({ audience: 'all_students', teacher_id: '', class_id: '', section_id: '', student_id: '', category: 'general', title: '', content: '', expiry_date: '' })
-      await load()
-    } catch (err) { toastError(err?.message || 'Unable to send notice.') }
-    finally { setSaving(false) }
-  }
-
   /* ── render ── */
   return (
     <div className="space-y-5 pb-20">
@@ -383,7 +294,6 @@ const AdminTeacherControlPage = () => {
         {[
           { id: 'assignments', label: 'Assignments', icon: School2 },
           { id: 'timetable',   label: 'Timetable',   icon: CalendarRange },
-          { id: 'notices',     label: 'Notices',     icon: Bell },
           { id: 'workflows',   label: 'Workflows',    icon: ShieldCheck },
         ].map(({ id, label, icon: Icon }) => (
           <button
@@ -541,104 +451,6 @@ const AdminTeacherControlPage = () => {
       {/* ════════════════════════════════════════
           TAB: WORKFLOWS
       ════════════════════════════════════════ */}
-      {tab === 'notices' && (
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-          <section className="rounded-[24px] border p-5" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-            <div className="mb-4 flex items-center gap-2">
-              <Send size={15} style={{ color: '#0f766e' }} />
-              <h2 className="text-base font-semibold" style={{ color: 'var(--color-text-primary)' }}>Create Notice</h2>
-            </div>
-            <form className="space-y-3" onSubmit={handleNoticeCreate}>
-              <Select
-                label="Send To"
-                value={noticeForm.audience}
-                onChange={(e) => setNoticeForm((p) => ({ ...p, audience: e.target.value, teacher_id: '', class_id: '', section_id: '', student_id: '' }))}
-                options={[
-                  { value: 'all_students', label: 'All Students' },
-                  { value: 'class', label: 'Class Wise' },
-                  { value: 'section', label: 'Section Wise' },
-                  { value: 'student', label: 'Student Wise' },
-                  { value: 'all_teachers', label: 'All Teachers' },
-                  { value: 'teacher', label: 'Teacher Wise' },
-                ]}
-                required
-              />
-
-              {noticeForm.audience === 'teacher' && (
-                <Select label="Teacher" value={noticeForm.teacher_id} onChange={(e) => setNoticeForm((p) => ({ ...p, teacher_id: e.target.value }))} options={teacherOptions} required />
-              )}
-
-              {['class', 'section', 'student'].includes(noticeForm.audience) && (
-                <Select label="Class" value={noticeForm.class_id} onChange={(e) => setNoticeForm((p) => ({ ...p, class_id: e.target.value, section_id: '', student_id: '' }))} options={classOptions} required={noticeForm.audience !== 'student'} />
-              )}
-
-              {['section', 'student'].includes(noticeForm.audience) && noticeForm.class_id && (
-                <Select label="Section" value={noticeForm.section_id} onChange={(e) => setNoticeForm((p) => ({ ...p, section_id: e.target.value, student_id: '' }))} options={noticeSectionOpts} required={noticeForm.audience === 'section'} />
-              )}
-
-              {noticeForm.audience === 'student' && (
-                <Select label="Student" value={noticeForm.student_id} onChange={(e) => setNoticeForm((p) => ({ ...p, student_id: e.target.value }))} options={noticeStudentOptions} placeholder="Select student" required />
-              )}
-
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Select
-                  label="Category"
-                  value={noticeForm.category}
-                  onChange={(e) => setNoticeForm((p) => ({ ...p, category: e.target.value }))}
-                  options={[
-                    { value: 'general', label: 'General' },
-                    { value: 'exam', label: 'Exam' },
-                    { value: 'event', label: 'Event' },
-                    { value: 'holiday', label: 'Holiday' },
-                    { value: 'homework', label: 'Homework' },
-                    { value: 'other', label: 'Other' },
-                  ]}
-                />
-                <Input type="date" label="Expiry Date" value={noticeForm.expiry_date} onChange={(e) => setNoticeForm((p) => ({ ...p, expiry_date: e.target.value }))} />
-              </div>
-
-              <Input label="Title" value={noticeForm.title} onChange={(e) => setNoticeForm((p) => ({ ...p, title: e.target.value }))} placeholder="Notice title" required />
-              <label className="block">
-                <span className="mb-1 block text-xs font-semibold" style={{ color: 'var(--color-text-secondary)' }}>Message</span>
-                <textarea
-                  value={noticeForm.content}
-                  onChange={(e) => setNoticeForm((p) => ({ ...p, content: e.target.value }))}
-                  className="min-h-32 w-full rounded-2xl px-3 py-2 text-sm outline-none"
-                  style={{ backgroundColor: 'var(--color-surface-raised)', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)' }}
-                  placeholder="Write notice message"
-                  required
-                />
-              </label>
-              <Button type="submit" variant="primary" loading={saving} className="w-full">Send Notice</Button>
-            </form>
-          </section>
-
-          <WorkflowSection title="Notice History" icon={Bell} items={notices} loading={loading}
-            renderItem={(item) => (
-              <div key={item.id} className="rounded-[22px] border p-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={item.is_active ? 'green' : 'grey'}>{item.is_active ? 'Active' : 'Inactive'}</Badge>
-                      <Badge variant="blue">{formatNoticeAudience(item)}</Badge>
-                    </div>
-                    <p className="mt-2 text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{item.title}</p>
-                    <p className="mt-1 line-clamp-2 text-xs" style={{ color: 'var(--color-text-secondary)' }}>{item.content}</p>
-                    <p className="mt-2 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-                      {item.category} | {formatDateTime(item.publish_date)} | Reads {Number(item.teacher_read_count || 0) + Number(item.student_read_count || 0)}
-                    </p>
-                  </div>
-                  <Button variant="secondary" size="sm" onClick={() => toggleNotice(item)} disabled={saving}>
-                    {item.is_active ? 'Deactivate' : 'Activate'}
-                  </Button>
-                </div>
-              </div>
-            )}
-            emptyTitle="No notices" emptyDesc="Notices sent by admin and teachers will appear here."
-          />
-        </div>
-      )}
-
       {tab === 'workflows' && (
         <div className="space-y-4">
           <WorkflowSection title="Leave Approval Queue" icon={UserRoundCheck} items={leaves} loading={loading}
@@ -948,27 +760,6 @@ const WorkflowCard = ({ title, meta, description, status, onApprove, onReject })
     </div>
   </article>
 )
-
-/* ════════════════════════════════════════════════════════════════════════════
-   Small helpers
-════════════════════════════════════════════════════════════════════════════ */
-const formatNoticeAudience = (item) => {
-  if (item.target_scope === 'teachers') return 'All Teachers'
-  if (item.target_scope === 'specific_teacher') return item.target_teacher_name || 'Teacher'
-  if (item.target_scope === 'all_students') return 'All Students'
-  if (item.target_scope === 'specific_student') return item.target_student_name || 'Student'
-  if (item.target_scope === 'specific_section' && item.section_name) return `${item.class_name || 'Class'} ${item.section_name}`
-  if (item.target_scope === 'specific_section') return item.class_name || 'Class'
-  if (item.target_scope === 'my_class_only') return `${item.class_name || 'Class'} ${item.section_name || ''}`.trim()
-  return 'Notice'
-}
-
-const formatDateTime = (value) => {
-  if (!value) return '--'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return '--'
-  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-}
 
 const HeroStat = ({ label, value, color }) => (
   <div className="rounded-[20px] border px-4 py-3" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>

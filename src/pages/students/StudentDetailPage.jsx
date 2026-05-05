@@ -21,6 +21,8 @@ import TabResults from './tabs/TabResults'
 import TabFees from './tabs/TabFees'
 import TabIdentity from './tabs/TabIdentity'
 import TabProfile from './tabs/TabProfile'
+import TabDocuments from './tabs/TabDocuments'
+import useAttendanceStore from '@/store/attendanceStore'
 
 // ─── Palette ──────────────────────────────────────────────────────────────────
 const PALETTES = [
@@ -279,36 +281,28 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ]
 
-const mockAttendance = (year, month) => {
-  const days = new Date(year, month + 1, 0).getDate()
-  const out = {}
-  for (let d = 1; d <= days; d++) {
-    const dow = new Date(year, month, d).getDay()
-    if (dow === 0 || dow === 6) continue
-    const r = Math.random()
-    out[d] = r < 0.07 ? 'absent' : r < 0.12 ? 'late' : r < 0.15 ? 'holiday' : 'present'
-  }
-  return out
-}
-
 const STATUS = {
   present: { bg: '#f0fdf4', border: '#bbf7d0', dot: '#16a34a', text: '#166534' },
   absent:  { bg: '#fef2f2', border: '#fecaca', dot: '#dc2626', text: '#991b1b' },
   late:    { bg: '#fffbeb', border: '#fde68a', dot: '#d97706', text: '#92400e' },
+  half_day: { bg: '#eff6ff', border: '#bfdbfe', dot: '#2563eb', text: '#1e40af' },
   holiday: { bg: 'var(--color-surface-raised)', border: 'var(--color-border)', dot: '#94a3b8', text: 'var(--color-text-muted)' },
 }
 
 const LEGEND_KEYS = ['present', 'absent', 'late', 'holiday']
 
 const AttendanceCalendar = ({ enrollmentId }) => {
+  const { fetchStudentAttendance, studentRecords, studentSummary, isLoading } = useAttendanceStore()
   const today = new Date()
   const [year,  setYear]  = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
-  const [data,  setData]  = useState({})
 
   useEffect(() => {
-    setData(mockAttendance(year, month))
-  }, [year, month, enrollmentId])
+    if (!enrollmentId) return
+    const from = new Date(year, month, 1).toISOString().split('T')[0]
+    const to = new Date(year, month + 1, 0).toISOString().split('T')[0]
+    fetchStudentAttendance(enrollmentId, { from, to })
+  }, [year, month, enrollmentId, fetchStudentAttendance])
 
   const prev = () => {
     if (month === 0) { setMonth(11); setYear(y => y - 1) }
@@ -325,22 +319,24 @@ const AttendanceCalendar = ({ enrollmentId }) => {
     Array.from({ length: totalDays }, (_, i) => i + 1)
   )
 
-  const counts = Object.values(data).reduce((a, v) => {
-    a[v] = (a[v] || 0) + 1
-    return a
-  }, {})
-  const total = (counts.present || 0) + (counts.absent || 0) + (counts.late || 0)
-  const pct   = total ? Math.round(((counts.present || 0) + (counts.late || 0)) * 100 / total) : null
+  const recordsMap = useMemo(() => {
+    const map = {}
+    studentRecords.forEach(r => {
+      const d = new Date(r.date).getDate()
+      map[d] = r.status
+    })
+    return map
+  }, [studentRecords])
 
   const STATS = [
-    { label: 'Present', value: counts.present || 0, bg: '#f0fdf4', border: '#bbf7d0', labelColor: '#16a34a', valColor: '#166534' },
-    { label: 'Absent',  value: counts.absent  || 0, bg: '#fef2f2', border: '#fecaca', labelColor: '#ef4444', valColor: '#991b1b' },
-    { label: 'Late',    value: counts.late    || 0, bg: '#fffbeb', border: '#fde68a', labelColor: '#f59e0b', valColor: '#92400e' },
-    { label: 'Rate',    value: pct !== null ? `${pct}%` : '—', bg: '#eff6ff', border: '#bfdbfe', labelColor: '#3b82f6', valColor: '#1e40af' },
+    { label: 'Present', value: studentSummary?.presentCount || 0, bg: '#f0fdf4', border: '#bbf7d0', labelColor: '#16a34a', valColor: '#166534' },
+    { label: 'Absent',  value: studentSummary?.absentCount || 0, bg: '#fef2f2', border: '#fecaca', labelColor: '#ef4444', valColor: '#991b1b' },
+    { label: 'Late',    value: studentSummary?.lateCount || 0, bg: '#fffbeb', border: '#fde68a', labelColor: '#f59e0b', valColor: '#92400e' },
+    { label: 'Rate',    value: studentSummary?.percentage !== undefined ? `${studentSummary.percentage}%` : '—', bg: '#eff6ff', border: '#bfdbfe', labelColor: '#3b82f6', valColor: '#1e40af' },
   ]
 
   return (
-    <div>
+    <div style={{ opacity: isLoading ? 0.6 : 1, transition: 'opacity 0.2s' }}>
       {/* Stats row — 2×2 on mobile, 4-col on desktop */}
       <div className="sdp-stats-grid" style={{
         display: 'grid',
@@ -411,7 +407,7 @@ const AttendanceCalendar = ({ enrollmentId }) => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3 }}>
         {cells.map((day, idx) => {
           if (!day) return <div key={`e${idx}`} />
-          const status  = data[day]
+          const status  = recordsMap[day]
           const s       = STATUS[status]
           const isToday = (
             day === today.getDate() &&
@@ -489,11 +485,16 @@ const AttendanceCalendar = ({ enrollmentId }) => {
 const RIGHT_TABS = [
   { key: 'identity',   label: 'Identity',   icon: IdCard },
   { key: 'profile',    label: 'Profile',    icon: User },
+  { key: 'documents',  label: 'Documents',  icon: ScrollText },
   { key: 'attendance', label: 'Attendance', icon: CalendarCheck },
   { key: 'results',    label: 'Results',    icon: GraduationCap },
   { key: 'fees',       label: 'Fees',       icon: Wallet },
-  { key: 'audit',      label: 'Audit Log',  icon: ScrollText },
+  { key: 'audit',      label: 'Audit Log',  icon: FileTextIcon },
 ]
+
+function FileTextIcon(props) {
+  return <ScrollText {...props} />
+}
 
 const RightPanel = ({ student, palette, activeTab, setActiveTab }) => (
   <div style={{
@@ -541,6 +542,7 @@ const RightPanel = ({ student, palette, activeTab, setActiveTab }) => (
     <div className="sdp-tab-content">
       {activeTab === 'identity'   && <TabIdentity student={student} studentId={student.id} />}
       {activeTab === 'profile'    && <TabProfile  student={student} studentId={student.id} />}
+      {activeTab === 'documents'  && <TabDocuments studentId={student.id} />}
       {activeTab === 'attendance' && <AttendanceCalendar enrollmentId={student.current_enrollment?.id} />}
       {activeTab === 'results'    && <TabResults  studentId={student.id} />}
       {activeTab === 'fees'       && <TabFees     enrollmentId={student.current_enrollment?.id} />}

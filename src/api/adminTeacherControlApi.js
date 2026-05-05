@@ -13,7 +13,7 @@ export const updateTeacherControlTimetableSlot = (id, data) => api.patch(`/admin
 export const getTeacherControlHomework = () => api.get('/admin/teacher-control/homework')
 export const updateTeacherControlHomework = (id, data) => api.patch(`/admin/teacher-control/homework/${id}`, data)
 
-export const getTeacherControlNotices = () => api.get('/admin/teacher-control/notices')
+export const getTeacherControlNotices = (params) => api.get('/admin/teacher-control/notices', { params })
 export const createTeacherControlNotice = (data) => api.post('/admin/teacher-control/notices', data)
 export const updateTeacherControlNotice = (id, data) => api.patch(`/admin/teacher-control/notices/${id}`, data)
 

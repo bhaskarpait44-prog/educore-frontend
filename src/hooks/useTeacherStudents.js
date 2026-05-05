@@ -3,6 +3,7 @@ import * as teacherApi from '@/api/teacherApi'
 
 const useTeacherStudents = () => {
   const [students, setStudents] = useState([])
+  const [subjects, setSubjects] = useState([])
   const [loadingList, setLoadingList] = useState(true)
   const [detailCache, setDetailCache] = useState({})
   const [attendanceCache, setAttendanceCache] = useState({})
@@ -10,12 +11,13 @@ const useTeacherStudents = () => {
   const [remarksCache, setRemarksCache] = useState({})
   const [loadingStudentId, setLoadingStudentId] = useState(null)
 
-  const fetchStudents = useCallback(async () => {
+  const fetchStudents = useCallback(async (params = {}) => {
     setLoadingList(true)
     try {
-      const res = await teacherApi.getTeacherStudents()
+      const res = await teacherApi.getTeacherStudents(params)
       const rows = res?.data?.students || []
       setStudents(rows)
+      setSubjects(res?.data?.available_subjects || [])
       return rows
     } finally {
       setLoadingList(false)
@@ -78,6 +80,7 @@ const useTeacherStudents = () => {
   return {
     students,
     sections,
+    subjects,
     loadingList,
     loadingStudentId,
     fetchStudents,

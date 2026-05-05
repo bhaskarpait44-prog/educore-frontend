@@ -93,11 +93,23 @@ const SectionsTab=({classId,sections,isSaving,onCreate,onUpdate,onDelete,addOpen
       ):(
         <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
           <table className="w-full">
-            <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">{['Section','Capacity','Enrolled','Availability','Status','Actions'].map(h=><th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>)}</tr></thead>
+            <thead><tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">{['Section','Class Teacher','Capacity','Enrolled','Availability','Status','Actions'].map(h=><th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>)}</tr></thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50 bg-white dark:bg-gray-800">
               {sections.map(sec=>(
                 <tr key={sec.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
                   <td className="px-4 py-3 font-semibold text-gray-900 dark:text-gray-100">Section {sec.name}</td>
+                  <td className="px-4 py-3">
+                    {sec.class_teacher_name ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                          {sec.class_teacher_name.charAt(0)}
+                        </div>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{sec.class_teacher_name}</span>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400 dark:text-gray-500 italic">Not assigned</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">{sec.capacity}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{sec.enrolled_count||0}</td>
                   <td className="px-4 py-3 min-w-36"><CapBar enrolled={sec.enrolled_count||0} capacity={sec.capacity}/></td>

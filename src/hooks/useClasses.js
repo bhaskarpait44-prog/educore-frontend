@@ -110,6 +110,17 @@ const useClasses = () => {
     }
   }, [])
 
+  // ── Teachers for selection ─────────────────────────────────────────────
+  const fetchTeachers = useCallback(async () => {
+    try {
+      const res = await classApi.getClassTeachers()
+      return res.data
+    } catch (err) {
+      toastError(err.message || 'Failed to load teachers')
+      return []
+    }
+  }, [])
+
   // ── Sections ───────────────────────────────────────────────────────────
   const fetchSections = useCallback(async (classId) => {
     try {
@@ -184,6 +195,7 @@ const useClasses = () => {
     updateClass,
     deleteClass,
     toggleClassStatus,
+    fetchTeachers,
     fetchSections,
     createSection,
     updateSection,

@@ -36,7 +36,7 @@ const NoticeForm = () => {
 
   const { can } = usePermissions()
   const { toastSuccess, toastError } = useToast()
-  const { loadingBase, saving, classTeacherSections, assignedSections, saveNotice } = useTeacherNotices()
+  const { loadingBase, saving, classTeacherSections, assignedSections, subjectTeacherSections, saveNotice } = useTeacherNotices()
   const [students, setStudents] = useState([])
   const [loadingStudents, setLoadingStudents] = useState(false)
   const [form, setForm] = useState({
@@ -58,7 +58,9 @@ const NoticeForm = () => {
         content: editingNotice.content || '',
         category: editingNotice.category || 'general',
         target_mode: editingNotice.target_scope === 'specific_student' ? 'student' : editingNotice.target_scope || '',
-        target_key: editingNotice.class_id && editingNotice.section_id ? `${editingNotice.class_id}:${editingNotice.section_id}` : '',
+        target_key: editingNotice.target_scope === 'specific_subject' 
+          ? `${editingNotice.class_id}:${editingNotice.section_id}:${editingNotice.subject_id}`
+          : (editingNotice.class_id && editingNotice.section_id ? `${editingNotice.class_id}:${editingNotice.section_id}` : ''),
         target_student_id: editingNotice.target_student_id ? String(editingNotice.target_student_id) : '',
         attachment_path: editingNotice.attachment_path || '',
         publish_date: editingNotice.publish_date ? String(editingNotice.publish_date).slice(0, 10) : todayDate(),
@@ -69,7 +71,7 @@ const NoticeForm = () => {
 
     setForm((prev) => ({
       ...prev,
-      target_mode: preferredTargetMode || (classTeacherSections.length ? 'my_class_only' : 'specific_section'),
+      target_mode: preferredTargetMode || (classTeacherSections.length ? 'whole_class' : 'specific_section'),
       target_key: classTeacherSections[0]?.value || assignedSections[0]?.value || '',
     }))
   }, [assignedSections, classTeacherSections, editingNotice, preferredTargetMode])
@@ -94,16 +96,23 @@ const NoticeForm = () => {
   const targetOptions = useMemo(() => {
     const options = []
     if (classTeacherSections.length) {
-      options.push({ value: 'my_class_only', label: 'Class Wise (Class Teacher)' })
+      options.push({ value: 'whole_class', label: 'Whole Class (Class Teacher)' })
+    }
+    if (subjectTeacherSections.length) {
+      options.push({ value: 'specific_subject', label: 'Specific Subject' })
     }
     if (assignedSections.length) {
       options.push({ value: 'specific_section', label: 'Assigned Class / Section' })
       options.push({ value: 'student', label: 'Student Wise' })
     }
     return options
-  }, [assignedSections, classTeacherSections])
+  }, [assignedSections, classTeacherSections, subjectTeacherSections])
 
-  const sectionOptions = form.target_mode === 'my_class_only' ? classTeacherSections : assignedSections
+  const sectionOptions = useMemo(() => {
+    if (form.target_mode === 'whole_class') return classTeacherSections
+    if (form.target_mode === 'specific_subject') return subjectTeacherSections
+    return assignedSections
+  }, [form.target_mode, classTeacherSections, subjectTeacherSections, assignedSections])
 
   const studentOptions = useMemo(() => {
     const selectedSection = assignedSections.find((item) => item.value === form.target_key)
@@ -154,6 +163,7 @@ const NoticeForm = () => {
               target_scope: form.target_mode === 'student' ? 'specific_student' : form.target_mode,
               class_id: form.target_mode === 'student' ? null : selectedTarget?.class_id || null,
               section_id: form.target_mode === 'student' ? null : selectedTarget?.section_id || null,
+              subject_id: form.target_mode === 'specific_subject' ? selectedTarget?.subject_id || null : null,
               target_student_id: form.target_mode === 'student' ? Number(form.target_student_id) : null,
               attachment_path: form.attachment_path.trim() || null,
               publish_date: form.publish_date,

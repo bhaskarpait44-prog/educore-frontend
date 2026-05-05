@@ -1,35 +1,32 @@
-// src/pages/DashboardPage.jsx
-import { useEffect, useCallback, useRef } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
   Users, CalendarCheck, IndianRupee, ClipboardList,
   Plus, ArrowUpRight, RefreshCw, ClipboardCheck,
   ScrollText, TrendingUp, TrendingDown, Minus,
-  ChevronRight, Bell, Wifi, WifiOff,
+  ChevronRight, ArrowRight, Wallet, UserPlus,
+  ArrowDownLeft, Clock, Search, Filter, MoreHorizontal
 } from 'lucide-react'
+
 import useDashboardStore from '@/store/dashboardStore'
 import useSessionStore   from '@/store/sessionStore'
 import useAuthStore      from '@/store/authStore'
-import useUiStore        from '@/store/uiStore'
 import usePageTitle      from '@/hooks/usePageTitle'
 import useToast          from '@/hooks/useToast'
-import AttendanceBarChart from '@/components/ui/AttendanceBarChart'
-import { OldValue, NewValue } from '@/components/ui/ValueDiff'
+import { AttendanceTrendChart, FeeStatusChart } from '@/components/admin/DashboardCharts'
 import { ROUTES }        from '@/constants/app'
 import { formatCurrency, formatDate, formatPercent, getInitials } from '@/utils/helpers'
+import { cn } from '@/utils/cn'
 
-const AUTO_REFRESH_MS = 5 * 60 * 1000
+const AUTO_REFRESH_MS = 10 * 60 * 1000 // 10 minutes
 
-// ── Palette helpers ──────────────────────────────────────────────────────
-const CARD_ACCENTS = ['#2563eb', '#16a34a', '#d97706', '#7c3aed']
-
-// ── Main Component ───────────────────────────────────────────────────────
 const DashboardPage = () => {
-  usePageTitle('Dashboard')
-  const navigate      = useNavigate()
+  usePageTitle('Admin Dashboard')
+  const navigate = useNavigate()
   const { toastInfo } = useToast()
-
-  const { user }           = useAuthStore()
+  
+  const { user } = useAuthStore()
   const { currentSession } = useSessionStore()
   const {
     stats, attendanceChart, recentAdmissions,
@@ -37,451 +34,408 @@ const DashboardPage = () => {
     isLoading, lastRefreshed, fetchAll, clearDashboard,
   } = useDashboardStore()
 
-  const timerRef = useRef(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const load = useCallback(() => {
-    fetchAll(currentSession?.id).catch(() => {})
-  }, [currentSession?.id])
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true)
+    try {
+      await fetchAll(currentSession?.id)
+      toastInfo('Dashboard data updated')
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [currentSession?.id, fetchAll, toastInfo])
 
   useEffect(() => {
-    load()
-    timerRef.current = setInterval(() => { load(); toastInfo('Dashboard refreshed') }, AUTO_REFRESH_MS)
-    return () => { clearInterval(timerRef.current); clearDashboard() }
-  }, [load])
+    handleRefresh()
+    const timer = setInterval(handleRefresh, AUTO_REFRESH_MS)
+    return () => {
+      clearInterval(timer)
+      clearDashboard()
+    }
+  }, [handleRefresh, clearDashboard])
 
   const greeting = () => {
     const h = new Date().getHours()
-    return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
+    if (h < 12) return 'Good Morning'
+    if (h < 17) return 'Good Afternoon'
+    return 'Good Evening'
   }
 
-  const formatRefreshed = () => lastRefreshed?.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) || ''
+  // --- Animation Variants ---
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  }
 
-  const attendancePct  = stats?.attendanceToday?.percentage ?? stats?.today_attendance?.percentage
-  const attendanceData = stats?.attendanceToday ?? stats?.today_attendance
-  const feeData        = stats?.feeCollection   ?? stats?.fee_collection
-  const examData       = stats?.upcomingExams   ?? stats?.upcoming_exams
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  }
 
   return (
-    <div className="space-y-6 pb-8">
-
-      {/* ── Header ──────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4">
+    <motion.div 
+      initial="hidden"
+      animate="show"
+      variants={container}
+      className="max-w-[1600px] mx-auto space-y-8 pb-12 px-4 sm:px-6 lg:px-8"
+    >
+      {/* --- HEADER SECTION --- */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] mb-1" style={{ color: 'var(--color-brand)' }}>
-            {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
-          </p>
-          <h1 className="text-2xl font-bold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-            {greeting()}, {user?.name?.split(' ')[0]}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              Live Overview · {new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          </div>
+          <h1 className="text-3xl font-black tracking-tight text-text-primary">
+            {greeting()}, <span className="text-brand">{user?.name?.split(' ')[0]}!</span>
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
-            {currentSession ? `Session · ${currentSession.name}` : 'No active session'}
+          <p className="text-text-secondary font-medium mt-1">
+            Manage <span className="text-text-primary">{currentSession?.name || 'Academic Session'}</span> operations from your command center.
           </p>
         </div>
 
-        <button
-          onClick={() => { load(); toastInfo('Refreshing…') }}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors flex-shrink-0"
-          style={{ color: 'var(--color-text-secondary)', border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}
-          title="Refresh dashboard"
-        >
-          <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
-          {lastRefreshed && (
-            <span className="text-xs hidden sm:block" style={{ color: 'var(--color-text-muted)' }}>
-              {formatRefreshed()}
-            </span>
-          )}
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="group flex items-center gap-2 px-4 py-2.5 bg-surface border border-border-base rounded-2xl shadow-sm text-sm font-bold text-text-secondary hover:bg-surface-raised hover:border-text-muted/30 transition-all active:scale-95 disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={cn("text-text-muted transition-transform group-hover:rotate-180", isRefreshing && "animate-spin")} />
+            Refresh
+          </button>
+          
+          <div className="h-10 w-[1px] bg-border-base mx-1 hidden md:block" />
+          
+          <button className="hidden md:flex h-11 w-11 items-center justify-center bg-brand text-white rounded-2xl shadow-lg shadow-brand/20 hover:bg-brand-dark transition-all hover:-translate-y-0.5 active:translate-y-0">
+            <Plus size={20} />
+          </button>
+        </div>
       </div>
 
-      {/* ── Stat Cards ──────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          isLoading={isLoading}
+      {/* --- KPI CARDS --- */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+        <KpiCard 
           icon={Users}
-          accent="#2563eb"
           label="Total Students"
-          value={stats?.totalStudents ?? stats?.total_students ?? '—'}
-          sub={stats?.newThisSession ? `+${stats.newThisSession} this session` : currentSession?.name}
-          trend={stats?.studentTrend}
+          value={stats?.totalStudents || 0}
+          trend="+4.2%"
+          trendUp={true}
+          description="Enrolled this session"
+          color="blue"
+          variants={item}
           onClick={() => navigate(ROUTES.STUDENTS)}
         />
-        <StatCard
-          isLoading={isLoading}
+        <KpiCard 
           icon={CalendarCheck}
-          accent="#16a34a"
-          label="Attendance"
-          value={attendancePct != null ? formatPercent(attendancePct) : '—'}
-          sub={attendanceData ? `${attendanceData.present ?? 0} present · ${attendanceData.absent ?? 0} absent` : 'Today'}
-          progress={attendancePct}
-          progressColor={(attendancePct ?? 100) >= 75 ? '#16a34a' : '#ef4444'}
+          label="Today's Attendance"
+          value={formatPercent(stats?.attendanceToday?.percentage || 0)}
+          trend="-0.5%"
+          trendUp={false}
+          description={`${stats?.attendanceToday?.present || 0} students present`}
+          color="emerald"
+          variants={item}
           onClick={() => navigate(ROUTES.ATTENDANCE)}
         />
-        <StatCard
-          isLoading={isLoading}
+        <KpiCard 
           icon={IndianRupee}
-          accent="#d97706"
-          label="Fee Collection"
-          value={feeData ? formatCurrency(feeData.collected ?? feeData.total_paid ?? 0) : '—'}
-          sub={feeData ? `${formatCurrency(feeData.pending ?? 0)} pending` : 'This month'}
-          progress={feeData?.percentage}
-          progressColor="#d97706"
+          label="Revenue (Month)"
+          value={formatCurrency(stats?.feeCollection?.collected || 0)}
+          trend="+12%"
+          trendUp={true}
+          description={`${formatPercent(stats?.feeCollection?.percentage || 0)} collection target met`}
+          color="amber"
+          variants={item}
         />
-        <StatCard
-          isLoading={isLoading}
+        <KpiCard 
           icon={ClipboardList}
-          accent="#7c3aed"
           label="Upcoming Exams"
-          value={examData?.count ?? 0}
-          sub={examData?.next ? `Next: ${examData.next}` : 'This month'}
+          value={stats?.upcomingExams?.count || 0}
+          description={stats?.upcomingExams?.next ? `Next: ${stats.upcomingExams.next}` : 'No exams scheduled'}
+          color="violet"
+          variants={item}
           onClick={() => navigate(ROUTES.EXAMS)}
         />
       </div>
 
-      {/* ── Attendance Chart + Quick Actions ────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-
-        {/* Chart — 2/3 */}
-        <div className="lg:col-span-2 rounded-[20px] p-5"
-          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-          <div className="flex items-center justify-between mb-5">
+      {/* --- MIDDLE SECTION: CHARTS & ACTIONS --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Attendance Chart */}
+        <motion.div variants={item} className="lg:col-span-8 bg-surface border border-border-base rounded-[32px] p-8 shadow-sm">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>
-                Attendance — Last 30 Days
-              </h2>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                Green ≥ 75% · Yellow 50–75% · Red &lt; 50%
-              </p>
+              <h3 className="text-lg font-black text-text-primary">Attendance Analytics</h3>
+              <p className="text-sm text-text-secondary font-medium">Monthly trend for student presence</p>
             </div>
-            <button onClick={() => navigate(ROUTES.ATTENDANCE)}
-              className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
-              style={{ color: 'var(--color-brand)' }}>
-              Full report <ArrowUpRight size={12} />
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-raised border border-border-base rounded-full text-[10px] font-bold text-text-muted uppercase tracking-wider">
+                Last 30 Days
+              </span>
+            </div>
+          </div>
+          <div className="h-[280px]">
+             <AttendanceTrendChart data={attendanceChart} />
+          </div>
+        </motion.div>
+
+        {/* Quick Actions Panel */}
+        <motion.div variants={item} className="lg:col-span-4 bg-surface-raised/50 border border-border-base rounded-[32px] p-8 shadow-sm">
+           <h3 className="text-lg font-black mb-6 flex items-center gap-2 text-text-primary">
+             <Clock size={18} className="text-brand" />
+             Quick Shortcuts
+           </h3>
+           <div className="space-y-4">
+             <ActionButton 
+                icon={UserPlus} 
+                label="Register Student" 
+                onClick={() => navigate(ROUTES.STUDENT_NEW)}
+                description="Admission workflow"
+             />
+             <ActionButton 
+                icon={ClipboardCheck} 
+                label="Submit Attendance" 
+                onClick={() => navigate(ROUTES.ATTENDANCE)}
+                description="Bulk daily record"
+             />
+             <ActionButton 
+                icon={Wallet} 
+                label="Collect Fees" 
+                onClick={() => navigate(ROUTES.FEES)}
+                description="Payment processing"
+                color="amber"
+             />
+             
+             <div className="pt-6 mt-6 border-t border-border-base">
+               <div className="flex items-center justify-between mb-4 px-2">
+                 <span className="text-xs font-bold text-text-muted uppercase tracking-widest">Active session</span>
+                 <span className="text-xs font-bold text-brand underline cursor-pointer">Switch</span>
+               </div>
+               <div className="bg-surface p-4 rounded-2xl border border-border-base flex items-center justify-between">
+                 <div>
+                   <p className="text-sm font-bold text-text-primary">{currentSession?.name || '—'}</p>
+                   <p className="text-[10px] text-text-muted font-bold uppercase tracking-tight mt-0.5">Primary Session</p>
+                 </div>
+                 <div className="h-8 w-8 bg-surface-raised rounded-xl flex items-center justify-center text-text-muted">
+                   <ChevronRight size={16} />
+                 </div>
+               </div>
+             </div>
+           </div>
+        </motion.div>
+      </div>
+
+      {/* --- BOTTOM SECTION: DATA PANELS --- */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Recent Admissions */}
+        <motion.div variants={item} className="bg-surface border border-border-base rounded-[32px] overflow-hidden shadow-sm flex flex-col">
+          <div className="px-8 py-6 border-b border-border-base/50 flex items-center justify-between bg-surface-raised/30">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-brand/10 text-brand rounded-2xl flex items-center justify-center">
+                <Search size={18} />
+              </div>
+              <div>
+                <h3 className="text-base font-black text-text-primary">Recent Admissions</h3>
+                <p className="text-xs text-text-muted font-bold uppercase tracking-tight">Newly joined scholars</p>
+              </div>
+            </div>
+            <button className="h-8 w-8 text-text-muted hover:text-text-primary transition-colors">
+              <MoreHorizontal size={20} />
             </button>
           </div>
-          {isLoading
-            ? <div className="animate-pulse h-40 rounded-xl" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-            : <AttendanceBarChart data={attendanceChart} height={150} />
-          }
-        </div>
-
-        {/* Quick Actions — 1/3 */}
-        <div className="rounded-[20px] p-5"
-          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-          <h2 className="text-sm font-bold mb-4" style={{ color: 'var(--color-text-primary)' }}>
-            Quick Actions
-          </h2>
-          <div className="flex flex-col gap-2">
-            {[
-              { label: 'Mark Attendance',  icon: CalendarCheck,  accent: '#16a34a', route: ROUTES.ATTENDANCE  },
-              { label: 'Admit Student',    icon: Plus,           accent: '#2563eb', route: ROUTES.STUDENT_NEW },
-              { label: 'Enter Exam Marks', icon: ClipboardCheck, accent: '#7c3aed', route: ROUTES.EXAMS       },
-            ].map(({ label, icon: Icon, accent, route }) => (
-              <button
-                key={label}
-                onClick={() => navigate(route)}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl text-left w-full transition-all group"
-                style={{ border: '1px solid var(--color-border)' }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.backgroundColor = `${accent}08`
-                  e.currentTarget.style.borderColor     = `${accent}40`
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                  e.currentTarget.style.borderColor     = 'var(--color-border)'
-                }}
-              >
-                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: `${accent}12` }}>
-                  <Icon size={15} style={{ color: accent }} />
+          
+          <div className="p-4 flex-1">
+            <AnimatePresence mode="wait">
+              {recentAdmissions.length > 0 ? (
+                <div className="space-y-1">
+                  {recentAdmissions.slice(0, 5).map((student, idx) => (
+                    <motion.div 
+                      key={student.id} 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      onClick={() => navigate(`${ROUTES.STUDENTS}/${student.id}`)}
+                      className="group flex items-center justify-between p-4 rounded-2xl hover:bg-surface-raised transition-all cursor-pointer"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="h-11 w-11 rounded-2xl bg-surface-raised border-2 border-surface shadow-sm flex items-center justify-center text-text-muted font-black text-xs overflow-hidden">
+                           {student.photo_path ? (
+                             <img src={student.photo_path} alt="" className="h-full w-full object-cover" />
+                           ) : getInitials(`${student.first_name} ${student.last_name}`)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-text-primary group-hover:text-brand transition-colors">{student.first_name} {student.last_name}</p>
+                          <p className="text-[11px] text-text-muted font-bold uppercase tracking-tight">{student.class_name || 'Unassigned'} · {student.admission_no || 'ADM'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-right">
+                         <div className="hidden sm:block">
+                           <p className="text-xs font-black text-text-primary">{formatDate(student.created_at || student.joined_date)}</p>
+                           <p className="text-[10px] text-text-muted font-bold uppercase tracking-tight">Joined Date</p>
+                         </div>
+                         <ArrowRight size={16} className="text-text-muted/50 group-hover:text-brand transition-all group-hover:translate-x-1" />
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-                <span className="text-sm font-medium flex-1" style={{ color: 'var(--color-text-primary)' }}>
-                  {label}
-                </span>
-                <ChevronRight size={14} style={{ color: 'var(--color-text-muted)' }} />
-              </button>
-            ))}
+              ) : (
+                <EmptyState icon={Search} label="No recent admissions found" />
+              )}
+            </AnimatePresence>
           </div>
-        </div>
-      </div>
+          <div className="p-4 border-t border-border-base/50">
+             <button 
+                onClick={() => navigate(ROUTES.STUDENTS)}
+                className="w-full py-3 bg-surface border border-border-base rounded-2xl text-xs font-black uppercase tracking-widest text-text-secondary hover:bg-surface-raised transition-all active:scale-[0.98]"
+             >
+               View Enrollment Registry
+             </button>
+          </div>
+        </motion.div>
 
-      {/* ── Recent Admissions + Fee Defaulters ──────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-        {/* Recent Admissions */}
-        <Panel
-          title="Recent Admissions"
-          action={{ label: 'All Students', onClick: () => navigate(ROUTES.STUDENTS) }}
-        >
-          {isLoading ? <ListSkeleton /> : recentAdmissions.length === 0
-            ? <EmptyState icon={Users} message="No recent admissions" />
-            : (
-              <div>
-                {recentAdmissions.slice(0, 8).map((s, i) => (
-                  <AdmissionRow
-                    key={s.id || i}
-                    student={s}
-                    onClick={() => navigate(`${ROUTES.STUDENTS}/${s.id}`)}
-                  />
-                ))}
+        {/* Audit Log / System Activity */}
+        <motion.div variants={item} className="bg-surface border border-border-base rounded-[32px] overflow-hidden shadow-sm flex flex-col">
+          <div className="px-8 py-6 border-b border-border-base/50 flex items-center justify-between bg-surface-raised/30">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 bg-text-primary text-surface rounded-2xl flex items-center justify-center">
+                <ScrollText size={18} />
               </div>
-            )}
-        </Panel>
-
-        {/* Fee Defaulters */}
-        <Panel
-          title="Fee Defaulters"
-          badge={feeDefaulters.length > 0 ? feeDefaulters.length : null}
-        >
-          {isLoading ? <ListSkeleton /> : feeDefaulters.length === 0
-            ? <EmptyState icon={IndianRupee} message="No pending dues — all clear! 🎉" positive />
-            : (
               <div>
-                {feeDefaulters.slice(0, 8).map((s, i) => (
-                  <DefaulterRow key={s.id || i} student={s} />
-                ))}
+                <h3 className="text-base font-black text-text-primary">System Activity</h3>
+                <p className="text-xs text-text-muted font-bold uppercase tracking-tight">Security & Operation audit</p>
               </div>
-            )}
-        </Panel>
-      </div>
-
-      {/* ── Recent Audit ─────────────────────────────────────────────── */}
-      <Panel
-        title="Recent System Activity"
-        icon={ScrollText}
-        action={{ label: 'Full Audit Log', onClick: () => navigate(ROUTES.AUDIT) }}
-      >
-        {isLoading ? <ListSkeleton rows={4} /> : recentAudit.length === 0
-          ? <EmptyState icon={ScrollText} message="No recent activity" />
-          : (
-            <div>
-              {recentAudit.map((log, i) => (
-                <AuditRow key={log.id || i} log={log} onClick={() => navigate(ROUTES.AUDIT)} />
-              ))}
             </div>
-          )}
-      </Panel>
-    </div>
+            <button className="h-8 w-8 text-text-muted hover:text-text-primary transition-colors">
+              <Filter size={18} />
+            </button>
+          </div>
+
+          <div className="p-4 flex-1">
+            <AnimatePresence mode="wait">
+              {recentAudit.length > 0 ? (
+                <div className="space-y-1">
+                  {recentAudit.slice(0, 5).map((log, idx) => (
+                    <motion.div 
+                      key={log.id} 
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className="flex items-start gap-4 p-4 rounded-2xl hover:bg-surface-raised transition-all"
+                    >
+                      <div className="mt-1 h-9 w-9 rounded-xl bg-surface-raised flex items-center justify-center text-text-muted flex-shrink-0">
+                         <Clock size={16} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                           <p className="text-sm font-bold text-text-primary truncate">
+                             {log.changed_by_name || 'System Admin'}
+                           </p>
+                           <span className="text-[10px] font-black text-text-muted uppercase flex-shrink-0">
+                             {new Date(log.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                           </span>
+                        </div>
+                        <p className="text-xs text-text-secondary mt-0.5 line-clamp-1 leading-relaxed">
+                          Updated <span className="font-black text-brand">{log.field_name}</span> in {log.table_name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                           <span className="text-[10px] px-2 py-0.5 bg-surface-raised text-text-secondary rounded font-mono truncate max-w-[100px]">{String(log.old_value || 'None')}</span>
+                           <ArrowRight size={10} className="text-text-muted/50" />
+                           <span className="text-[10px] px-2 py-0.5 bg-brand/10 text-brand rounded font-mono truncate max-w-[100px]">{String(log.new_value || 'None')}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState icon={ScrollText} label="No recent audit logs available" />
+              )}
+            </AnimatePresence>
+          </div>
+          <div className="p-4 border-t border-border-base/50">
+             <button 
+                onClick={() => navigate(ROUTES.AUDIT)}
+                className="w-full py-3 bg-surface border border-border-base rounded-2xl text-xs font-black uppercase tracking-widest text-text-secondary hover:bg-surface-raised transition-all active:scale-[0.98]"
+             >
+               Full System Audit
+             </button>
+          </div>
+        </motion.div>
+      </div>
+    </motion.div>
   )
 }
 
-// ── StatCard ─────────────────────────────────────────────────────────────
-const StatCard = ({ isLoading, icon: Icon, accent, label, value, sub, trend, progress, progressColor, onClick }) => (
-  <button
-    onClick={onClick}
-    disabled={!onClick}
-    className="w-full text-left p-4 rounded-[20px] transition-all duration-200"
-    style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-    onMouseEnter={e => {
-      if (!onClick) return
-      e.currentTarget.style.borderColor = accent + '50'
-      e.currentTarget.style.transform   = 'translateY(-2px)'
-      e.currentTarget.style.boxShadow   = `0 8px 32px ${accent}12`
-    }}
-    onMouseLeave={e => {
-      e.currentTarget.style.borderColor = 'var(--color-border)'
-      e.currentTarget.style.transform   = 'translateY(0)'
-      e.currentTarget.style.boxShadow   = 'none'
-    }}
-  >
-    {isLoading ? <StatSkeleton /> : (
-      <>
-        <div className="flex items-start justify-between mb-3">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: `${accent}12` }}>
-            <Icon size={17} style={{ color: accent }} />
-          </div>
-          {trend != null && (
-            <span className="flex items-center gap-0.5 text-[11px] font-bold px-2 py-0.5 rounded-full"
-              style={{
-                backgroundColor: trend > 0 ? '#f0fdf4' : trend < 0 ? '#fef2f2' : 'var(--color-surface-raised)',
-                color: trend > 0 ? '#16a34a' : trend < 0 ? '#dc2626' : 'var(--color-text-muted)',
-              }}>
-              {trend > 0 ? <TrendingUp size={10} /> : trend < 0 ? <TrendingDown size={10} /> : <Minus size={10} />}
-              {trend > 0 ? '+' : ''}{trend}%
-            </span>
-          )}
+// --- SUBCOMPONENTS ---
+
+const KpiCard = ({ icon: Icon, label, value, trend, trendUp, description, color, onClick, variants }) => {
+  const colorMap = {
+    blue: "bg-brand text-brand shadow-brand/10",
+    emerald: "bg-emerald-600 text-emerald-600 shadow-emerald-100",
+    amber: "bg-amber-600 text-amber-600 shadow-amber-100",
+    violet: "bg-violet-600 text-violet-600 shadow-violet-100"
+  }
+
+  return (
+    <motion.button 
+      variants={variants}
+      onClick={onClick}
+      disabled={!onClick}
+      className="group w-full bg-surface border border-border-base rounded-[32px] p-6 text-left transition-all hover:border-brand/30 hover:shadow-xl hover:shadow-brand/5 hover:-translate-y-1 active:translate-y-0 disabled:cursor-default"
+    >
+      <div className="flex items-center justify-between mb-5">
+        <div className={cn("h-12 w-12 rounded-2xl bg-opacity-10 flex items-center justify-center", colorMap[color].split(' ')[0])}>
+           <Icon size={22} className={colorMap[color].split(' ')[1]} />
         </div>
-
-        <p className="text-2xl font-bold tracking-tight leading-none mb-1.5"
-          style={{ color: 'var(--color-text-primary)' }}>
-          {value ?? '—'}
-        </p>
-        <p className="text-xs font-semibold mb-0.5" style={{ color: 'var(--color-text-secondary)' }}>
-          {label}
-        </p>
-        {sub && <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{sub}</p>}
-
-        {progress != null && (
-          <div className="mt-3 h-1 rounded-full overflow-hidden"
-            style={{ backgroundColor: 'var(--color-surface-raised)' }}>
-            <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${Math.min(100, Math.max(0, progress))}%`, backgroundColor: progressColor || accent }} />
+        {trend && (
+          <div className={cn(
+            "flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black tracking-tight uppercase",
+            trendUp ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
+          )}>
+            {trendUp ? <ArrowUpRight size={10} strokeWidth={3} /> : <ArrowDownLeft size={10} strokeWidth={3} />}
+            {trend}
           </div>
         )}
-      </>
-    )}
-  </button>
-)
-
-// ── Panel wrapper ────────────────────────────────────────────────────────
-const Panel = ({ title, badge, action, icon: Icon, children }) => (
-  <div className="rounded-[20px] overflow-hidden"
-    style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
-    <div className="flex items-center justify-between px-5 py-4"
-      style={{ borderBottom: '1px solid var(--color-border)' }}>
-      <div className="flex items-center gap-2.5">
-        {Icon && <Icon size={14} style={{ color: 'var(--color-brand)' }} />}
-        <h2 className="text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>{title}</h2>
-        {badge != null && (
-          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold"
-            style={{ backgroundColor: '#fef2f2', color: '#dc2626' }}>
-            {badge}
-          </span>
-        )}
       </div>
-      {action && (
-        <button onClick={action.onClick}
-          className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
-          style={{ color: 'var(--color-brand)' }}>
-          {action.label} <ArrowUpRight size={11} />
-        </button>
-      )}
-    </div>
-    <div className="px-5 py-2">{children}</div>
-  </div>
-)
-
-// ── Row components ───────────────────────────────────────────────────────
-const AdmissionRow = ({ student, onClick }) => (
-  <div
-    className="flex items-center gap-3 py-3 cursor-pointer rounded-xl px-1 -mx-1 transition-colors"
-    onClick={onClick}
-    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
-    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-    style={{ borderBottom: '1px solid var(--color-border)' }}
-  >
-    <Avatar name={`${student.first_name} ${student.last_name}`} color="var(--color-brand)" />
-    <div className="flex-1 min-w-0">
-      <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>
-        {student.first_name} {student.last_name}
-      </p>
-      <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>
-        {student.class_name || student.class || '—'}
-        {student.admission_no && ` · ${student.admission_no}`}
-      </p>
-    </div>
-    <div className="text-right flex-shrink-0">
-      <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-        {formatDate(student.created_at || student.joined_date)}
-      </p>
-      <ChevronRight size={13} style={{ color: 'var(--color-text-muted)', marginLeft: 'auto', marginTop: 2 }} />
-    </div>
-  </div>
-)
-
-const DefaulterRow = ({ student }) => {
-  const name = student.student_name || `${student.first_name} ${student.last_name}`
-  const due  = student.pending || student.balance || student.total_pending || 0
-  return (
-    <div className="flex items-center gap-3 py-3"
-      style={{ borderBottom: '1px solid var(--color-border)' }}>
-      <Avatar name={name} color="#dc2626" />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-semibold truncate" style={{ color: 'var(--color-text-primary)' }}>{name}</p>
-        <p className="text-xs truncate" style={{ color: 'var(--color-text-muted)' }}>
-          {student.class_name || student.class || '—'}
-        </p>
+      
+      <div className="space-y-1">
+        <h4 className="text-[11px] font-black text-text-muted uppercase tracking-widest leading-none">{label}</h4>
+        <p className="text-3xl font-black text-text-primary tracking-tight">{value}</p>
+        <p className="text-xs text-text-secondary font-medium truncate">{description}</p>
       </div>
-      <span className="text-sm font-bold flex-shrink-0" style={{ color: '#dc2626' }}>
-        {formatCurrency(due)}
-      </span>
-    </div>
+    </motion.button>
   )
 }
 
-const AuditRow = ({ log, onClick }) => (
-  <div
-    className="flex items-start gap-3 py-3.5 cursor-pointer rounded-xl px-1 -mx-1 transition-colors"
-    onClick={onClick}
-    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-surface-raised)'}
-    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-    style={{ borderBottom: '1px solid var(--color-border)' }}
-  >
-    <Avatar name={(log.changed_by_name || log.admin_name || 'S')} color="var(--color-brand)" size="sm" />
-    <div className="flex-1 min-w-0">
-      <div className="flex flex-wrap items-center gap-1.5 leading-snug">
-        <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>
-          {log.changed_by_name || log.admin_name || `User #${log.changed_by}`}
-        </span>
-        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>updated</span>
-        <code className="text-[11px] px-1.5 py-0.5 rounded-md font-mono"
-          style={{ backgroundColor: '#eff6ff', color: '#1d4ed8' }}>
-          {log.field_name}
-        </code>
-        <span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>in</span>
-        <code className="text-[11px] px-1.5 py-0.5 rounded-md font-mono"
-          style={{ backgroundColor: 'var(--color-surface-raised)', color: 'var(--color-brand)' }}>
-          {log.table_name}
-        </code>
-      </div>
-      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-        <OldValue value={log.old_value ? String(log.old_value).slice(0, 24) : null} />
-        <span className="text-xs" style={{ color: '#94a3b8' }}>→</span>
-        <NewValue value={log.new_value ? String(log.new_value).slice(0, 24) : null} />
-      </div>
-    </div>
-    <span className="text-[11px] flex-shrink-0 mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-      {new Date(log.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-    </span>
-  </div>
-)
-
-// ── Shared atoms ─────────────────────────────────────────────────────────
-const Avatar = ({ name, color, size = 'md' }) => {
-  const dim = size === 'sm' ? 'w-7 h-7 text-[10px]' : 'w-9 h-9 text-xs'
+const ActionButton = ({ icon: Icon, label, description, onClick, color = "blue" }) => {
+  const accentColor = color === 'blue' ? 'bg-brand' : 'bg-amber-600'
+  
   return (
-    <div className={`${dim} rounded-full flex items-center justify-center font-bold text-white flex-shrink-0`}
-      style={{ backgroundColor: color }}>
-      {getInitials(name)}
-    </div>
+    <button 
+      onClick={onClick}
+      className="group w-full flex items-center gap-4 p-4 rounded-2xl bg-surface border border-border-base hover:bg-surface-raised hover:border-brand/30 transition-all shadow-sm"
+    >
+      <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110", accentColor)}>
+        <Icon size={18} className="text-white" />
+      </div>
+      <div className="flex-1 text-left">
+        <p className="text-sm font-bold text-text-primary group-hover:text-brand transition-colors">{label}</p>
+        <p className="text-[10px] text-text-muted font-bold uppercase tracking-tight">{description}</p>
+      </div>
+      <ChevronRight size={14} className="text-text-muted group-hover:text-text-primary transition-all group-hover:translate-x-1" />
+    </button>
   )
 }
 
-const EmptyState = ({ icon: Icon, message, positive }) => (
-  <div className="flex flex-col items-center justify-center py-10 text-center">
-    {Icon && (
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-2.5"
-        style={{ backgroundColor: positive ? '#f0fdf4' : 'var(--color-surface-raised)' }}>
-        <Icon size={17} style={{ color: positive ? '#16a34a' : 'var(--color-text-muted)' }} />
-      </div>
-    )}
-    <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>{message}</p>
-  </div>
-)
-
-const StatSkeleton = () => (
-  <div className="animate-pulse space-y-3">
-    <div className="w-9 h-9 rounded-xl" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-    <div className="h-7 w-20 rounded-lg" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-    <div className="h-3 w-16 rounded" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-    <div className="h-3 w-24 rounded" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-  </div>
-)
-
-const ListSkeleton = ({ rows = 5 }) => (
-  <div className="animate-pulse">
-    {[...Array(rows)].map((_, i) => (
-      <div key={i} className="flex items-center gap-3 py-3"
-        style={{ borderBottom: '1px solid var(--color-border)' }}>
-        <div className="w-9 h-9 rounded-full flex-shrink-0"
-          style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-        <div className="flex-1 space-y-2">
-          <div className="h-3.5 w-36 rounded" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-          <div className="h-2.5 w-24 rounded" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-        </div>
-        <div className="h-3 w-12 rounded" style={{ backgroundColor: 'var(--color-surface-raised)' }} />
-      </div>
-    ))}
+const EmptyState = ({ icon: Icon, label }) => (
+  <div className="flex flex-col items-center justify-center py-12 px-4">
+    <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+      <Icon size={24} className="text-slate-300" />
+    </div>
+    <p className="text-sm text-slate-400 font-medium italic">{label}</p>
   </div>
 )
 

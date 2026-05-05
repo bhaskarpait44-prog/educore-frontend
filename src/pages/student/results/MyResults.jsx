@@ -11,6 +11,7 @@ import {
 import Button from '@/components/ui/Button'
 import EmptyState from '@/components/ui/EmptyState'
 import ResultTable from '@/components/student/ResultTable'
+import WhatIfAnalysis from '@/components/student/WhatIfAnalysis'
 import usePageTitle from '@/hooks/usePageTitle'
 import useStudentResults from '@/hooks/useStudentResults'
 import useToast from '@/hooks/useToast'
@@ -250,49 +251,59 @@ const MyResults = () => {
               </div>
             </section>
 
-            {compartment ? (
-              <section
-                className="rounded-[28px] border p-5"
-                style={{ borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.10)' }}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700">
-                    <CircleAlert size={18} />
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">Compartment Notice</h2>
-                    <p className="mt-2 text-sm text-amber-900/80 dark:text-amber-100/80">
-                      You have compartment in the following subject(s). You must pass these papers to move ahead smoothly.
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {(compartment.subjects || []).map((subject) => (
-                        <span key={subject} className="rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold text-amber-800">
-                          {subject}
-                        </span>
-                      ))}
+            <div className="space-y-5">
+              {compartment ? (
+                <section
+                  className="rounded-[28px] border p-5"
+                  style={{ borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.10)' }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-700">
+                      <CircleAlert size={18} />
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">Compartment Notice</h2>
+                      <p className="mt-2 text-sm text-amber-900/80 dark:text-amber-100/80">
+                        You have compartment in the following subject(s). You must pass these papers to move ahead smoothly.
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {(compartment.subjects || []).map((subject) => (
+                          <span key={subject} className="rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold text-amber-800">
+                            {subject}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </section>
-            ) : (
-              <section
-                className="rounded-[28px] border p-5"
-                style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
-              >
-                <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Promotion Outlook</h2>
-                <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
-                  {summary?.result_status === 'pass'
-                    ? 'This exam is in a passing state. Keep that rhythm through the rest of the session.'
-                    : 'This result needs recovery work. Review the red subjects first and speak with your class teacher.'}
-                </p>
-                <div className="mt-5 rounded-[24px] border px-4 py-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Current Exam Result</p>
-                  <p className="mt-2 text-xl font-bold" style={{ color: resultTone(summary?.result_status) }}>
-                    {String(summary?.result_status || 'awaiting').toUpperCase()}
+                </section>
+              ) : (
+                <section
+                  className="rounded-[28px] border p-5"
+                  style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+                >
+                  <h2 className="text-lg font-semibold text-[var(--color-text-primary)]">Promotion Outlook</h2>
+                  <p className="mt-2 text-sm text-[var(--color-text-secondary)]">
+                    {summary?.result_status === 'pass'
+                      ? 'This exam is in a passing state. Keep that rhythm through the rest of the session.'
+                      : 'This result needs recovery work. Review the red subjects first and speak with your class teacher.'}
                   </p>
-                </div>
-              </section>
-            )}
+                  <div className="mt-5 rounded-[24px] border px-4 py-4" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-raised)' }}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--color-text-muted)]">Current Exam Result</p>
+                    <p className="mt-2 text-xl font-bold" style={{ color: resultTone(summary?.result_status) }}>
+                      {String(summary?.result_status || 'awaiting').toUpperCase()}
+                    </p>
+                  </div>
+                </section>
+              )}
+
+              {subjects.length > 0 && (
+                <WhatIfAnalysis 
+                  subjects={subjects} 
+                  initialPercentage={summary?.percentage || 0} 
+                  initialGrade={summary?.grade || 'F'} 
+                />
+              )}
+            </div>
           </div>
         </>
       )}
