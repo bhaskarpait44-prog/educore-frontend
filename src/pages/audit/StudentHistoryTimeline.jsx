@@ -3,12 +3,11 @@
 // This is the TIMELINE version for a richer view
 
 import { useEffect, useState } from 'react'
-import { Filter, ArrowRight, User, MapPin, Monitor } from 'lucide-react'
+import { Filter, ArrowRight, User, MapPin, Monitor, ScrollText } from 'lucide-react'
 import useAuditStore from '@/store/auditStore'
 import { OldValue, NewValue } from '@/components/ui/ValueDiff'
 import Select from '@/components/ui/Select'
 import EmptyState from '@/components/ui/EmptyState'
-import { ScrollText } from 'lucide-react'
 
 const FIELD_LABELS = {
   first_name    : 'First Name',

@@ -1,6 +1,6 @@
 // src/pages/audit/AuditLogListPage.jsx
 import { useEffect, useState, useCallback } from 'react'
-import { FileSpreadsheet, ChevronLeft, ChevronRight, Eye, Filter, X } from 'lucide-react'
+import { FileSpreadsheet, ChevronLeft, ChevronRight, Eye, Filter, X, ScrollText } from 'lucide-react'
 import useAuditStore from '@/store/auditStore'
 import useToast from '@/hooks/useToast'
 import Button from '@/components/ui/Button'
@@ -11,7 +11,6 @@ import DateRangePicker from '@/components/ui/DateRangePicker'
 import { OldValue, NewValue } from '@/components/ui/ValueDiff'
 import AuditDetailModal from './AuditDetailModal'
 import { formatDate, debounce, truncate } from '@/utils/helpers'
-import { ScrollText } from 'lucide-react'
 
 const TABLE_OPTIONS = [
   { value: 'students',         label: 'Students'         },
